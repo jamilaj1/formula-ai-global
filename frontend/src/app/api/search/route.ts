@@ -1,7 +1,5 @@
 ﻿import { NextResponse } from 'next/server'
 
-const API_URL = process.env.API_URL || 'http://localhost:8080'
-
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const query = searchParams.get('query') || ''
@@ -11,16 +9,16 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`${API_URL}/api/formula/search?query=${encodeURIComponent(query)}&language=en`)
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`)
-    }
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/brain?query=${encodeURIComponent(query)}&language=en`
+    )
+    if (!response.ok) throw new Error(`Error: ${response.status}`)
     const data = await response.json()
     return NextResponse.json({ results: data.result || 'No results found' })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Search error:', error)
-    return NextResponse.json({ 
-      results: '⚠️ AI Brain is starting up. Please try again in a moment.\n\nMake sure the backend is running on http://localhost:8080' 
+    return NextResponse.json({
+      results: '⚠️ ' + (error.message || 'Search failed. Please try again.')
     })
   }
 }
