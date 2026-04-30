@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+supabase
+anthropic
+pydantic
+python-dotenv
+python-multipart
+pdfplumber
+PyPDF2
+beautifulsoup4
+aiohttp
+reportlab
+openpyxl
