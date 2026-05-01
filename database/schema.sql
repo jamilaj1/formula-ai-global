@@ -405,6 +405,35 @@ create policy "compounds_read_all"  on public.chemical_compounds  for select usi
 
 
 -- =============================================================================
+-- 6.5 SAFETY NET: relax NOT NULL on every legacy column we don't manage
+-- =============================================================================
+-- The frontend writes to: profiles, search_history, saved_formulas,
+-- uploaded_books. The Stripe webhook writes to: subscriptions, payments.
+-- If a legacy version of any of these tables has NOT NULL on a column we don't
+-- set, INSERTs fail. This block drops NOT NULL on every column except
+-- absolute essentials (id, created_at, user_id, plan_id, source_search_id).
+do $$
+declare
+  t text;
+  col record;
+  essentials text[] := array['id','created_at','updated_at','user_id','plan_id','source_search_id'];
+begin
+  foreach t in array array[
+    'profiles', 'search_history', 'saved_formulas', 'uploaded_books',
+    'subscriptions', 'payments', 'api_usage', 'chemical_compounds'
+  ] loop
+    for col in
+      select column_name from information_schema.columns
+      where table_schema='public' and table_name = t
+        and is_nullable='NO' and column_name <> all(essentials)
+    loop
+      execute format('alter table public.%I alter column %I drop not null', t, col.column_name);
+    end loop;
+  end loop;
+end$$;
+
+
+-- =============================================================================
 -- 7. TRIGGERS
 -- =============================================================================
 create or replace function public.handle_new_user()
