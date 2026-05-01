@@ -232,14 +232,61 @@ begin
 end$$;
 
 insert into public.industries (slug, name, description) values
-  ('cosmetics',     'Cosmetics',          'Personal care, skin care, hair care'),
-  ('cleaning',      'Cleaning Products',  'Detergents, disinfectants, surface cleaners'),
-  ('automotive',    'Automotive',         'Car shampoos, polishes, coolants'),
-  ('industrial',    'Industrial',         'Lubricants, coatings, solvents'),
-  ('food',          'Food & Beverage',    'Food-grade additives and processing aids'),
-  ('agriculture',   'Agriculture',        'Fertilizers, pesticides, plant nutrients'),
-  ('pharmaceutical','Pharmaceutical',     'Excipients and topical formulations'),
-  ('textile',       'Textile',            'Fabric softeners, dyes, finishing agents')
+  -- Personal care & cosmetics (8)
+  ('cosmetics',         'Cosmetics',                'General cosmetic formulations'),
+  ('skin_care',         'Skin Care',                'Creams, lotions, serums, masks'),
+  ('hair_care',         'Hair Care',                'Shampoos, conditioners, treatments, dyes'),
+  ('color_cosmetics',   'Color Cosmetics',          'Lipsticks, foundations, eye makeup'),
+  ('oral_care',         'Oral Care',                'Toothpaste, mouthwash, dental gels'),
+  ('sun_care',          'Sun Care',                 'Sunscreens, after-sun, SPF products'),
+  ('baby_care',         'Baby Care',                'Baby shampoos, lotions, wipes, powders'),
+  ('fragrances',        'Fragrances & Perfumes',    'Eau de parfum, body sprays, deodorants'),
+
+  -- Cleaning & hygiene (6)
+  ('cleaning',          'Cleaning Products',        'General-purpose cleaners and detergents'),
+  ('laundry',           'Laundry & Fabric Care',    'Detergents, softeners, stain removers'),
+  ('disinfectants',     'Disinfectants & Biocides', 'Hospital-grade disinfectants, sanitizers'),
+  ('dishwashing',       'Dishwashing',              'Hand wash, machine wash, rinse aids'),
+  ('industrial_clean',  'Industrial Cleaning',      'Heavy-duty degreasers and acid cleaners'),
+  ('water_treatment',   'Water Treatment',          'Coagulants, anti-scalants, biocides'),
+
+  -- Industrial & chemical (8)
+  ('industrial',        'Industrial Chemicals',     'Bulk chemicals and intermediates'),
+  ('paint_coatings',    'Paints & Coatings',        'Architectural and industrial coatings'),
+  ('adhesives',         'Adhesives & Sealants',     'Glues, silicones, polyurethanes'),
+  ('lubricants',        'Lubricants & Greases',     'Motor oils, hydraulic fluids, greases'),
+  ('plastics',          'Plastics & Polymers',      'Resins, additives, masterbatches'),
+  ('rubber',            'Rubber',                   'Natural and synthetic rubber compounds'),
+  ('inks',              'Printing Inks',            'Solvent, water, and UV-curable inks'),
+  ('petroleum',         'Petroleum & Oil & Gas',    'Drilling fluids, fuel additives'),
+
+  -- Automotive & transport (2)
+  ('automotive',        'Automotive Care',          'Car shampoos, waxes, polishes'),
+  ('automotive_fluids', 'Automotive Fluids',        'Coolants, brake fluids, screen wash'),
+
+  -- Construction & materials (4)
+  ('construction',      'Construction Chemicals',   'Concrete admixtures, waterproofing'),
+  ('mining',            'Mining',                   'Flotation reagents, dust suppressants'),
+  ('metallurgy',        'Metallurgy & Metals',      'Pickling, plating, passivation'),
+  ('glass_ceramics',    'Glass & Ceramics',         'Frits, glazes, decorating media'),
+
+  -- Pulp, paper, textile, leather (3)
+  ('pulp_paper',        'Pulp & Paper',             'Sizing, retention aids, brighteners'),
+  ('textile',           'Textile',                  'Dyes, finishing agents, softeners'),
+  ('leather',           'Leather',                  'Tanning, finishing, dyeing chemicals'),
+
+  -- Food & agriculture (4)
+  ('food',              'Food & Beverage',          'Food-grade additives and processing aids'),
+  ('nutraceuticals',    'Nutraceuticals',           'Vitamins, supplements, functional foods'),
+  ('agriculture',       'Agriculture',              'Fertilizers, soil amendments'),
+  ('pesticides',        'Pesticides & Crop Protection','Insecticides, fungicides, herbicides'),
+
+  -- Health, pharma, vet (5)
+  ('pharmaceutical',    'Pharmaceutical',           'Excipients and topical formulations'),
+  ('medical_devices',   'Medical Devices',          'Diagnostic reagents, surgical fluids'),
+  ('aromatherapy',      'Aromatherapy & Essential Oils','Carrier oils, massage blends'),
+  ('veterinary',        'Veterinary',               'Animal health and topical products'),
+  ('pet_care',          'Pet Care',                 'Pet shampoos, deodorizers, treatments')
 on conflict (slug) do nothing;
 
 
