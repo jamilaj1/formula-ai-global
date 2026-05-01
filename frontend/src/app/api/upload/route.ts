@@ -34,9 +34,11 @@ or use "qs to 100%". Extract anything with 3+ different ingredients combining
 into one product.`
 
 // IMPORTANT: keep total processing under Vercel's 300s timeout
-// 25 chunks × ~5s = 125s + pdf-parse ~15s = ~140s. Safe margin.
-const MAX_CHARS_PER_CHUNK = 50_000
-const MAX_CHUNKS = 25
+// pdf-parse on a 700-page PDF can take 30-60s alone. Be conservative:
+// 12 chunks × ~6s = 72s + pdf-parse ~60s = ~132s. Plenty of margin.
+// Larger books should be split client-side before upload.
+const MAX_CHARS_PER_CHUNK = 60_000
+const MAX_CHUNKS = 12
 
 type Component = { name?: string; percentage?: string; cas_number?: string; function?: string }
 type Formula = {
