@@ -20,7 +20,7 @@ export default function SearchPage() {
       const res = await fetch(`/api/brain?query=${encodeURIComponent(query)}&language=${language}`)
       const data = await res.json()
       setResult(data.result || data.error || 'No results')
-    } catch (err) {
+    } catch {
       setResult('Search failed.')
     }
     setLoading(false)
@@ -33,10 +33,12 @@ export default function SearchPage() {
   }
 
   const saveAsText = () => {
-    const blob = new Blob(['\uFEFF' + result], { type: 'text/plain;charset=utf-8' })
+    const blob = new Blob(['﻿' + result], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'formula.txt'; a.click()
+    a.href = url
+    a.download = 'formula.txt'
+    a.click()
     URL.revokeObjectURL(url)
   }
 
@@ -55,7 +57,7 @@ export default function SearchPage() {
             placeholder={t('search_placeholder')}
             className={`flex-1 p-4 rounded-xl text-lg border outline-none focus:border-green-400 ${inputBg}`} />
           <button onClick={handleSearch} disabled={loading}
-            className="bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 disabled:opacity-50 min-w-[60px]">
+            className="bg-green-500 text-white px-6 py-4 rounded-xl font-bold hover:bg-green-600 disabled:opacity-50 min-w-[60px] flex items-center justify-center">
             {loading ? '...' : <Search className="w-5 h-5" />}
           </button>
         </div>

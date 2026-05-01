@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || ''
-})
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
+const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -14,9 +15,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query required' }, { status: 400 })
   }
 
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { success: false, error: 'ANTHROPIC_API_KEY not configured on server' },
+      { status: 500 }
+    )
+  }
+
   try {
+    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5',
+      model: MODEL,
       max_tokens: 4096,
       temperature: 0.1,
       system: `You are an expert chemical formulator with 30 years of experience.
@@ -39,19 +49,16 @@ IMPORTANT RULES:
 - NaCl has NO role in disinfectants
 - NaOCl + Acid = CHLORINE GAS (FATAL)
 - 80% of formulas should be affordable (use cheap materials)`,
-      messages: [{ role: 'user', content: query }]
+      messages: [{ role: 'user', content: query }],
     })
 
-    return NextResponse.json({
-      success: true,
-      result: (message.content[0] as any).text,
-      query: query
-    })
-  } catch (error: any) {
+    const firstBlock = message.content[0]
+    const text = firstBlock && firstBlock.type === 'text' ? firstBlock.text : ''
+
+    return NextResponse.json({ success: true, result: text, query })
+  } catch (error: unknown) {
     console.error('Brain error:', error)
-    return NextResponse.json({
-      success: false,
-      error: error.message || 'Unknown error'
-    }, { status: 500 })
+    const msg = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({ success: false, error: msg }, { status: 500 })
   }
 }
