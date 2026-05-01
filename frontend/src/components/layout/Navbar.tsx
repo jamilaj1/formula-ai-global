@@ -1,73 +1,41 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage, LANGUAGES } from '@/components/providers/LanguageProvider'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useAuth } from '@/components/providers/AuthProvider'
 import {
-  Sun,
-  Moon,
-  Globe,
-  Search,
-  LayoutDashboard,
-  CreditCard,
-  History as HistoryIcon,
-  Upload,
-  LogOut,
-  User,
-  Beaker,
+  Sun, Moon, Globe, Search, LayoutDashboard, CreditCard,
+  History as HistoryIcon, Upload, LogOut, User, Beaker,
 } from 'lucide-react'
 
 export default function Navbar() {
   const router = useRouter()
   const { toggleTheme, isDark } = useTheme()
   const { language, setLanguage, t } = useLanguage()
+  const { user, signOut } = useAuth()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [email, setEmail] = useState<string | null>(null)
+  const email = user?.email || null
 
-  useEffect(() => {
-    if (!isSupabaseConfigured) return
-    let mounted = true
-    supabase.auth.getUser().then(({ data }) => {
-      if (mounted) setEmail(data.user?.email || null)
-    })
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) setEmail(session?.user?.email || null)
-    })
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
-
-  const logout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = async () => {
+    await signOut()
     setShowUserMenu(false)
-    setEmail(null)
     router.push('/')
   }
 
   const linkBase = isDark
     ? 'text-gray-300 hover:bg-gray-800 hover:text-white'
     : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-  const iconBtn = isDark
-    ? 'text-gray-300 hover:bg-gray-800'
-    : 'text-gray-700 hover:bg-gray-100'
-  const menuPanel = isDark
-    ? 'bg-gray-800 border-gray-700'
-    : 'bg-white border-gray-200'
-  const menuItem = isDark
-    ? 'text-gray-300 hover:bg-gray-700'
-    : 'text-gray-700 hover:bg-gray-50'
+  const iconBtn = isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'
+  const menuPanel = isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+  const menuItem = isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
 
   return (
-    <nav
-      className={`sticky top-0 z-50 backdrop-blur-lg border-b ${
-        isDark ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'
-      }`}
-    >
+    <nav className={`sticky top-0 z-50 backdrop-blur-lg border-b ${
+      isDark ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'
+    }`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -100,10 +68,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <div className="relative">
               <button
-                onClick={() => {
-                  setShowLangMenu(!showLangMenu)
-                  setShowUserMenu(false)
-                }}
+                onClick={() => { setShowLangMenu(!showLangMenu); setShowUserMenu(false) }}
                 className={`flex items-center gap-1 px-2 py-2 rounded-lg text-sm ${iconBtn}`}
                 aria-label="Change language"
               >
@@ -113,16 +78,11 @@ export default function Navbar() {
               {showLangMenu && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowLangMenu(false)} />
-                  <div
-                    className={`absolute top-full right-0 mt-2 w-48 rounded-xl shadow-xl z-50 overflow-hidden border ${menuPanel}`}
-                  >
+                  <div className={`absolute top-full right-0 mt-2 w-56 max-h-96 overflow-y-auto rounded-xl shadow-xl z-50 border ${menuPanel}`}>
                     {LANGUAGES.map((lang) => (
                       <button
                         key={lang.code}
-                        onClick={() => {
-                          setLanguage(lang.code)
-                          setShowLangMenu(false)
-                        }}
+                        onClick={() => { setLanguage(lang.code); setShowLangMenu(false) }}
                         className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${
                           language === lang.code ? 'bg-emerald-500/10 text-emerald-400' : menuItem
                         }`}
@@ -149,10 +109,7 @@ export default function Navbar() {
             {email ? (
               <div className="relative">
                 <button
-                  onClick={() => {
-                    setShowUserMenu(!showUserMenu)
-                    setShowLangMenu(false)
-                  }}
+                  onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false) }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${iconBtn}`}
                 >
                   <User className="w-4 h-4" />
@@ -161,44 +118,31 @@ export default function Navbar() {
                 {showUserMenu && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
-                    <div
-                      className={`absolute top-full right-0 mt-2 w-56 rounded-xl shadow-xl z-50 overflow-hidden border ${menuPanel}`}
-                    >
-                      <div
-                        className={`px-4 py-3 text-xs border-b ${
-                          isDark ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-100'
-                        }`}
-                      >
+                    <div className={`absolute top-full right-0 mt-2 w-56 rounded-xl shadow-xl z-50 overflow-hidden border ${menuPanel}`}>
+                      <div className={`px-4 py-3 text-xs border-b ${
+                        isDark ? 'text-gray-400 border-gray-700' : 'text-gray-500 border-gray-100'
+                      }`}>
                         Signed in as
-                        <div className={`mt-0.5 truncate ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>
-                          {email}
-                        </div>
+                        <div className={`mt-0.5 truncate ${isDark ? 'text-gray-200' : 'text-gray-900'}`}>{email}</div>
                       </div>
-                      <Link
-                        href="/dashboard"
-                        onClick={() => setShowUserMenu(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
-                      >
+                      <Link href="/dashboard" onClick={() => setShowUserMenu(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}>
                         <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
                       </Link>
-                      <Link
-                        href="/formulas"
-                        onClick={() => setShowUserMenu(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
-                      >
+                      <Link href="/formulas" onClick={() => setShowUserMenu(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}>
                         <Beaker className="w-4 h-4" /> {t('my_formulas')}
                       </Link>
-                      <Link
-                        href="/history"
-                        onClick={() => setShowUserMenu(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
-                      >
+                      <Link href="/history" onClick={() => setShowUserMenu(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}>
                         <HistoryIcon className="w-4 h-4" /> {t('history')}
                       </Link>
-                      <button
-                        onClick={logout}
-                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10"
-                      >
+                      <Link href="/settings" onClick={() => setShowUserMenu(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}>
+                        <User className="w-4 h-4" /> Settings
+                      </Link>
+                      <button onClick={handleLogout}
+                        className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-400 hover:bg-red-500/10">
                         <LogOut className="w-4 h-4" /> {t('logout')}
                       </button>
                     </div>
@@ -207,18 +151,14 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600"
-                >
+                <Link href="/login"
+                  className="px-4 py-2 rounded-lg text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600">
                   {t('login')}
                 </Link>
-                <Link
-                  href="/register"
+                <Link href="/register"
                   className={`hidden sm:inline-block px-3 py-2 rounded-lg text-sm font-medium ${
                     isDark ? 'text-gray-300 hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
+                  }`}>
                   {t('register')}
                 </Link>
               </div>

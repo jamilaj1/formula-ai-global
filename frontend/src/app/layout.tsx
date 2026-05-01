@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider } from '@/components/providers/LanguageProvider'
+import { AuthProvider } from '@/components/providers/AuthProvider'
 import Navbar from '@/components/layout/Navbar'
 import PWARegister from '@/components/PWARegister'
 import '@/app/globals.css'
@@ -13,10 +14,7 @@ export const metadata: Metadata = {
   applicationName: 'Formula AI',
   keywords: ['chemistry', 'formulation', 'cosmetics', 'cleaning products', 'AI', 'CAS number'],
   authors: [{ name: 'Formula AI Global' }],
-  icons: {
-    icon: '/icon-192.svg',
-    apple: '/icon-192.svg',
-  },
+  icons: { icon: '/icon-192.svg', apple: '/icon-192.svg' },
   openGraph: {
     title: 'Formula AI Global',
     description: 'AI-powered chemical formulation platform',
@@ -40,11 +38,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider defaultTheme="dark">
           <LanguageProvider defaultLanguage="en">
-            <div className="min-h-screen flex flex-col">
-              <Navbar />
-              <main className="flex-1">{children}</main>
-            </div>
-            <PWARegister />
+            <AuthProvider>
+              <div className="min-h-screen flex flex-col">
+                <Navbar />
+                <main className="flex-1">{children}</main>
+              </div>
+              <PWARegister />
+            </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
       </body>

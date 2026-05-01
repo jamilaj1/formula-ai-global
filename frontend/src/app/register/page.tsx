@@ -1,14 +1,15 @@
 'use client'
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { CheckCircle2 } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const { signUp } = useAuth()
   const { isDark } = useTheme()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
@@ -26,22 +27,14 @@ export default function RegisterPage() {
     }
     setLoading(true)
     setError('')
-    try {
-      const { data, error: signError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: { data: { full_name: name } },
-      })
-      if (signError) {
-        setError(signError.message)
-      } else if (data.session) {
-        router.push('/dashboard')
-      } else {
-        // Email confirmation required
-        setDone(true)
-      }
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Registration failed')
+    const err = await signUp(email, password, name || undefined)
+    if (err) {
+      setError(err)
+    } else {
+      setDone(true)
+      // Some Supabase projects auto-sign-in; others require confirmation.
+      // Either way, send to dashboard after a brief moment.
+      setTimeout(() => router.push('/dashboard'), 2000)
     }
     setLoading(false)
   }
@@ -56,16 +49,14 @@ export default function RegisterPage() {
 
   if (done) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${bg}`}>
+      <div className={`min-h-screen flex items-center justify-center ${bg} p-4`}>
         <div className={`p-8 rounded-2xl w-full max-w-md text-center ${card}`}>
           <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-          <h2 className={`text-2xl font-bold mb-2 ${heading}`}>Check your email</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${heading}`}>Account created</h2>
           <p className={sub}>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+            Welcome aboard. If your project requires email confirmation, check{' '}
+            <strong>{email}</strong>.
           </p>
-          <Link href="/login" className="inline-block mt-6 text-green-500 hover:underline">
-            Back to login
-          </Link>
         </div>
       </div>
     )
@@ -74,53 +65,27 @@ export default function RegisterPage() {
   return (
     <div className={`min-h-screen flex items-center justify-center ${bg} p-4`}>
       <div className={`p-8 rounded-2xl w-full max-w-md ${card}`}>
-        <h2 className={`text-2xl font-bold mb-2 text-center ${heading}`}>
-          {t('register') || 'Create account'}
-        </h2>
-        <p className={`text-center mb-6 text-sm ${sub}`}>
-          Get 10 free formulas every month
-        </p>
-        {error && (
-          <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>
-        )}
+        <h2 className={`text-2xl font-bold mb-2 text-center ${heading}`}>{t('register')}</h2>
+        <p className={`text-center mb-6 text-sm ${sub}`}>Get 10 free formulas every month</p>
+        {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
         <form onSubmit={handleRegister} className="space-y-4">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)}
             placeholder="Full name"
-            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`}
-          />
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password (6+ chars)"
-            required
-            minLength={6}
-            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`}
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-green-500 text-gray-900 p-3 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50"
-          >
+            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`} />
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="Email" required
+            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`} />
+          <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password (6+ chars)" required minLength={6}
+            className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`} />
+          <button type="submit" disabled={loading}
+            className="w-full bg-green-500 text-gray-900 p-3 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50">
             {loading ? '...' : 'Create account'}
           </button>
         </form>
         <div className={`text-center mt-6 text-sm ${sub}`}>
           Already have an account?{' '}
-          <Link href="/login" className="text-green-500 hover:underline">
-            Sign in
-          </Link>
+          <Link href="/login" className="text-green-500 hover:underline">{t('login')}</Link>
         </div>
       </div>
     </div>

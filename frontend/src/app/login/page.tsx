@@ -1,13 +1,14 @@
 'use client'
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 
 export default function LoginPage() {
   const router = useRouter()
+  const { signIn } = useAuth()
   const { isDark } = useTheme()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
@@ -19,13 +20,9 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-      if (authError) setError(authError.message)
-      else router.push('/dashboard')
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed')
-    }
+    const err = await signIn(email, password)
+    if (err) setError(err)
+    else router.push('/dashboard')
     setLoading(false)
   }
 
@@ -62,7 +59,7 @@ export default function LoginPage() {
         <div className={`text-center mt-6 text-sm ${sub}`}>
           New here?{' '}
           <Link href="/register" className="text-green-500 hover:underline">
-            Create an account
+            {t('register')}
           </Link>
         </div>
       </div>
