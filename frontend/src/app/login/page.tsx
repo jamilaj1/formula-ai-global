@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
+import GoogleSignInButton from '@/components/GoogleSignInButton'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -49,6 +50,12 @@ export default function LoginPage() {
           </div>
         )}
         {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
+        <GoogleSignInButton label="Continue with Google" className="mb-4" />
+        <div className={`flex items-center gap-3 my-4 text-xs ${sub}`}>
+          <div className="flex-1 h-px bg-current opacity-20" />
+          <span>or</span>
+          <div className="flex-1 h-px bg-current opacity-20" />
+        </div>
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}
             placeholder="Email" required

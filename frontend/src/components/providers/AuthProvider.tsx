@@ -1,7 +1,7 @@
 'use client'
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User, Provider } from '@supabase/supabase-js'
 
 interface AuthContextType {
   user: User | null
@@ -9,6 +9,7 @@ interface AuthContextType {
   configured: boolean
   signIn: (email: string, password: string) => Promise<string | null>
   signUp: (email: string, password: string, fullName?: string) => Promise<string | null>
+  signInWithProvider: (provider: Provider) => Promise<string | null>
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<string | null>
 }
@@ -24,6 +25,7 @@ const AuthContext = createContext<AuthContextType>({
   configured: false,
   signIn: async () => NOT_CONFIGURED_MSG,
   signUp: async () => NOT_CONFIGURED_MSG,
+  signInWithProvider: async () => NOT_CONFIGURED_MSG,
   signOut: async () => {},
   resetPassword: async () => NOT_CONFIGURED_MSG,
 })
@@ -58,18 +60,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const wrap = (msg: string) => {
+    if (/failed to fetch|network/i.test(msg)) {
+      return 'Cannot reach the auth server. Check that NEXT_PUBLIC_SUPABASE_URL is correct, your Supabase project is active, and that no browser extension (AdBlock, privacy tools) is blocking the request.'
+    }
+    return msg
+  }
+
   const signIn = async (email: string, password: string): Promise<string | null> => {
     if (!isSupabaseConfigured) return NOT_CONFIGURED_MSG
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       return error?.message ?? null
     } catch (err: unknown) {
-      // 'Failed to fetch' usually means CORS, no network, or wrong URL.
-      const msg = err instanceof Error ? err.message : 'Sign-in failed'
-      if (/failed to fetch|network/i.test(msg)) {
-        return 'Cannot reach the auth server. Check that NEXT_PUBLIC_SUPABASE_URL is correct and that your Supabase project is online.'
-      }
-      return msg
+      return wrap(err instanceof Error ? err.message : 'Sign-in failed')
     }
   }
 
@@ -87,11 +91,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       return error?.message ?? null
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Registration failed'
-      if (/failed to fetch|network/i.test(msg)) {
-        return 'Cannot reach the auth server. Check that NEXT_PUBLIC_SUPABASE_URL is correct and that your Supabase project is online.'
-      }
-      return msg
+      return wrap(err instanceof Error ? err.message : 'Registration failed')
+    }
+  }
+
+  // OAuth sign-in (Google, GitHub, etc.). Uses a top-level redirect, so it
+  // bypasses fetch() and is immune to AdBlock / privacy-extension blocking
+  // that breaks email+password signups in some browsers.
+  const signInWithProvider = async (provider: Provider): Promise<string | null> => {
+    if (!isSupabaseConfigured) return NOT_CONFIGURED_MSG
+    try {
+      const redirectTo =
+        typeof window !== 'undefined' ? `${window.location.origin}/dashboard` : undefined
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo },
+      })
+      return error?.message ?? null
+    } catch (err: unknown) {
+      return wrap(err instanceof Error ? err.message : `${provider} sign-in failed`)
     }
   }
 
@@ -108,14 +126,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
       return error?.message ?? null
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Reset failed'
-      return msg
+      return wrap(err instanceof Error ? err.message : 'Reset failed')
     }
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, configured: isSupabaseConfigured, signIn, signUp, signOut, resetPassword }}
+      value={{
+        user,
+        loading,
+        configured: isSupabaseConfigured,
+        signIn,
+        signUp,
+        signInWithProvider,
+        signOut,
+        resetPassword,
+      }}
     >
       {children}
     </AuthContext.Provider>

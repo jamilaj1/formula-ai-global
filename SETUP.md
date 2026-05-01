@@ -80,3 +80,42 @@ npm run dev
 ```
 
 Open http://localhost:3000.
+
+## 7. Enable Google sign-in (recommended, bypasses fetch issues)
+
+The site has a "Continue with Google" button on /login and /register.
+For it to work, you need to wire Google OAuth through Supabase once:
+
+### a) Google Cloud Console
+
+1. Open https://console.cloud.google.com/apis/credentials
+2. Create Project (or pick existing one) → **OAuth consent screen** →
+   External → fill in app name, support email, save
+3. **Credentials → Create Credentials → OAuth client ID**:
+   - Application type: **Web application**
+   - Name: `Formula AI Global`
+   - **Authorized JavaScript origins:**
+     ```
+     https://jamilformula.com
+     https://ivabcssceeaqgqjzgmdx.supabase.co
+     ```
+   - **Authorized redirect URIs:**
+     ```
+     https://ivabcssceeaqgqjzgmdx.supabase.co/auth/v1/callback
+     ```
+4. Click **Create** → copy the **Client ID** and **Client Secret**.
+
+### b) Supabase
+
+1. Open Supabase → **Authentication → Sign In / Providers**
+2. Find **Google** in the list and toggle it ON
+3. Paste **Client ID** and **Client Secret**
+4. Set **Redirect URL** to: `https://jamilformula.com/auth/callback`
+5. Click **Save**
+
+### c) Test
+
+Open `https://jamilformula.com/register` in an incognito window.
+Click **Sign up with Google**, pick your Google account, you should be
+redirected straight into `/dashboard` with a working session — no
+email/password, no "Failed to fetch", no AdBlock issues.
