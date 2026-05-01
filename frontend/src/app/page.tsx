@@ -1,37 +1,46 @@
 ﻿'use client'
 import React from 'react'
+import Link from 'next/link'
+import { useLanguage } from '@/components/providers/LanguageProvider'
 import { Globe, Beaker, Shield, Zap } from 'lucide-react'
 
 export default function HomePage() {
+  const { t } = useLanguage()
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900">
-      <nav className="flex items-center justify-between px-8 py-4">
-        <div className="text-white text-2xl font-bold">
-          Formula <span className="text-green-400">AI</span>
-        </div>
-        <div className="flex gap-4">
-          <a href="/login" className="text-white hover:text-green-400">Login</a>
-          <a href="/pricing" className="bg-green-500 text-gray-900 px-4 py-2 rounded-lg font-bold">Get Started</a>
-        </div>
-      </nav>
       <div className="max-w-6xl mx-auto px-4 py-20 text-center">
-        <h1 className="text-6xl font-bold text-white mb-6">
-          World First
-          <span className="text-green-400"> AI-Powered </span>
-          Chemical Formulation Platform
+        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
+          {t('welcome')} to <span className="text-green-400">Formula AI</span>
         </h1>
-        <p className="text-xl text-gray-300 mb-8">200000+ Formulas | 40 Industries | 195 Countries | 20 Languages</p>
+        <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+          World's First AI-Powered Chemical Formulation Platform
+        </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <div className="bg-white/10 rounded-xl p-6"><Globe className="w-8 h-8 text-green-400 mx-auto mb-2" /><div className="text-2xl font-bold text-white">195</div><div className="text-sm text-gray-400">Countries</div></div>
-          <div className="bg-white/10 rounded-xl p-6"><Beaker className="w-8 h-8 text-green-400 mx-auto mb-2" /><div className="text-2xl font-bold text-white">200K+</div><div className="text-sm text-gray-400">Formulas</div></div>
-          <div className="bg-white/10 rounded-xl p-6"><Shield className="w-8 h-8 text-green-400 mx-auto mb-2" /><div className="text-2xl font-bold text-white">40</div><div className="text-sm text-gray-400">Industries</div></div>
-          <div className="bg-white/10 rounded-xl p-6"><Zap className="w-8 h-8 text-green-400 mx-auto mb-2" /><div className="text-2xl font-bold text-white">AI</div><div className="text-sm text-gray-400">Powered</div></div>
+          <StatsCard icon={Globe} value="195" label="Countries" />
+          <StatsCard icon={Beaker} value="200K+" label="Formulas" />
+          <StatsCard icon={Shield} value="40" label="Industries" />
+          <StatsCard icon={Zap} value="AI" label="Powered" />
         </div>
         <div className="flex gap-4 justify-center">
-          <a href="/search" className="bg-green-500 text-gray-900 px-8 py-4 rounded-xl text-lg font-bold">Try Search</a>
-          <a href="/pricing" className="bg-white/10 text-white px-8 py-4 rounded-xl text-lg font-bold">View Plans</a>
+          <Link href="/search" className="bg-green-500 text-gray-900 px-8 py-4 rounded-xl text-lg font-bold hover:bg-green-400">
+            {t('search')}
+          </Link>
+          <Link href="/pricing" className="bg-white/10 text-white px-8 py-4 rounded-xl text-lg font-bold hover:bg-white/20">
+            {t('pricing')}
+          </Link>
         </div>
       </div>
     </main>
+  )
+}
+
+function StatsCard({ icon: Icon, value, label }: { icon: any, value: string, label: string }) {
+  return (
+    <div className="bg-white/10 rounded-xl p-6">
+      <Icon className="w-8 h-8 text-green-400 mx-auto mb-2" />
+      <div className="text-2xl font-bold text-white">{value}</div>
+      <div className="text-sm text-gray-400">{label}</div>
+    </div>
   )
 }
