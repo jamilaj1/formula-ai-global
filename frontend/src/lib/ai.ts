@@ -1,8 +1,8 @@
 /**
- * Unified AI provider: Groq (free, primary) → Anthropic (fallback)
- * - Groq: Llama 3.3 70B Versatile, 30 RPM free, no monthly cap
- * - Anthropic: Claude Haiku/Sonnet, paid, used only when GROQ_API_KEY missing
- *   or if Groq returns an error
+ * Unified AI provider: tries Groq (free) first by default, falls back to
+ * Anthropic on error. preferredProvider just changes the order — fallback
+ * always happens. This guarantees we keep working even when one provider
+ * has a billing cap or rate-limit issue.
  */
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -13,7 +13,6 @@ export type AIRequest = {
   user: string
   maxTokens?: number
   temperature?: number
-  /** When set, force using only this provider (for upload chunks etc.) */
   preferredProvider?: AIProvider
 }
 
@@ -25,7 +24,6 @@ export type AIResponse = {
 
 const GROQ_MODEL = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile'
 const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001'
-
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
 async function callGroq(req: AIRequest): Promise<AIResponse> {
@@ -79,38 +77,34 @@ export function availableProvider(): AIProvider {
 }
 
 /**
- * Try Groq first (free); on error, fall back to Anthropic if configured.
- * If `preferredProvider` is set, we only try that one.
+ * Try the preferred provider first (or Groq by default), and ALWAYS fall back
+ * to the other provider on error. preferredProvider just changes the order.
  */
 export async function generate(req: AIRequest): Promise<AIResponse> {
-  const preferred = req.preferredProvider
   const groqAvailable = Boolean(process.env.GROQ_API_KEY)
   const anthropicAvailable = Boolean(process.env.ANTHROPIC_API_KEY)
 
-  if (preferred === 'groq') {
-    if (!groqAvailable) throw new Error('GROQ_API_KEY not configured')
-    return callGroq(req)
-  }
-  if (preferred === 'anthropic') {
-    if (!anthropicAvailable) throw new Error('ANTHROPIC_API_KEY not configured')
-    return callAnthropic(req)
+  if (!groqAvailable && !anthropicAvailable) {
+    throw new Error(
+      'No AI provider configured. Set GROQ_API_KEY (free) and/or ANTHROPIC_API_KEY in env.'
+    )
   }
 
-  // Default: Groq → Anthropic
-  if (groqAvailable) {
+  const order: AIProvider[] = req.preferredProvider === 'anthropic'
+    ? ['anthropic', 'groq']
+    : ['groq', 'anthropic']
+
+  let lastErr: unknown = null
+  for (const provider of order) {
+    if (provider === 'groq' && !groqAvailable) continue
+    if (provider === 'anthropic' && !anthropicAvailable) continue
     try {
-      return await callGroq(req)
+      if (provider === 'groq') return await callGroq(req)
+      return await callAnthropic(req)
     } catch (err) {
-      // If Anthropic isn't configured, surface the Groq error
-      if (!anthropicAvailable) throw err
-      console.warn('Groq failed, falling back to Anthropic:', err)
-      return callAnthropic(req)
+      lastErr = err
+      console.warn(`${provider} call failed, trying next provider:`, err)
     }
   }
-
-  if (anthropicAvailable) return callAnthropic(req)
-
-  throw new Error(
-    'No AI provider configured. Set GROQ_API_KEY (free) and/or ANTHROPIC_API_KEY in env.'
-  )
+  throw lastErr instanceof Error ? lastErr : new Error('All AI providers failed')
 }

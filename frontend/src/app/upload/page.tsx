@@ -26,6 +26,15 @@ type UploadResp = {
   stopped_early?: boolean
 }
 
+type Result = {
+  formulas: ExtractedFormula[]
+  pages?: number
+  chunks_processed?: number
+  chunks_failed?: number
+  raw_extracted?: number
+  filtered_out?: number
+}
+
 export default function UploadPage() {
   const { isDark } = useTheme()
   const { t, language } = useLanguage()
@@ -34,7 +43,7 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ formulas: ExtractedFormula[]; pages?: number; chunks_processed?: number } | null>(null)
+  const [result, setResult] = useState<Result | null>(null)
   const [savedAll, setSavedAll] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [savingAll, setSavingAll] = useState(false)
@@ -81,21 +90,27 @@ export default function UploadPage() {
       fd.append('language', language)
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
 
-      // Read as text first so we can show server error pages (HTML / Vercel timeout)
       const raw = await res.text()
       let data: UploadResp = {}
       try {
         data = JSON.parse(raw) as UploadResp
       } catch {
         if (res.status === 504 || raw.toLowerCase().includes('timeout')) {
-          throw new Error('The book is very large; the server timed out before finishing. Please try a smaller PDF (under 200 pages).')
+          throw new Error('The book is very large; the server timed out. Try a smaller PDF (under 200 pages).')
         }
         throw new Error(`Server error (${res.status}): ${raw.slice(0, 200)}`)
       }
       if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress(100)
       const formulas: ExtractedFormula[] = data.formulas || []
-      setResult({ formulas, pages: data.pages, chunks_processed: data.chunks_processed })
+      setResult({
+        formulas,
+        pages: data.pages,
+        chunks_processed: data.chunks_processed,
+        chunks_failed: data.chunks_failed,
+        raw_extracted: data.raw_extracted,
+        filtered_out: data.filtered_out,
+      })
 
       await persistResults(formulas, file.name, file.size)
     } catch (err: unknown) {
@@ -210,13 +225,26 @@ export default function UploadPage() {
         {result && (
           <div className={`mt-8 rounded-2xl p-6 ${card}`}>
             <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-6 h-6 text-green-500" />
-                <h2 className={`text-xl font-bold ${heading}`}>
-                  {result.formulas.length} formula{result.formulas.length !== 1 ? 's' : ''} extracted
-                  {result.pages ? ` from ${result.pages} pages` : ''}
-                  {result.chunks_processed && result.chunks_processed > 1 ? ` (${result.chunks_processed} chunks)` : ''}
-                </h2>
+              <div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-6 h-6 text-green-500" />
+                  <h2 className={`text-xl font-bold ${heading}`}>
+                    {result.formulas.length} formula{result.formulas.length !== 1 ? 's' : ''} extracted
+                    {result.pages ? ` from ${result.pages} pages` : ''}
+                  </h2>
+                </div>
+                <div className={`text-xs mt-1 ${sub}`}>
+                  {result.chunks_processed ? `${result.chunks_processed} chunks processed` : ''}
+                  {typeof result.chunks_failed === 'number' && result.chunks_failed > 0
+                    ? `, ${result.chunks_failed} failed`
+                    : ''}
+                  {typeof result.raw_extracted === 'number'
+                    ? ` - AI returned ${result.raw_extracted} candidate${result.raw_extracted !== 1 ? 's' : ''}`
+                    : ''}
+                  {typeof result.filtered_out === 'number' && result.filtered_out > 0
+                    ? `, ${result.filtered_out} rejected (glossary/single-ingredient)`
+                    : ''}
+                </div>
               </div>
               {user && result.formulas.length > 0 && (
                 <button
