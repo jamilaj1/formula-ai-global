@@ -22,7 +22,7 @@ export default function UploadPage() {
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
-  const [result, setResult] = useState<{ formulas: ExtractedFormula[]; pages?: number } | null>(null)
+  const [result, setResult] = useState<{ formulas: ExtractedFormula[]; pages?: number; chunks_processed?: number } | null>(null)
   const [savedAll, setSavedAll] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [savingAll, setSavingAll] = useState(false)
@@ -63,8 +63,8 @@ export default function UploadPage() {
     setSavedAll(false)
     setSavedCount(0)
 
-    // Animate progress while we wait for the API
-    const tick = setInterval(() => setProgress((p) => (p < 90 ? p + 5 : p)), 600)
+    // Slow progress: large books can take up to 5 minutes to process all chunks
+    const tick = setInterval(() => setProgress((p) => (p < 95 ? p + 1 : p)), 2000)
 
     try {
       const fd = new FormData()
@@ -75,7 +75,7 @@ export default function UploadPage() {
       if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress(100)
       const formulas: ExtractedFormula[] = data.formulas || []
-      setResult({ formulas, pages: data.pages })
+      setResult({ formulas, pages: data.pages, chunks_processed: data.chunks_processed })
 
       // Auto-record the upload so it shows in dashboard stats
       await persistResults(formulas, file.name, file.size)
@@ -168,9 +168,5 @@ export default function UploadPage() {
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Extracting formulas... {progress}%
               </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 flex items-start gap-2 bg-red-500/10 text-red-400 p-3 rounded-lg text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 m
+              <div className={`text-xs mt-1 ${sub}`}>
+                Large books are processed in chunks — this can 
