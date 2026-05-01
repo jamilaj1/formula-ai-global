@@ -2,7 +2,7 @@
 import React, { useState } from 'react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
-import { Download, Copy, Check, FileSpreadsheet, FileText } from 'lucide-react'
+import { Copy, Check, FileSpreadsheet, FileText } from 'lucide-react'
 
 interface Component {
   name: string
@@ -65,23 +65,23 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
               <thead>
                 <tr className={isDark ? 'bg-gray-800' : 'bg-gray-100'}>
                   <th className={`text-left py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('components')}</th>
-                  <th className={`text-right py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('percentage')}</th>
-                  <th className={`text-right py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('cas_number')}</th>
-                  <th className={`text-right py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('function')}</th>
+                  <th className={`text-center py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`} style={{width: '100px'}}>%</th>
+                  <th className={`text-center py-3 px-4 font-bold ${isDark ? 'text-white' : 'text-gray-900'}`} style={{width: '130px'}}>CAS</th>
+                  <th className={`text-left py-3 px-4 font-bold hidden md:table-cell ${isDark ? 'text-white' : 'text-gray-900'}`}>Function</th>
                 </tr>
               </thead>
               <tbody>
                 {parsedComponents.map((comp, idx) => (
                   <tr key={idx} className={`border-t ${isDark ? 'border-gray-700 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <td className={`py-3 px-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.name}</td>
-                    <td className={`py-3 px-4 text-right font-mono ${isDark ? 'text-green-400' : 'text-green-600'}`}>{comp.percentage}</td>
-                    <td className={`py-3 px-4 text-right font-mono text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.cas_number || '—'}</td>
-                    <td className={`py-3 px-4 text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.function || '—'}</td>
+                    <td className={`py-2.5 px-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.name}</td>
+                    <td className={`py-2.5 px-4 text-center font-mono font-bold ${isDark ? 'text-green-400' : 'text-green-600'}`}>{comp.percentage}</td>
+                    <td className={`py-2.5 px-4 text-center font-mono text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.cas_number || '—'}</td>
+                    <td className={`py-2.5 px-4 text-xs hidden md:table-cell ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.function || '—'}</td>
                   </tr>
                 ))}
-                <tr className={`border-t ${isDark ? 'border-gray-600' : 'border-gray-300'} font-bold`}>
+                <tr className={`border-t-2 ${isDark ? 'border-gray-600' : 'border-gray-300'} font-bold`}>
                   <td className={`py-3 px-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Total</td>
-                  <td className={`py-3 px-4 text-right font-mono ${isDark ? 'text-green-400' : 'text-green-600'}`}>
+                  <td className={`py-3 px-4 text-center font-mono ${isDark ? 'text-green-400' : 'text-green-600'}`}>
                     {calculateTotal(parsedComponents)}%
                   </td>
                   <td colSpan={2}></td>
@@ -102,7 +102,7 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
             <button onClick={() => copyToClipboard(rawText)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${isDark ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Copied!' : t('share')}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
         </>
@@ -127,80 +127,88 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
 function parseComponents(text: string): Component[] {
   const components: Component[] = []
   const lines = text.split('\n')
-
-  // Method 1: Markdown table parsing
   let inTable = false
-  let headerSkipped = false
-  
+  let headerFound = false
+  let separatorFound = false
+
   for (const line of lines) {
     const trimmed = line.trim()
-    
-    // Detect table start
-    if (trimmed.includes('|') && (trimmed.includes('%') || trimmed.includes('CAS') || trimmed.includes('Function'))) {
-      inTable = true
-      headerSkipped = false
-      continue
+
+    // Skip empty lines
+    if (!trimmed) continue
+
+    // Detect table header (must contain | and one of these keywords)
+    if (trimmed.includes('|') && !inTable) {
+      const lower = trimmed.toLowerCase()
+      if (lower.includes('ingredient') || lower.includes('component') || lower.includes('المكون') ||
+          (lower.includes('%') && lower.includes('cas')) || lower.includes('function')) {
+        inTable = true
+        headerFound = true
+        continue
+      }
     }
-    
+
     // Skip separator line (|---|---|)
-    if (inTable && !headerSkipped && trimmed.match(/^\|[\s\-|]+\|$/)) {
-      headerSkipped = true
+    if (inTable && !separatorFound && trimmed.match(/^\|[\s\-:|]+\|$/)) {
+      separatorFound = true
       continue
     }
-    
-    // Parse table row
-    if (inTable && headerSkipped && trimmed.includes('|')) {
+
+    // Parse data rows
+    if (inTable && separatorFound && trimmed.includes('|')) {
       const parts = trimmed.split('|').map(p => p.replace(/\*\*/g, '').trim()).filter(p => p)
+
       if (parts.length >= 2) {
         const comp: Component = { name: '', percentage: '', cas_number: '', function: '' }
-        
-        // Try different column orders
-        if (parts.length === 4) {
-          comp.name = parts[0]
-          comp.percentage = parts[1]
-          comp.cas_number = parts[2]
-          comp.function = parts[3]
-        } else if (parts.length === 3) {
-          comp.name = parts[0]
-          comp.percentage = parts[1]
-          comp.cas_number = parts[2]
-        } else if (parts.length === 2) {
-          comp.name = parts[0]
-          comp.percentage = parts[1]
+
+        // Find which column has the percentage
+        let pctIdx = -1
+        let casIdx = -1
+        let nameIdx = -1
+        let funcIdx = -1
+
+        parts.forEach((part, i) => {
+          if (part.match(/^\d+\.?\d*\s*%$/)) pctIdx = i
+          else if (part.match(/^\d{2,7}-\d{2,7}-\d$/)) casIdx = i
+          else if (part.match(/^\d+\.?\d*\s*g$/)) { /* skip grams column */ }
+          else if (nameIdx === -1 && i !== pctIdx && i !== casIdx) nameIdx = i
+        })
+
+        if (pctIdx === -1) {
+          // Check if any part contains percentage
+          parts.forEach((part, i) => {
+            if (part.match(/\d+\.?\d*\s*%/)) pctIdx = i
+          })
         }
-        
-        // Skip header-like rows
-        if (comp.name && !comp.name.includes('---') && !comp.name.includes('Component') && !comp.name.includes('Ingredient') && !comp.name.includes('المكون') && comp.name.length > 2) {
-          // Check if has percentage
-          if (comp.percentage && comp.percentage.match(/\d+\.?\d*\s*%/)) {
-            components.push(comp)
-          } else if (parts.length > 2 && parts[2].match(/\d+\.?\d*\s*%/)) {
-            comp.percentage = parts[2]
-            comp.cas_number = parts.length > 3 ? parts[1] : ''
-            components.push(comp)
-          }
+
+        // Skip rows without percentage
+        if (pctIdx === -1) continue
+
+        // Skip summary/total rows
+        const firstPart = parts[0].toLowerCase()
+        if (firstPart.includes('total') || firstPart.includes('المجموع') || firstPart.includes('totaal')) continue
+
+        // Skip rows that look like section headers (all caps, no number)
+        if (parts.length <= 2 && !parts[0].match(/\d/)) continue
+
+        comp.percentage = parts[pctIdx]
+        comp.name = nameIdx !== -1 ? parts[nameIdx] : parts[0]
+        comp.cas_number = casIdx !== -1 ? parts[casIdx] : (parts.length > 2 ? parts[parts.length - 2] : '')
+        comp.function = funcIdx !== -1 ? parts[funcIdx] : (parts.length > 3 ? parts[parts.length - 1] : '')
+
+        // Clean up - remove grams column if mistaken
+        if (comp.cas_number?.match(/^\d+\.?\d*\s*g$/)) comp.cas_number = ''
+
+        // Only add if name doesn't look like a header
+        if (comp.name.length > 2 && !comp.name.includes('---') && !comp.name.match(/^step/i)) {
+          components.push(comp)
         }
       }
     }
-    
-    // End of table
+
+    // End table detection
     if (inTable && !trimmed.includes('|') && components.length > 0) {
       inTable = false
-    }
-  }
-
-  // Method 2: Percentage-pattern parsing (if no table found)
-  if (components.length === 0) {
-    for (const line of lines) {
-      const match = line.match(/(.+?)\s+(\d+\.?\d*\s*%)\s*(\d{2,7}-\d{2,7}-\d)?\s*(.*)/)
-      if (match && !match[1].includes('المجموع') && !match[1].includes('Total') && !match[1].includes('TOTAL')) {
-        components.push({
-          name: match[1].trim(),
-          percentage: match[2].trim(),
-          cas_number: match[3]?.trim() || '',
-          function: match[4]?.trim() || ''
-        })
-      }
     }
   }
 
