@@ -1,18 +1,63 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
-const plans = [
-  { name: 'Starter', price: '0', features: ['10 formulas/month', 'Basic search', 'PDF export'] },
-  { name: 'Professional', price: '49', features: ['100 formulas/month', 'Advanced AI', 'API access'], popular: true },
-  { name: 'Business', price: '299', features: ['Unlimited formulas', 'Team access', '24/7 support'] },
-  { name: 'Enterprise', price: '999', features: ['Everything', 'On-premise', 'Custom dev'] },
+type Plan = {
+  id: 'starter' | 'professional' | 'business' | 'enterprise'
+  name: string
+  price: string
+  features: string[]
+  popular?: boolean
+}
+
+const plans: Plan[] = [
+  { id: 'starter',      name: 'Starter',      price: '0',   features: ['10 formulas/month', 'Basic search', 'PDF export'] },
+  { id: 'professional', name: 'Professional', price: '49',  features: ['100 formulas/month', 'Advanced AI', 'API access'], popular: true },
+  { id: 'business',     name: 'Business',     price: '299', features: ['Unlimited formulas', 'Team access', '24/7 support'] },
+  { id: 'enterprise',   name: 'Enterprise',   price: '999', features: ['Everything', 'On-premise', 'Custom dev'] },
 ]
 
 export default function PricingPage() {
   const { isDark } = useTheme()
   const { t } = useLanguage()
+  const router = useRouter()
+  const [busy, setBusy] = useState<Plan['id'] | null>(null)
+  const [error, setError] = useState('')
+
+  const subscribe = async (plan: Plan) => {
+    setError('')
+    if (plan.id === 'starter') {
+      // Free plan: just push them to register
+      router.push('/register')
+      return
+    }
+    setBusy(plan.id)
+    try {
+      let email: string | undefined
+      if (isSupabaseConfigured) {
+        const { data } = await supabase.auth.getUser()
+        email = data.user?.email || undefined
+      }
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan: plan.id, email }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.url) {
+        setError(json.error || 'Checkout failed')
+        return
+      }
+      window.location.href = json.url
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Checkout failed')
+    } finally {
+      setBusy(null)
+    }
+  }
 
   const bg = isDark ? 'bg-gray-900' : 'bg-gray-50'
   const heading = isDark ? 'text-white' : 'text-gray-900'
@@ -20,7 +65,17 @@ export default function PricingPage() {
   return (
     <div className={`min-h-screen py-20 ${bg}`}>
       <div className="max-w-6xl mx-auto px-4">
-        <h1 className={`text-4xl font-bold text-center mb-12 ${heading}`}>{t('pricing')}</h1>
+        <h1 className={`text-4xl font-bold text-center mb-2 ${heading}`}>{t('pricing')}</h1>
+        <p className={`text-center mb-12 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+          Choose the plan that fits your formulation work
+        </p>
+
+        {error && (
+          <div className="max-w-xl mx-auto mb-8 bg-red-500/10 text-red-400 p-4 rounded-xl text-sm">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => {
             const cardBase = 'relative rounded-2xl p-6 transition-transform'
@@ -36,9 +91,10 @@ export default function PricingPage() {
               : isDark
                 ? 'bg-white/20 text-white hover:bg-white/30'
                 : 'bg-gray-900 text-white hover:bg-gray-800'
+            const isBusy = busy === plan.id
 
             return (
-              <div key={plan.name} className={`${cardBase} ${cardStyle}`}>
+              <div key={plan.id} className={`${cardBase} ${cardStyle}`}>
                 {plan.popular && (
                   <span className="absolute -top-3 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-bold">
                     Popular
@@ -56,8 +112,12 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <button className={`w-full py-3 rounded-xl font-bold ${btnStyle}`}>
-                  {plan.price === '0' ? 'Start Free' : 'Subscribe'}
+                <button
+                  onClick={() => subscribe(plan)}
+                  disabled={isBusy}
+                  className={`w-full py-3 rounded-xl font-bold disabled:opacity-50 ${btnStyle}`}
+                >
+                  {isBusy ? '...' : plan.price === '0' ? 'Start Free' : 'Subscribe'}
                 </button>
               </div>
             )

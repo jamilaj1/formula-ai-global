@@ -16,6 +16,7 @@ import {
   Upload,
   LogOut,
   User,
+  Beaker,
 } from 'lucide-react'
 
 export default function Navbar() {
@@ -57,6 +58,9 @@ export default function Navbar() {
   const menuPanel = isDark
     ? 'bg-gray-800 border-gray-700'
     : 'bg-white border-gray-200'
+  const menuItem = isDark
+    ? 'text-gray-300 hover:bg-gray-700'
+    : 'text-gray-700 hover:bg-gray-50'
 
   return (
     <nav
@@ -84,8 +88,8 @@ export default function Navbar() {
               <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
             </Link>
             {email && (
-              <Link href="/history" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-                <HistoryIcon className="w-4 h-4" /> {t('history')}
+              <Link href="/formulas" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+                <Beaker className="w-4 h-4" /> {t('my_formulas')}
               </Link>
             )}
             <Link href="/pricing" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
@@ -94,7 +98,6 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Language picker */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -121,11 +124,7 @@ export default function Navbar() {
                           setShowLangMenu(false)
                         }}
                         className={`w-full flex items-center gap-2 px-4 py-2 text-sm ${
-                          language === lang.code
-                            ? 'bg-emerald-500/10 text-emerald-400'
-                            : isDark
-                              ? 'text-gray-300 hover:bg-gray-700'
-                              : 'text-gray-700 hover:bg-gray-50'
+                          language === lang.code ? 'bg-emerald-500/10 text-emerald-400' : menuItem
                         }`}
                       >
                         <span>{lang.flag}</span>
@@ -137,7 +136,6 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* Theme toggle */}
             <button
               onClick={toggleTheme}
               className={`p-2 rounded-lg ${
@@ -148,7 +146,6 @@ export default function Navbar() {
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* Auth area */}
             {email ? (
               <div className="relative">
                 <button
@@ -180,18 +177,21 @@ export default function Navbar() {
                       <Link
                         href="/dashboard"
                         onClick={() => setShowUserMenu(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${
-                          isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
                       >
                         <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
                       </Link>
                       <Link
+                        href="/formulas"
+                        onClick={() => setShowUserMenu(false)}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
+                      >
+                        <Beaker className="w-4 h-4" /> {t('my_formulas')}
+                      </Link>
+                      <Link
                         href="/history"
                         onClick={() => setShowUserMenu(false)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm ${
-                          isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
-                        }`}
+                        className={`flex items-center gap-2 px-4 py-2 text-sm ${menuItem}`}
                       >
                         <HistoryIcon className="w-4 h-4" /> {t('history')}
                       </Link>
