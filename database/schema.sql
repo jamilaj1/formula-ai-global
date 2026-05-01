@@ -114,6 +114,21 @@ begin
 end$$;
 
 -- Seed the four canonical plans (idempotent on the slug).
+
+-- Relax NOT NULL on every legacy column we don't explicitly set in INSERTs.
+-- Idempotent: drop_not_null is a no-op if already nullable.
+do $$
+declare col record;
+begin
+  for col in
+    select column_name from information_schema.columns
+    where table_schema='public' and table_name='subscription_plans'
+      and is_nullable='NO' and column_name not in ('id','created_at','user_id','plan_id')
+  loop
+    execute format('alter table public.subscription_plans alter column %I drop not null', col.column_name);
+  end loop;
+end$$;
+
 insert into public.subscription_plans (slug, name, price_monthly, formula_quota, features) values
   ('starter',      'Starter',      0,    10,   '["Basic search","PDF export","10 formulas/month"]'::jsonb),
   ('professional', 'Professional', 49,   100,  '["Advanced AI","API access","100 formulas/month"]'::jsonb),
@@ -201,6 +216,21 @@ begin
   end if;
 end$$;
 
+
+-- Relax NOT NULL on every legacy column we don't explicitly set in INSERTs.
+-- Idempotent: drop_not_null is a no-op if already nullable.
+do $$
+declare col record;
+begin
+  for col in
+    select column_name from information_schema.columns
+    where table_schema='public' and table_name='industries'
+      and is_nullable='NO' and column_name not in ('id','created_at','user_id','plan_id')
+  loop
+    execute format('alter table public.industries alter column %I drop not null', col.column_name);
+  end loop;
+end$$;
+
 insert into public.industries (slug, name, description) values
   ('cosmetics',     'Cosmetics',          'Personal care, skin care, hair care'),
   ('cleaning',      'Cleaning Products',  'Detergents, disinfectants, surface cleaners'),
@@ -230,6 +260,21 @@ begin
                 where table_schema='public' and table_name='standards' and column_name='code') then
     alter table public.standards add constraint standards_code_key unique (code);
   end if;
+end$$;
+
+
+-- Relax NOT NULL on every legacy column we don't explicitly set in INSERTs.
+-- Idempotent: drop_not_null is a no-op if already nullable.
+do $$
+declare col record;
+begin
+  for col in
+    select column_name from information_schema.columns
+    where table_schema='public' and table_name='standards'
+      and is_nullable='NO' and column_name not in ('id','created_at','user_id','plan_id')
+  loop
+    execute format('alter table public.standards alter column %I drop not null', col.column_name);
+  end loop;
 end$$;
 
 insert into public.standards (code, name, region, description) values
