@@ -2,7 +2,24 @@
 import React, { useState } from 'react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { Search, Copy, Check, FileText } from 'lucide-react'
+
+async function saveToHistory(query: string, language: string, result: string) {
+  if (!isSupabaseConfigured) return
+  try {
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) return
+    await supabase.from('search_history').insert({
+      user_id: userData.user.id,
+      query,
+      language,
+      result,
+    })
+  } catch {
+    // Silent: don't break the user's search if history save fails.
+  }
+}
 
 export default function SearchPage() {
   const { t, language } = useLanguage()
@@ -12,19 +29,23 @@ export default function SearchPage() {
   const [result, setResult] = useState('')
   const [copied, setCopied] = useState(false)
 
-  const handleSearch = async () => {
-    if (!query.trim()) return
+  const runSearch = async (q: string) => {
+    if (!q.trim()) return
     setLoading(true)
     setResult('')
     try {
-      const res = await fetch(`/api/brain?query=${encodeURIComponent(query)}&language=${language}`)
+      const res = await fetch(`/api/brain?query=${encodeURIComponent(q)}&language=${language}`)
       const data = await res.json()
-      setResult(data.result || data.error || 'No results')
+      const text = data.result || data.error || 'No results'
+      setResult(text)
+      if (data.result) saveToHistory(q, language, text)
     } catch {
       setResult('Search failed.')
     }
     setLoading(false)
   }
+
+  const handleSearch = () => runSearch(query)
 
   const copyAll = async () => {
     await navigator.clipboard.writeText(result)
@@ -84,7 +105,7 @@ export default function SearchPage() {
         {!result && !loading && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {suggestions.map(s => (
-              <button key={s} onClick={() => { setQuery(s); handleSearch() }}
+              <button key={s} onClick={() => { setQuery(s); runSearch(s) }}
                 className={`rounded-xl p-4 text-center text-sm transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{s}</button>
             ))}
           </div>
