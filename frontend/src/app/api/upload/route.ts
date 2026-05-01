@@ -15,26 +15,28 @@ Examples of valid formulas:
   "Anti-Dandruff Shampoo": Water 70%, SLES 15%, CAPB 5%, Climbazole 1.5%, ...
 
 NOT a formula (REJECT these):
-  "Sodium Hydroxide: 100% Sodium Hydroxide" — this is a glossary entry for ONE chemical
+  "Sodium Hydroxide: 100% Sodium Hydroxide" — glossary entry for ONE chemical
   "Carmoisine: 100% Carmoisine" — single-chemical encyclopedia entry
   Any entry with only 1 or 2 ingredients
   Any entry where the only ingredient is 100% of itself
 
 For each REAL formula return a JSON object:
-  - name: descriptive name (e.g. "Industrial White Spray Paint")
-  - category: e.g. "spray paint", "shampoo", "disinfectant"
-  - components: array of { name, percentage, cas_number, function } — MUST have >= 3 items with DIFFERENT percentages
+  - name: descriptive name
+  - category: e.g. "spray paint", "shampoo"
+  - components: array of { name, percentage, cas_number, function } — MUST have >= 3 items
   - notes: warnings or process notes
 
 Output ONLY a JSON array. No prose. No markdown fences.
 If no real formulas exist in this chunk, output: []
 
-BE PERMISSIVE about percentage totals — some formulas list "qs to 100%" or
-omit minor ingredients. As long as you see 3+ different ingredients combining
-to make ONE product, extract it.`
+BE PERMISSIVE about percentage totals — books often omit minor ingredients
+or use "qs to 100%". Extract anything with 3+ different ingredients combining
+into one product.`
 
-const MAX_CHARS_PER_CHUNK = 40_000
-const MAX_CHUNKS = 60
+// IMPORTANT: keep total processing under Vercel's 300s timeout
+// 25 chunks × ~5s = 125s + pdf-parse ~15s = ~140s. Safe margin.
+const MAX_CHARS_PER_CHUNK = 50_000
+const MAX_CHUNKS = 25
 
 type Component = { name?: string; percentage?: string; cas_number?: string; function?: string }
 type Formula = {
@@ -72,7 +74,6 @@ function extractFormulas(text: string): Formula[] {
   }
 }
 
-// Keep things permissive: reject only obvious glossary entries
 function isRealFormula(f: Formula): boolean {
   const components = f.components || []
   if (components.length < 3) return false
@@ -83,12 +84,9 @@ function isRealFormula(f: Formula): boolean {
     return isFinite(num) ? num : 0
   })
 
-  // Reject only if dominant single ingredient is 99%+ AND the formula has fewer
-  // than 5 components — that pattern matches glossary entries best.
   const max = Math.max(...pcts, 0)
   if (max >= 99.5 && components.length < 5) return false
 
-  // Reject if every percentage is identical (e.g. all 100% — clearly a list)
   const unique = new Set(pcts.map((p) => p.toFixed(1)))
   if (unique.size === 1) return false
 
@@ -97,19 +95,16 @@ function isRealFormula(f: Formula): boolean {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-async function processChunk(
-  chunk: string,
-  language: string,
-  preferredProvider: 'anthropic' | 'groq' | undefined,
-  attempt = 0
-): Promise<Formula[]> {
+async function processChunk(chunk: string, language: string, attempt = 0): Promise<Formula[]> {
   try {
+    // Anthropic (Claude) does this task ~2x better than Llama on Groq.
+    // Falls back to Groq automatically if Anthropic key missing or errors.
     const out = await generate({
       system: `${SYSTEM_PROMPT}\nThe user prefers responses in: ${language}.`,
       user: `Extract every multi-ingredient formula from this text:\n\n${chunk}`,
       maxTokens: 4096,
       temperature: 0.1,
-      preferredProvider,
+      preferredProvider: process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'groq',
     })
     return extractFormulas(out.text)
   } catch (err: unknown) {
@@ -119,10 +114,9 @@ async function processChunk(
       errMsg.includes('429') ||
       errMsg.includes('overloaded') ||
       errMsg.includes('Rate limit')
-    if (isRateLimit && attempt < 4) {
-      const waitMs = Math.min(60_000, 5_000 * Math.pow(2, attempt))
-      await sleep(waitMs)
-      return processChunk(chunk, language, preferredProvider, attempt + 1)
+    if (isRateLimit && attempt < 2) {
+      await sleep(3000 * Math.pow(2, attempt))
+      return processChunk(chunk, language, attempt + 1)
     }
     throw err
   }
@@ -145,7 +139,7 @@ function dedupeFormulas(formulas: Formula[]): Formula[] {
 export async function POST(request: Request) {
   if (availableProvider() === 'none') {
     return NextResponse.json(
-      { success: false, error: 'No AI provider configured. Set GROQ_API_KEY or ANTHROPIC_API_KEY.' },
+      { success: false, error: 'No AI provider configured.' },
       { status: 500 }
     )
   }
@@ -175,6 +169,10 @@ export async function POST(request: Request) {
     )
   }
 
+  // Hard time budget: stop processing chunks before Vercel kills us
+  const startTime = Date.now()
+  const TIME_BUDGET_MS = 250_000 // 4 min 10s — leaves 50s safety margin
+
   try {
     const arrayBuf = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuf)
@@ -188,58 +186,51 @@ export async function POST(request: Request) {
 
     if (fullText.length < 200) {
       return NextResponse.json(
-        { success: false, error: 'Could not extract text from PDF (image-only PDF?). Try a different file.' },
+        { success: false, error: 'Could not extract text from PDF (image-only PDF?).' },
         { status: 422 }
       )
     }
 
-    const chunks = splitText(fullText, MAX_CHARS_PER_CHUNK).slice(0, MAX_CHUNKS)
+    const allChunks = splitText(fullText, MAX_CHARS_PER_CHUNK)
+    const chunks = allChunks.slice(0, MAX_CHUNKS)
     const allFormulas: Formula[] = []
     let rawCount = 0
+    let chunksDone = 0
     let chunksFailed = 0
     let lastError = ''
+    let stoppedEarly = false
 
-    // Try Groq first (free + fast). If a chunk fails, fall back to Anthropic.
-    const minMsBetweenCalls = 2500
+    const minMsBetweenCalls = 800
 
     for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i]
-      let formulas: Formula[] = []
-
-      // First attempt: Groq (free)
-      try {
-        formulas = await processChunk(chunk, language, 'groq')
-      } catch (err) {
-        // Second attempt: Anthropic fallback
-        if (process.env.ANTHROPIC_API_KEY) {
-          try {
-            formulas = await processChunk(chunk, language, 'anthropic')
-          } catch (err2) {
-            chunksFailed += 1
-            lastError = err2 instanceof Error ? err2.message : String(err2)
-            console.error(`Chunk ${i + 1}/${chunks.length} failed (both providers):`, err2)
-          }
-        } else {
-          chunksFailed += 1
-          lastError = err instanceof Error ? err.message : String(err)
-        }
+      // Time-budget check: if we're running out, stop and return partial results
+      if (Date.now() - startTime > TIME_BUDGET_MS) {
+        stoppedEarly = true
+        break
       }
 
-      rawCount += formulas.length
-      const valid = formulas.filter(isRealFormula)
-      allFormulas.push(...valid)
+      try {
+        const formulas = await processChunk(chunks[i], language)
+        rawCount += formulas.length
+        const valid = formulas.filter(isRealFormula)
+        allFormulas.push(...valid)
+        chunksDone += 1
+      } catch (err) {
+        chunksFailed += 1
+        lastError = err instanceof Error ? err.message.slice(0, 200) : String(err).slice(0, 200)
+        console.error(`Chunk ${i + 1} failed:`, err)
+      }
 
       if (i < chunks.length - 1) await sleep(minMsBetweenCalls)
     }
 
     const deduped = dedupeFormulas(allFormulas)
 
-    // If everything failed, surface an actionable error
-    if (chunksFailed === chunks.length) {
+    if (chunksDone === 0) {
       return NextResponse.json(
         {
           success: false,
-          error: `All ${chunks.length} chunks failed. Last error: ${lastError.slice(0, 300)}`,
+          error: `All chunks failed. Last error: ${lastError || 'unknown'}`,
         },
         { status: 502 }
       )
@@ -250,8 +241,10 @@ export async function POST(request: Request) {
       filename: file.name,
       size: file.size,
       pages,
-      chunks_processed: chunks.length,
+      total_chunks: allChunks.length,
+      chunks_processed: chunksDone,
       chunks_failed: chunksFailed,
+      stopped_early: stoppedEarly,
       raw_extracted: rawCount,
       filtered_out: rawCount - deduped.length,
       formulas: deduped,

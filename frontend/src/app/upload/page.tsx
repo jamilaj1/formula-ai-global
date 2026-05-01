@@ -68,7 +68,18 @@ export default function UploadPage() {
       fd.append('file', file)
       fd.append('language', language)
       const res = await fetch('/api/upload', { method: 'POST', body: fd })
-      const data = await res.json()
+
+      // Read as text first so we can show server error pages (HTML / Vercel timeout)
+      const raw = await res.text()
+      let data: { success?: boolean; error?: string; formulas?: ExtractedFormula[]; pages?: number; chunks_processed?: number }
+      try {
+        data = JSON.parse(raw)
+      } catch {
+        if (res.status === 504 || raw.toLowerCase().includes('timeout')) {
+          throw new Error('The book is very large; the server timed out before finishing. Please try a smaller PDF (under 200 pages).')
+        }
+        throw new Error(`Server error (${res.status}): ${raw.slice(0, 200)}`)
+      }
       if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress(100)
       const formulas: ExtractedFormula[] = data.formulas || []
@@ -232,23 +243,4 @@ export default function UploadPage() {
                           <ul className={`mt-2 text-sm space-y-1 ${sub}`}>
                             {f.components.slice(0, 8).map((c, j) => (
                               <li key={j}>
-                                {c.percentage ? <strong>{c.percentage}</strong> : null}{' '}
-                                {c.name}
-                                {c.cas_number ? ` (CAS ${c.cas_number})` : ''}
-                              </li>
-                            ))}
-                            {f.components.length > 8 && <li>+ {f.components.length - 8} more</li>}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+                                {c.percentage ? <stron
