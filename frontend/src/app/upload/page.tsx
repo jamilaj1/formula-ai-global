@@ -71,9 +71,16 @@ export default function UploadPage() {
 
       // Read as text first so we can show server error pages (HTML / Vercel timeout)
       const raw = await res.text()
-      let data: { success?: boolean; error?: string; formulas?: ExtractedFormula[]; pages?: number; chunks_processed?: number }
+      type UploadResp = {
+        success?: boolean
+        error?: string
+        formulas?: ExtractedFormula[]
+        pages?: number
+        chunks_processed?: number
+      }
+      let data: UploadResp = {}
       try {
-        data = JSON.parse(raw)
+        data = JSON.parse(raw) as UploadResp
       } catch {
         if (res.status === 504 || raw.toLowerCase().includes('timeout')) {
           throw new Error('The book is very large; the server timed out before finishing. Please try a smaller PDF (under 200 pages).')
@@ -243,4 +250,15 @@ export default function UploadPage() {
                           <ul className={`mt-2 text-sm space-y-1 ${sub}`}>
                             {f.components.slice(0, 8).map((c, j) => (
                               <li key={j}>
-                                {c.percentage ? <stron
+                                {c.percentage ? <strong>{c.percentage}</strong> : null}{' '}
+                                {c.name}
+                                {c.cas_number ? ` (CAS ${c.cas_number})` : ''}
+                              </li>
+                            ))}
+                            {f.components.length > 8 && <li>+ {f.components.length - 8} more</li>}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))
