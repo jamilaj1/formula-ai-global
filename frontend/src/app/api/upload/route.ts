@@ -3,39 +3,38 @@ import { generate, availableProvider } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 300 // 5 min
+export const maxDuration = 300
 
-const SYSTEM_PROMPT = `You are an expert chemical formulator extracting REAL FORMULATIONS
-(multi-ingredient recipes) from a book chunk. The book may also contain a glossary,
-an index of raw materials, a bibliography, and a table of contents — IGNORE those.
+const SYSTEM_PROMPT = `You are an expert chemical formulator extracting MULTI-INGREDIENT
+RECIPES (formulas) from a book chunk. The book may contain a glossary that
+describes single chemicals — IGNORE the glossary; you ONLY want recipes.
 
-A VALID FORMULA has ALL of these properties:
-  1. THREE OR MORE different ingredients (a single-chemical entry is NOT a formula)
-  2. Percentages that VARY — they must NOT all be 100%
-  3. Percentages of all listed ingredients should sum to roughly 100%
-  4. A clear product name (e.g. "White Spray Paint", "Anti-Dandruff Shampoo")
-  5. The ingredients are intentionally mixed together to make ONE end product
+A FORMULA is a list of 3+ ingredients with percentages that combine into one product.
+Examples of valid formulas:
+  "White Spray Paint": Alkyd Resin 25%, Titanium Dioxide 20%, Toluene 33%, Xylene 10%, ...
+  "Anti-Dandruff Shampoo": Water 70%, SLES 15%, CAPB 5%, Climbazole 1.5%, ...
 
-You MUST REJECT and NOT extract any of these:
-  - Glossary / encyclopedia entries that describe ONE chemical (e.g. "Sodium Hydroxide:
-    100% Sodium Hydroxide CAS 1310-73-2" is an entry, NOT a formula — REJECT)
-  - Lists of raw materials with their CAS numbers but no recipe
-  - Any "formula" with only 1 or 2 ingredients
-  - Any "formula" where the only ingredient is 100%
-  - Tables of contents, indexes, or bibliographies
-  - Definitions of single chemicals or product types
+NOT a formula (REJECT these):
+  "Sodium Hydroxide: 100% Sodium Hydroxide" — this is a glossary entry for ONE chemical
+  "Carmoisine: 100% Carmoisine" — single-chemical encyclopedia entry
+  Any entry with only 1 or 2 ingredients
+  Any entry where the only ingredient is 100% of itself
 
-For each VALID formula, return a JSON object with:
-  - name: short formula name in English (e.g. "White Spray Paint - Industrial Grade")
-  - category: e.g. "shampoo", "disinfectant", "spray paint", "floor cleaner"
-  - components: array of { name, percentage, cas_number, function } — MUST have >= 3 items
-  - notes: any important warnings or process notes
+For each REAL formula return a JSON object:
+  - name: descriptive name (e.g. "Industrial White Spray Paint")
+  - category: e.g. "spray paint", "shampoo", "disinfectant"
+  - components: array of { name, percentage, cas_number, function } — MUST have >= 3 items with DIFFERENT percentages
+  - notes: warnings or process notes
 
-Output ONLY a JSON array. No prose. No markdown fences. No explanation.
-If no valid formulas exist in this chunk, output: []`
+Output ONLY a JSON array. No prose. No markdown fences.
+If no real formulas exist in this chunk, output: []
 
-const MAX_CHARS_PER_CHUNK = 40_000 // smaller chunks = better extraction
-const MAX_CHUNKS = 60 // cover ~1000-page books
+BE PERMISSIVE about percentage totals — some formulas list "qs to 100%" or
+omit minor ingredients. As long as you see 3+ different ingredients combining
+to make ONE product, extract it.`
+
+const MAX_CHARS_PER_CHUNK = 40_000
+const MAX_CHUNKS = 60
 
 type Component = { name?: string; percentage?: string; cas_number?: string; function?: string }
 type Formula = {
@@ -73,45 +72,44 @@ function extractFormulas(text: string): Formula[] {
   }
 }
 
-// Strict client-side validation: reject anything that doesn't look like a real formula
+// Keep things permissive: reject only obvious glossary entries
 function isRealFormula(f: Formula): boolean {
   const components = f.components || []
   if (components.length < 3) return false
 
-  // Parse percentages, treating missing/invalid as 0
   const pcts = components.map((c) => {
     const raw = String(c.percentage || '').replace(/[%\s]/g, '')
     const num = parseFloat(raw)
     return isFinite(num) ? num : 0
   })
 
-  // Reject if ANY single ingredient is 100% (that's a glossary entry)
-  if (pcts.some((p) => p >= 99.5)) return false
+  // Reject only if dominant single ingredient is 99%+ AND the formula has fewer
+  // than 5 components — that pattern matches glossary entries best.
+  const max = Math.max(...pcts, 0)
+  if (max >= 99.5 && components.length < 5) return false
 
-  // Total should be roughly 100% (allow 50-150% tolerance for rounding/missing data)
-  const total = pcts.reduce((s, n) => s + n, 0)
-  if (total < 50 || total > 150) return false
-
-  // Need at least 3 ingredients with valid percentages
-  const validCount = pcts.filter((p) => p > 0 && p < 100).length
-  if (validCount < 3) return false
+  // Reject if every percentage is identical (e.g. all 100% — clearly a list)
+  const unique = new Set(pcts.map((p) => p.toFixed(1)))
+  if (unique.size === 1) return false
 
   return true
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-async function processChunk(chunk: string, language: string, attempt = 0): Promise<Formula[]> {
+async function processChunk(
+  chunk: string,
+  language: string,
+  preferredProvider: 'anthropic' | 'groq' | undefined,
+  attempt = 0
+): Promise<Formula[]> {
   try {
-    // For PDF extraction we PREFER Anthropic (Claude) — far more accurate at
-    // structured chemistry-table parsing than Llama on Groq. Cost is ~$0.01-0.03
-    // per book, well under the $1 Anthropic cap.
     const out = await generate({
       system: `${SYSTEM_PROMPT}\nThe user prefers responses in: ${language}.`,
-      user: `Extract every REAL multi-ingredient formula from this text:\n\n${chunk}`,
+      user: `Extract every multi-ingredient formula from this text:\n\n${chunk}`,
       maxTokens: 4096,
       temperature: 0.1,
-      preferredProvider: process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'groq',
+      preferredProvider,
     })
     return extractFormulas(out.text)
   } catch (err: unknown) {
@@ -124,7 +122,7 @@ async function processChunk(chunk: string, language: string, attempt = 0): Promi
     if (isRateLimit && attempt < 4) {
       const waitMs = Math.min(60_000, 5_000 * Math.pow(2, attempt))
       await sleep(waitMs)
-      return processChunk(chunk, language, attempt + 1)
+      return processChunk(chunk, language, preferredProvider, attempt + 1)
     }
     throw err
   }
@@ -190,10 +188,7 @@ export async function POST(request: Request) {
 
     if (fullText.length < 200) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'Could not extract text from PDF (image-only PDF?). Try a different file.',
-        },
+        { success: false, error: 'Could not extract text from PDF (image-only PDF?). Try a different file.' },
         { status: 422 }
       )
     }
@@ -201,25 +196,54 @@ export async function POST(request: Request) {
     const chunks = splitText(fullText, MAX_CHARS_PER_CHUNK).slice(0, MAX_CHUNKS)
     const allFormulas: Formula[] = []
     let rawCount = 0
+    let chunksFailed = 0
+    let lastError = ''
 
-    // Groq: 30 RPM = one call every 2s. Pace at 2.5s for safety.
+    // Try Groq first (free + fast). If a chunk fails, fall back to Anthropic.
     const minMsBetweenCalls = 2500
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
+      let formulas: Formula[] = []
+
+      // First attempt: Groq (free)
       try {
-        const formulas = await processChunk(chunk, language)
-        rawCount += formulas.length
-        // Strict client-side filter: only keep real multi-ingredient formulas
-        const valid = formulas.filter(isRealFormula)
-        allFormulas.push(...valid)
+        formulas = await processChunk(chunk, language, 'groq')
       } catch (err) {
-        console.error(`Chunk ${i + 1}/${chunks.length} failed:`, err)
+        // Second attempt: Anthropic fallback
+        if (process.env.ANTHROPIC_API_KEY) {
+          try {
+            formulas = await processChunk(chunk, language, 'anthropic')
+          } catch (err2) {
+            chunksFailed += 1
+            lastError = err2 instanceof Error ? err2.message : String(err2)
+            console.error(`Chunk ${i + 1}/${chunks.length} failed (both providers):`, err2)
+          }
+        } else {
+          chunksFailed += 1
+          lastError = err instanceof Error ? err.message : String(err)
+        }
       }
+
+      rawCount += formulas.length
+      const valid = formulas.filter(isRealFormula)
+      allFormulas.push(...valid)
+
       if (i < chunks.length - 1) await sleep(minMsBetweenCalls)
     }
 
     const deduped = dedupeFormulas(allFormulas)
+
+    // If everything failed, surface an actionable error
+    if (chunksFailed === chunks.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `All ${chunks.length} chunks failed. Last error: ${lastError.slice(0, 300)}`,
+        },
+        { status: 502 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
@@ -227,6 +251,7 @@ export async function POST(request: Request) {
       size: file.size,
       pages,
       chunks_processed: chunks.length,
+      chunks_failed: chunksFailed,
       raw_extracted: rawCount,
       filtered_out: rawCount - deduped.length,
       formulas: deduped,
