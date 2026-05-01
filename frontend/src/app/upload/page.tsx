@@ -14,6 +14,18 @@ type ExtractedFormula = {
   notes?: string
 }
 
+type UploadResp = {
+  success?: boolean
+  error?: string
+  formulas?: ExtractedFormula[]
+  pages?: number
+  chunks_processed?: number
+  chunks_failed?: number
+  raw_extracted?: number
+  filtered_out?: number
+  stopped_early?: boolean
+}
+
 export default function UploadPage() {
   const { isDark } = useTheme()
   const { t, language } = useLanguage()
@@ -71,13 +83,6 @@ export default function UploadPage() {
 
       // Read as text first so we can show server error pages (HTML / Vercel timeout)
       const raw = await res.text()
-      type UploadResp = {
-        success?: boolean
-        error?: string
-        formulas?: ExtractedFormula[]
-        pages?: number
-        chunks_processed?: number
-      }
       let data: UploadResp = {}
       try {
         data = JSON.parse(raw) as UploadResp
@@ -181,7 +186,7 @@ export default function UploadPage() {
                 Extracting formulas... {progress}%
               </div>
               <div className={`text-xs mt-1 ${sub}`}>
-                Large books are processed in chunks — this can take up to 5 minutes.
+                Large books are processed in chunks - this can take up to 5 minutes.
               </div>
             </div>
           )}
@@ -261,4 +266,12 @@ export default function UploadPage() {
                       </div>
                     </div>
                   </div>
-                ))
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
