@@ -8,7 +8,7 @@ import { useLanguage } from '@/components/providers/LanguageProvider'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { signIn } = useAuth()
+  const { signIn, configured } = useAuth()
   const { isDark } = useTheme()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
@@ -38,6 +38,16 @@ export default function LoginPage() {
     <div className={`min-h-screen flex items-center justify-center ${bg} p-4`}>
       <div className={`p-8 rounded-2xl w-full max-w-md ${card}`}>
         <h2 className={`text-2xl font-bold mb-6 text-center ${heading}`}>{t('login')}</h2>
+        {!configured && (
+          <div className="bg-amber-500/15 border border-amber-500/30 text-amber-200 p-3 rounded-lg mb-4 text-sm">
+            <strong>Auth is not configured on this deployment.</strong>
+            <br />
+            The site administrator must add{' '}
+            <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
+            <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in
+            Vercel → Project Settings → Environment Variables, then Redeploy.
+          </div>
+        )}
         {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
         <form onSubmit={handleLogin} className="space-y-4">
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)}

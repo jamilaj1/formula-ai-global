@@ -9,7 +9,7 @@ import { CheckCircle2 } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const { signUp } = useAuth()
+  const { signUp, configured } = useAuth()
   const { isDark } = useTheme()
   const { t } = useLanguage()
   const [email, setEmail] = useState('')
@@ -67,6 +67,16 @@ export default function RegisterPage() {
       <div className={`p-8 rounded-2xl w-full max-w-md ${card}`}>
         <h2 className={`text-2xl font-bold mb-2 text-center ${heading}`}>{t('register')}</h2>
         <p className={`text-center mb-6 text-sm ${sub}`}>Get 10 free formulas every month</p>
+        {!configured && (
+          <div className="bg-amber-500/15 border border-amber-500/30 text-amber-200 p-3 rounded-lg mb-4 text-sm">
+            <strong>Auth is not configured on this deployment.</strong>
+            <br />
+            The site administrator must add{' '}
+            <code className="font-mono">NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
+            <code className="font-mono">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> in
+            Vercel → Project Settings → Environment Variables, then Redeploy.
+          </div>
+        )}
         {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
         <form onSubmit={handleRegister} className="space-y-4">
           <input type="text" value={name} onChange={(e) => setName(e.target.value)}
