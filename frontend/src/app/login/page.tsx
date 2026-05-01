@@ -49,6 +49,11 @@ export default function LoginPage() {
           <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
             placeholder="Password" required
             className={`w-full p-3 rounded-xl border outline-none focus:border-green-400 ${input}`} />
+          <div className="flex justify-end -mt-1">
+            <Link href="/forgot-password" className="text-xs text-green-500 hover:underline">
+              Forgot password?
+            </Link>
+          </div>
           <button type="submit" disabled={loading}
             className="w-full bg-green-500 text-gray-900 p-3 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50">
             {loading ? '...' : t('login')}

@@ -2,11 +2,13 @@ import type { Metadata, Viewport } from 'next'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { LanguageProvider } from '@/components/providers/LanguageProvider'
 import Navbar from '@/components/layout/Navbar'
+import PWARegister from '@/components/PWARegister'
 import '@/app/globals.css'
 
 export const metadata: Metadata = {
   title: 'Formula AI Global - Chemical Formulation Platform',
-  description: "World's First AI-Powered Chemical Formulation Platform - search, extract, and validate chemical formulas in seconds.",
+  description:
+    "World's First AI-Powered Chemical Formulation Platform - search, extract, and validate chemical formulas in seconds.",
   manifest: '/manifest.json',
   applicationName: 'Formula AI',
   keywords: ['chemistry', 'formulation', 'cosmetics', 'cleaning products', 'AI', 'CAS number'],
@@ -42,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Navbar />
               <main className="flex-1">{children}</main>
             </div>
+            <PWARegister />
           </LanguageProvider>
         </ThemeProvider>
       </body>
