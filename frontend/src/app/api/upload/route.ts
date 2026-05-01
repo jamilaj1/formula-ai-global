@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generate, availableProvider } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 300 // 5 min — books can have many chunks
-
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001'
 
 const SYSTEM_PROMPT = `You are an expert chemical formulator. You receive a chunk of
 text from a chemistry / cosmetics / cleaning-products book. Extract EVERY complete
@@ -24,9 +22,8 @@ Rules:
 - Output ONLY a JSON array. No prose. No markdown fences. No explanation.
 - If no complete formulas exist in this chunk, output an empty array: []`
 
-const RATE_LIMIT_TPM = 400_000 // safety margin under 450K limit
-const MAX_CHARS_PER_CHUNK = 60_000 // ~15K input tokens per chunk
-const MAX_CHUNKS = 30 // hard cap so we don't run forever
+const MAX_CHARS_PER_CHUNK = 50_000 // ~12K tokens, fits in Groq's 128K context comfortably
+const MAX_CHUNKS = 30
 
 type Component = { name?: string; percentage?: string; cas_number?: string; function?: string }
 type Formula = {
@@ -36,7 +33,6 @@ type Formula = {
   notes?: string
 }
 
-// Split text into chunks at paragraph boundaries when possible
 function splitText(text: string, maxChars: number): string[] {
   if (text.length <= maxChars) return [text]
   const chunks: string[] = []
@@ -54,7 +50,6 @@ function splitText(text: string, maxChars: number): string[] {
   return chunks
 }
 
-// Extract a JSON array from Claude's response (be lenient)
 function extractFormulas(text: string): Formula[] {
   const match = text.match(/\[[\s\S]*\]/)
   if (!match) return []
@@ -66,42 +61,33 @@ function extractFormulas(text: string): Formula[] {
   }
 }
 
-// Sleep helper for retry/backoff
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
-// Call Claude with auto-retry on rate limit (429)
-async function callClaude(
-  anthropic: Anthropic,
-  chunk: string,
-  language: string,
-  attempt = 0
-): Promise<Formula[]> {
+async function processChunk(chunk: string, language: string, attempt = 0): Promise<Formula[]> {
   try {
-    const message = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4096,
-      temperature: 0.1,
+    const out = await generate({
       system: `${SYSTEM_PROMPT}\nThe user prefers responses in: ${language}.`,
-      messages: [{ role: 'user', content: `Extract every complete chemical formula:\n\n${chunk}` }],
+      user: `Extract every complete chemical formula:\n\n${chunk}`,
+      maxTokens: 4096,
+      temperature: 0.1,
     })
-    const firstBlock = message.content[0]
-    const text = firstBlock && firstBlock.type === 'text' ? firstBlock.text : ''
-    return extractFormulas(text)
+    return extractFormulas(out.text)
   } catch (err: unknown) {
-    // Retry on rate limit (max 4 attempts, exponential backoff)
     const errMsg = err instanceof Error ? err.message : String(err)
     const isRateLimit =
-      errMsg.includes('rate_limit') || errMsg.includes('429') || errMsg.includes('overloaded')
+      errMsg.includes('rate_limit') ||
+      errMsg.includes('429') ||
+      errMsg.includes('overloaded') ||
+      errMsg.includes('Rate limit')
     if (isRateLimit && attempt < 4) {
-      const waitMs = Math.min(60_000, 5_000 * Math.pow(2, attempt)) // 5s, 10s, 20s, 40s
+      const waitMs = Math.min(60_000, 5_000 * Math.pow(2, attempt))
       await sleep(waitMs)
-      return callClaude(anthropic, chunk, language, attempt + 1)
+      return processChunk(chunk, language, attempt + 1)
     }
     throw err
   }
 }
 
-// Deduplicate formulas by lowercased name + first component
 function dedupeFormulas(formulas: Formula[]): Formula[] {
   const seen = new Set<string>()
   const out: Formula[] = []
@@ -117,9 +103,13 @@ function dedupeFormulas(formulas: Formula[]): Formula[] {
 }
 
 export async function POST(request: Request) {
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (availableProvider() === 'none') {
     return NextResponse.json(
-      { success: false, error: 'ANTHROPIC_API_KEY not configured on server' },
+      {
+        success: false,
+        error:
+          'No AI provider configured. Set GROQ_API_KEY (free at console.groq.com) or ANTHROPIC_API_KEY.',
+      },
       { status: 500 }
     )
   }
@@ -150,11 +140,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Extract text from PDF (much smaller than sending raw PDF to Claude)
     const arrayBuf = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuf)
 
-    // pdf-parse is CommonJS, use dynamic import
     const pdfParseModule = await import('pdf-parse')
     const pdfParse = (pdfParseModule as { default?: unknown }).default || pdfParseModule
     const pdfData = await (pdfParse as (b: Buffer) => Promise<{ text: string; numpages: number }>)(buffer)
@@ -169,25 +157,19 @@ export async function POST(request: Request) {
       }, { status: 422 })
     }
 
-    // 2. Split into chunks Claude can handle (and stay under rate limit)
     const chunks = splitText(fullText, MAX_CHARS_PER_CHUNK).slice(0, MAX_CHUNKS)
-
-    // 3. Process each chunk with auto-retry; pace requests to stay under TPM
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const allFormulas: Formula[] = []
-    const charsPerToken = 4
-    const minMsBetweenCalls = Math.ceil(
-      (MAX_CHARS_PER_CHUNK / charsPerToken) * (60_000 / RATE_LIMIT_TPM)
-    )
+
+    // Groq is 30 RPM = one call every 2 seconds. Be conservative and pace 2.5s.
+    const minMsBetweenCalls = 2500
 
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i]
       try {
-        const formulas = await callClaude(anthropic, chunk, language)
+        const formulas = await processChunk(chunk, language)
         allFormulas.push(...formulas)
       } catch (err) {
         console.error(`Chunk ${i + 1}/${chunks.length} failed:`, err)
-        // Continue with remaining chunks even if one fails
       }
       if (i < chunks.length - 1) await sleep(minMsBetweenCalls)
     }

@@ -4,7 +4,6 @@ export const runtime = 'edge'
 
 function maskUrl(url: string | undefined): string {
   if (!url) return 'NOT_SET'
-  // Show host portion only so the user can spot typos like 'ib' vs 'iv'
   try {
     const u = new URL(url)
     return u.host
@@ -24,9 +23,6 @@ export async function GET() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // Probe whether the Supabase URL actually resolves and responds.
-  // We send the anon key so /auth/v1/health returns 200; even if the key is
-  // wrong/missing, ANY HTTP response (200, 401, 404...) proves the host is
-  // reachable — only a network/DNS error means the URL is broken.
   let supabaseReachable = false
   let supabaseError: string | undefined
   let supabaseStatus: number | undefined
@@ -42,7 +38,31 @@ export async function GET() {
         signal: AbortSignal.timeout(5000),
       })
       supabaseStatus = res.status
-      // Any HTTP response means the server is reachable.
       supabaseReachable = true
     } catch (err: unknown) {
-      supabaseError = 
+      supabaseError = err instanceof Error ? err.message : 'fetch failed'
+    }
+  }
+
+  return NextResponse.json({
+    status: 'ok',
+    service: 'formula-ai-global',
+    version: '3.2.0',
+    timestamp: new Date().toISOString(),
+    env: {
+      groq_key_set: Boolean(process.env.GROQ_API_KEY),
+      anthropic_key_set: Boolean(process.env.ANTHROPIC_API_KEY),
+      ai_primary: process.env.GROQ_API_KEY
+        ? 'groq (free)'
+        : process.env.ANTHROPIC_API_KEY
+          ? 'anthropic (paid)'
+          : 'NONE',
+      supabase_url: maskUrl(supabaseUrl),
+      supabase_key_preview: maskKey(supabaseKey),
+      supabase_reachable: supabaseReachable,
+      supabase_status: supabaseStatus,
+      supabase_error: supabaseError,
+      stripe_set: Boolean(process.env.STRIPE_SECRET_KEY),
+    },
+  })
+}

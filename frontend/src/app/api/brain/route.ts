@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
+import { generate, availableProvider } from '@/lib/ai'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-5'
-
 // Detect cost-tier signals in any of the supported languages.
-// When the user explicitly asks for cheap/economy formulas we tell Claude to
+// When the user explicitly asks for cheap/economy formulas we tell the model to
 // strip every non-essential ingredient.
 const ECONOMY_PATTERNS = [
   /\b(cheap|cheapest|low[- ]?cost|low[- ]?price|economy|economical|budget|affordable)\b/i,
@@ -110,29 +108,29 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query required' }, { status: 400 })
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (availableProvider() === 'none') {
     return NextResponse.json(
-      { success: false, error: 'ANTHROPIC_API_KEY not configured on server' },
+      {
+        success: false,
+        error:
+          'No AI provider configured. Set GROQ_API_KEY (free at console.groq.com) or ANTHROPIC_API_KEY in Vercel env.',
+      },
       { status: 500 }
     )
   }
 
   try {
-    const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
     const tier = detectCostTier(query)
-
-    const message = await anthropic.messages.create({
-      model: MODEL,
-      max_tokens: 4096,
-      temperature: 0.1,
-      system: buildSystemPrompt(language, tier),
-      messages: [{ role: 'user', content: query }],
+    const system = buildSystemPrompt(language, tier)
+    const out = await generate({ system, user: query, maxTokens: 4096, temperature: 0.1 })
+    return NextResponse.json({
+      success: true,
+      result: out.text,
+      query,
+      tier,
+      provider: out.provider,
+      model: out.model,
     })
-
-    const firstBlock = message.content[0]
-    const text = firstBlock && firstBlock.type === 'text' ? firstBlock.text : ''
-
-    return NextResponse.json({ success: true, result: text, query, tier })
   } catch (error: unknown) {
     console.error('Brain error:', error)
     const msg = error instanceof Error ? error.message : 'Unknown error'

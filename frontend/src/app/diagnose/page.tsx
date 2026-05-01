@@ -9,7 +9,9 @@ interface HealthData {
   version: string
   timestamp: string
   env: {
+    groq_key_set: boolean
     anthropic_key_set: boolean
+    ai_primary: string
     supabase_url: string
     supabase_key_preview: string
     supabase_reachable: boolean
@@ -90,10 +92,39 @@ export default function DiagnosePage() {
         {data && (
           <div className="space-y-3">
             <Item
+              ok={data.env.groq_key_set || data.env.anthropic_key_set}
+              warn={!data.env.groq_key_set && data.env.anthropic_key_set}
+              label="AI provider"
+              value={`Primary: ${data.env.ai_primary}`}
+              hint={
+                data.env.groq_key_set
+                  ? 'Free, no monthly cap (Llama 3.3 70B via Groq).'
+                  : data.env.anthropic_key_set
+                    ? 'Paid Anthropic only — add GROQ_API_KEY to make searches free.'
+                    : 'No AI provider set. Get a free key at console.groq.com.'
+              }
+            />
+            <Item
+              ok={data.env.groq_key_set}
+              warn={!data.env.groq_key_set}
+              label="Groq API key (free tier)"
+              value={data.env.groq_key_set ? 'Configured' : 'NOT SET'}
+              hint={
+                data.env.groq_key_set
+                  ? '30 requests/minute, no monthly cap. console.groq.com'
+                  : 'Sign up at console.groq.com (free, no card) and add GROQ_API_KEY in Vercel.'
+              }
+            />
+            <Item
               ok={data.env.anthropic_key_set}
-              label="Anthropic API key"
+              warn={!data.env.anthropic_key_set}
+              label="Anthropic API key (fallback)"
               value={data.env.anthropic_key_set ? 'Configured' : 'NOT SET'}
-              hint={data.env.anthropic_key_set ? 'Search and PDF upload will work' : 'Set ANTHROPIC_API_KEY in Vercel'}
+              hint={
+                data.env.anthropic_key_set
+                  ? 'Used only as fallback if Groq fails. Set spending cap at console.anthropic.com.'
+                  : 'Optional. Groq alone is enough for most users.'
+              }
             />
 
             <Item
@@ -106,31 +137,4 @@ export default function DiagnosePage() {
             <Item
               ok={data.env.supabase_key_preview !== 'NOT_SET' && data.env.supabase_key_preview !== 'TOO_SHORT'}
               label="Supabase anon key"
-              value={data.env.supabase_key_preview}
-              hint="Should be ~250 chars long, starting with eyJ. Use the 'anon public' key, NOT the service_role key."
-            />
-
-            <Item
-              ok={data.env.supabase_reachable}
-              label="Supabase reachability"
-              value={data.env.supabase_reachable
-                ? `Connected (HTTP ${data.env.supabase_status ?? 'OK'})`
-                : `Cannot reach: ${data.env.supabase_error || 'unknown error'}`}
-              hint={data.env.supabase_reachable
-                ? 'Auth requests will succeed.'
-                : 'Sign-up will fail with "Failed to fetch". Most common cause: a typo in the URL above.'}
-            />
-
-            <Item
-              ok={data.env.stripe_set}
-              warn={!data.env.stripe_set}
-              label="Stripe (optional)"
-              value={data.env.stripe_set ? 'Configured' : 'Not set (free tier only)'}
-              hint={data.env.stripe_set
-                ? 'Paid subscription buttons on /pricing will work.'
-                : 'OK for launch — paid plans will show a clean error until you set STRIPE_SECRET_KEY.'}
-            />
-
-            <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'} mt-4 text-center`}>
-              v{data.version} · {new Date(data.timestamp).toLocaleString()}
-     
+          
