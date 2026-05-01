@@ -1,43 +1,57 @@
 'use client'
-import React from 'react'
+import React, { useState } from 'react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Zap, Search, Book, TrendingUp } from 'lucide-react'
-import Link from 'next/link'
+import { useTheme } from '@/components/providers/ThemeProvider'
+import { Search } from 'lucide-react'
 
-export default function DashboardPage() {
-  const { t } = useLanguage()
-  const stats = [
-    { icon: Zap, label: 'Available Formulas', value: '200,000+', color: 'text-green-400', bg: 'bg-green-400/10' },
-    { icon: Search, label: 'Searches Today', value: '1,247', color: 'text-blue-400', bg: 'bg-blue-400/10' },
-    { icon: Book, label: 'Books Processed', value: '12', color: 'text-purple-400', bg: 'bg-purple-400/10' },
-    { icon: TrendingUp, label: 'Active Users', value: '3,892', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
-  ]
+export default function SearchPage() {
+  const { t, language } = useLanguage()
+  const { isDark } = useTheme()
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [result, setResult] = useState('')
+
+  const handleSearch = async () => {
+    if (!query.trim()) return
+    setLoading(true)
+    setResult('')
+    try {
+      const res = await fetch(`/api/brain?query=${encodeURIComponent(query)}&language=${language}`)
+      const data = await res.json()
+      setResult(data.result || data.error || 'No results')
+    } catch (err) {
+      setResult('Search failed.')
+    }
+    setLoading(false)
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-white mb-8">{t('welcome')} 👋</h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map(({ icon: Icon, label, value, color, bg }) => (
-            <div key={label} className={`${bg} rounded-xl p-6`}>
-              <Icon className={`w-8 h-8 ${color} mb-3`} />
-              <div className="text-2xl font-bold text-white mb-1">{value}</div>
-              <div className="text-gray-400 text-sm">{label}</div>
-            </div>
-          ))}
+    <div className={`min-h-screen p-8 ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className="max-w-4xl mx-auto">
+        <h1 className={`text-3xl font-bold mb-8 ${isDark ? 'text-white' : 'text-gray-900'}`}>{t('search')}</h1>
+        <div className="flex gap-4 mb-8">
+          <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+            placeholder={t('search_placeholder')}
+            className={`flex-1 p-4 rounded-xl text-lg border outline-none focus:border-green-400 ${isDark ? 'bg-white/10 text-white border-white/10' : 'bg-white text-gray-900 border-gray-200'}`} />
+          <button onClick={handleSearch} disabled={loading}
+            className="bg-green-500 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50">
+            {loading ? '...' : <Search className="w-5 h-5" />}
+          </button>
         </div>
-        <div className="grid md:grid-cols-2 gap-6">
-          <Link href="/search" className="bg-white/5 rounded-xl p-8 hover:bg-white/10">
-            <Search className="w-10 h-10 text-green-400 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{t('search')}</h3>
-            <p className="text-gray-400">Search 200,000+ formulas</p>
-          </Link>
-          <Link href="/upload" className="bg-white/5 rounded-xl p-8 hover:bg-white/10">
-            <Book className="w-10 h-10 text-blue-400 mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{t('upload_book')}</h3>
-            <p className="text-gray-400">Upload a PDF book to extract formulas</p>
-          </Link>
-        </div>
+        {result && (
+          <div className={`rounded-2xl p-6 ${isDark ? 'bg-white/5' : 'bg-white border border-gray-200'}`}>
+            <pre className={`whitespace-pre-wrap font-sans leading-8 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>{result}</pre>
+          </div>
+        )}
+        {!result && !loading && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {['Shampoo', 'Liquid Soap', 'Disinfectant', 'Floor Cleaner', 'Car Shampoo', 'Hand Sanitizer', 'Dish Soap', 'Glass Cleaner'].map(s => (
+              <button key={s} onClick={() => { setQuery(s); handleSearch() }}
+                className={`rounded-xl p-4 text-center transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-gray-300' : 'bg-gray-100 hover:bg-gray-200 text-gray-700'}`}>{s}</button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
