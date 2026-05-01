@@ -1,32 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
+:root { --background: #0f172a; --foreground: #f1f5f9; }
+.dark { --background: #0f172a; --foreground: #f1f5f9; }
+.light { --background: #f8fafc; --foreground: #0f172a; }
+
+body { background-color: var(--background); color: var(--foreground); }
+[dir="rtl"] { direction: rtl; text-align: right; }
+* { transition: background-color 0.3s ease, color 0.3s ease; }
+
+/* ========== TABLE STYLES ========== */
+pre.table-result {
+  font-family: 'Segoe UI', system-ui, sans-serif !important;
+  line-height: 1.8 !important;
+  font-size: 14px !important;
 }
 
-.dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
+pre.table-result table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  font-size: 14px;
 }
 
-.light {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+pre.table-result th {
+  background: #1e293b;
+  color: #f1f5f9;
+  padding: 12px 16px;
+  text-align: left;
+  font-weight: 700;
+  border-bottom: 2px solid #475569;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
+pre.table-result td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #334155;
+  color: #e2e8f0;
 }
 
-/* RTL support */
-[dir="rtl"] {
-  direction: rtl;
-  text-align: right;
+pre.table-result tr:hover td {
+  background: rgba(255,255,255,0.03);
 }
 
-/* Smooth theme transition */
-* {
-  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+pre.table-result h1 { font-size: 1.8em; font-weight: 700; margin: 20px 0 10px; color: #f1f5f9; }
+pre.table-result h2 { font-size: 1.4em; font-weight: 600; margin: 16px 0 8px; color: #e2e8f0; }
+pre.table-result h3 { font-size: 1.1em; font-weight: 600; margin: 12px 0 6px; color: #cbd5e1; }
+pre.table-result strong { color: #f1f5f9; }
+pre.table-result code { background: #334155; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
+
+.light pre.table-result th { background: #e2e8f0; color: #0f172a; border-bottom: 2px solid #94a3b8; }
+.light pre.table-result td { color: #1e293b; border-bottom: 1px solid #cbd5e1; }
+.light pre.table-result tr:hover td { background: rgba(0,0,0,0.02); }
+.light pre.table-result h1, .light pre.table-result h2, .light pre.table-result strong { color: #0f172a; }
+
+/* ========== FORMULA CARD ========== */
+.formula-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 32px;
+}
+
+.light .formula-card {
+  background: white;
+  border: 1px solid #e2e8f0;
 }
