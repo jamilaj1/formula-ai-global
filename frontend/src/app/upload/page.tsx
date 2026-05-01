@@ -2,29 +2,55 @@
 import React, { useState } from 'react'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
+import { useAuth } from '@/components/providers/AuthProvider'
+import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, BookmarkCheck, Bookmark } from 'lucide-react'
 
+type Component = { name?: string; percentage?: string; cas_number?: string; function?: string }
 type ExtractedFormula = {
   name?: string
   category?: string
-  components?: Array<{ name?: string; percentage?: string; cas_number?: string; function?: string }>
+  components?: Component[]
   notes?: string
 }
 
 export default function UploadPage() {
   const { isDark } = useTheme()
   const { t, language } = useLanguage()
+  const { user } = useAuth()
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState('')
   const [result, setResult] = useState<{ formulas: ExtractedFormula[]; pages?: number } | null>(null)
+  const [savedAll, setSavedAll] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+  const [savingAll, setSavingAll] = useState(false)
 
   const onPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0] || null
     setFile(f)
     setResult(null)
     setError('')
+    setSavedAll(false)
+    setSavedCount(0)
+  }
+
+  // Persist book metadata + every formula to the user's library
+  const persistResults = async (formulas: ExtractedFormula[], filename: string, sizeBytes: number) => {
+    if (!user?.id || !isSupabaseConfigured) return
+    try {
+      // 1. Record the upload itself so /dashboard "Books Processed" goes up
+      await supabase.from('uploaded_books').insert({
+        user_id: user.id,
+        filename,
+        size_bytes: sizeBytes,
+        formulas_extracted: formulas.length,
+        status: 'completed',
+      })
+    } catch (err) {
+      console.error('Failed to record upload:', err)
+    }
   }
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -34,6 +60,8 @@ export default function UploadPage() {
     setError('')
     setProgress(0)
     setResult(null)
+    setSavedAll(false)
+    setSavedCount(0)
 
     // Animate progress while we wait for the API
     const tick = setInterval(() => setProgress((p) => (p < 90 ? p + 5 : p)), 600)
@@ -46,13 +74,59 @@ export default function UploadPage() {
       const data = await res.json()
       if (!res.ok || !data.success) throw new Error(data.error || `HTTP ${res.status}`)
       setProgress(100)
-      setResult({ formulas: data.formulas || [], pages: data.pages })
+      const formulas: ExtractedFormula[] = data.formulas || []
+      setResult({ formulas, pages: data.pages })
+
+      // Auto-record the upload so it shows in dashboard stats
+      await persistResults(formulas, file.name, file.size)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')
     } finally {
       clearInterval(tick)
       setUploading(false)
     }
+  }
+
+  const componentsToText = (f: ExtractedFormula): string => {
+    const lines: string[] = []
+    if (f.name) lines.push(`# ${f.name}`)
+    if (f.category) lines.push(`*Category: ${f.category}*`)
+    lines.push('')
+    if (f.components && f.components.length > 0) {
+      lines.push('| # | Component | CAS | % | Function |')
+      lines.push('|---|---|---|---|---|')
+      f.components.forEach((c, i) => {
+        lines.push(`| ${i + 1} | ${c.name || ''} | ${c.cas_number || ''} | ${c.percentage || ''} | ${c.function || ''} |`)
+      })
+    }
+    if (f.notes) {
+      lines.push('')
+      lines.push(`**Notes:** ${f.notes}`)
+    }
+    return lines.join('\n')
+  }
+
+  const saveAllToLibrary = async () => {
+    if (!user?.id || !isSupabaseConfigured || !result) return
+    setSavingAll(true)
+    let saved = 0
+    for (const f of result.formulas) {
+      try {
+        const { error: insertErr } = await supabase.from('saved_formulas').insert({
+          user_id: user.id,
+          name: f.name || 'Untitled formula',
+          category: f.category || null,
+          components: f.components || [],
+          notes: componentsToText(f),
+        })
+        if (!insertErr) saved += 1
+      } catch (err) {
+        console.error('Save formula failed:', err)
+      }
+    }
+    setSavedCount(saved)
+    setSavedAll(true)
+    setSavingAll(false)
   }
 
   const bg = isDark ? 'bg-gray-900' : 'bg-gray-50'
@@ -99,64 +173,4 @@ export default function UploadPage() {
 
           {error && (
             <div className="mt-4 flex items-start gap-2 bg-red-500/10 text-red-400 p-3 rounded-lg text-sm">
-              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={!file || uploading}
-            className="w-full mt-6 bg-green-500 text-gray-900 py-3 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50"
-          >
-            {uploading ? 'Processing...' : 'Extract Formulas'}
-          </button>
-        </form>
-
-        {result && (
-          <div className={`mt-8 rounded-2xl p-6 ${card}`}>
-            <div className="flex items-center gap-2 mb-4">
-              <CheckCircle2 className="w-6 h-6 text-green-500" />
-              <h2 className={`text-xl font-bold ${heading}`}>
-                {result.formulas.length} formula{result.formulas.length !== 1 ? 's' : ''} extracted
-                {result.pages ? ` from ${result.pages} pages` : ''}
-              </h2>
-            </div>
-
-            {result.formulas.length === 0 ? (
-              <p className={sub}>No complete formulas were found in the document.</p>
-            ) : (
-              <div className="space-y-4">
-                {result.formulas.map((f, i) => (
-                  <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
-                    <div className="flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-green-500 shrink-0 mt-1" />
-                      <div className="flex-1">
-                        <div className={`font-semibold ${heading}`}>
-                          {f.name || `Formula ${i + 1}`}
-                        </div>
-                        {f.category && <div className={`text-sm ${sub}`}>{f.category}</div>}
-                        {f.components && f.components.length > 0 && (
-                          <ul className={`mt-2 text-sm space-y-1 ${sub}`}>
-                            {f.components.slice(0, 8).map((c, j) => (
-                              <li key={j}>
-                                {c.percentage ? <strong>{c.percentage}</strong> : null}{' '}
-                                {c.name}
-                                {c.cas_number ? ` (CAS ${c.cas_number})` : ''}
-                              </li>
-                            ))}
-                            {f.components.length > 8 && <li>+ {f.components.length - 8} more</li>}
-                          </ul>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+              <AlertCircle className="w-5 h-5 shrink-0 m
