@@ -1,5 +1,6 @@
 'use client'
 import React, { useState } from 'react'
+import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/providers/ThemeProvider'
@@ -31,12 +32,13 @@ export default function LoginPage() {
   const bg = isDark ? 'bg-gray-900' : 'bg-gray-50'
   const card = isDark ? 'bg-white/5' : 'bg-white border border-gray-200 shadow-md'
   const heading = isDark ? 'text-white' : 'text-gray-900'
+  const sub = isDark ? 'text-gray-400' : 'text-gray-600'
   const input = isDark
     ? 'bg-white/10 text-white border-white/10 placeholder-gray-400'
     : 'bg-white text-gray-900 border-gray-200 placeholder-gray-500'
 
   return (
-    <div className={`min-h-screen flex items-center justify-center ${bg}`}>
+    <div className={`min-h-screen flex items-center justify-center ${bg} p-4`}>
       <div className={`p-8 rounded-2xl w-full max-w-md ${card}`}>
         <h2 className={`text-2xl font-bold mb-6 text-center ${heading}`}>{t('login')}</h2>
         {error && <div className="bg-red-500/20 text-red-300 p-3 rounded-lg mb-4 text-sm">{error}</div>}
@@ -52,6 +54,12 @@ export default function LoginPage() {
             {loading ? '...' : t('login')}
           </button>
         </form>
+        <div className={`text-center mt-6 text-sm ${sub}`}>
+          New here?{' '}
+          <Link href="/register" className="text-green-500 hover:underline">
+            Create an account
+          </Link>
+        </div>
       </div>
     </div>
   )
