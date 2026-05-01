@@ -24,31 +24,25 @@ export async function GET() {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   // Probe whether the Supabase URL actually resolves and responds.
+  // We send the anon key so /auth/v1/health returns 200; even if the key is
+  // wrong/missing, ANY HTTP response (200, 401, 404...) proves the host is
+  // reachable — only a network/DNS error means the URL is broken.
   let supabaseReachable = false
   let supabaseError: string | undefined
+  let supabaseStatus: number | undefined
   if (supabaseUrl) {
     try {
+      const headers: Record<string, string> = {}
+      if (supabaseKey) {
+        headers['apikey'] = supabaseKey
+        headers['Authorization'] = `Bearer ${supabaseKey}`
+      }
       const res = await fetch(`${supabaseUrl}/auth/v1/health`, {
+        headers,
         signal: AbortSignal.timeout(5000),
       })
-      supabaseReachable = res.ok || res.status === 404
+      supabaseStatus = res.status
+      // Any HTTP response means the server is reachable.
+      supabaseReachable = true
     } catch (err: unknown) {
-      supabaseError = err instanceof Error ? err.message : 'fetch failed'
-    }
-  }
-
-  return NextResponse.json({
-    status: 'ok',
-    service: 'formula-ai-global',
-    version: '3.1.0',
-    timestamp: new Date().toISOString(),
-    env: {
-      anthropic_key_set: Boolean(process.env.ANTHROPIC_API_KEY),
-      supabase_url: maskUrl(supabaseUrl),
-      supabase_key_preview: maskKey(supabaseKey),
-      supabase_reachable: supabaseReachable,
-      supabase_error: supabaseError,
-      stripe_set: Boolean(process.env.STRIPE_SECRET_KEY),
-    },
-  })
-}
+      supabaseError = 

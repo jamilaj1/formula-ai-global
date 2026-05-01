@@ -13,6 +13,7 @@ interface HealthData {
     supabase_url: string
     supabase_key_preview: string
     supabase_reachable: boolean
+    supabase_status?: number
     supabase_error?: string
     stripe_set: boolean
   }
@@ -113,7 +114,7 @@ export default function DiagnosePage() {
               ok={data.env.supabase_reachable}
               label="Supabase reachability"
               value={data.env.supabase_reachable
-                ? 'Connected'
+                ? `Connected (HTTP ${data.env.supabase_status ?? 'OK'})`
                 : `Cannot reach: ${data.env.supabase_error || 'unknown error'}`}
               hint={data.env.supabase_reachable
                 ? 'Auth requests will succeed.'
@@ -132,10 +133,4 @@ export default function DiagnosePage() {
 
             <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'} mt-4 text-center`}>
               v{data.version} · {new Date(data.timestamp).toLocaleString()}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
+     
