@@ -1,13 +1,13 @@
 'use client'
 import React from 'react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Beaker, Book, Search, Activity, TrendingUp } from 'lucide-react'
+import { Zap, Search, Book, TrendingUp } from 'lucide-react'
 import Link from 'next/link'
 
 export default function DashboardPage() {
   const { t } = useLanguage()
   const stats = [
-    { icon: Beaker, label: 'Available Formulas', value: '200,000+', color: 'text-green-400', bg: 'bg-green-400/10' },
+    { icon: Zap, label: 'Available Formulas', value: '200,000+', color: 'text-green-400', bg: 'bg-green-400/10' },
     { icon: Search, label: 'Searches Today', value: '1,247', color: 'text-blue-400', bg: 'bg-blue-400/10' },
     { icon: Book, label: 'Books Processed', value: '12', color: 'text-purple-400', bg: 'bg-purple-400/10' },
     { icon: TrendingUp, label: 'Active Users', value: '3,892', color: 'text-yellow-400', bg: 'bg-yellow-400/10' },
@@ -27,13 +27,13 @@ export default function DashboardPage() {
           ))}
         </div>
         <div className="grid md:grid-cols-2 gap-6">
-          <Link href="/search" className="bg-white/5 rounded-xl p-8 hover:bg-white/10 transition-colors group">
-            <Search className="w-10 h-10 text-green-400 mb-4 group-hover:scale-110 transition-transform" />
+          <Link href="/search" className="bg-white/5 rounded-xl p-8 hover:bg-white/10">
+            <Search className="w-10 h-10 text-green-400 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">{t('search')}</h3>
             <p className="text-gray-400">Search 200,000+ formulas</p>
           </Link>
-          <Link href="/upload" className="bg-white/5 rounded-xl p-8 hover:bg-white/10 transition-colors group">
-            <Book className="w-10 h-10 text-blue-400 mb-4 group-hover:scale-110 transition-transform" />
+          <Link href="/upload" className="bg-white/5 rounded-xl p-8 hover:bg-white/10">
+            <Book className="w-10 h-10 text-blue-400 mb-4" />
             <h3 className="text-xl font-bold text-white mb-2">{t('upload_book')}</h3>
             <p className="text-gray-400">Upload a PDF book to extract formulas</p>
           </Link>

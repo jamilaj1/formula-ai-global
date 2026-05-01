@@ -2,7 +2,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { useLanguage } from '@/components/providers/LanguageProvider'
-import { Globe, Beaker, Shield, Zap } from 'lucide-react'
+import { Globe, Zap } from 'lucide-react'
 
 export default function HomePage() {
   const { t } = useLanguage()
@@ -17,10 +17,10 @@ export default function HomePage() {
           World's First AI-Powered Chemical Formulation Platform
         </p>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12">
-          <StatsCard icon={Globe} value="195" label="Countries" />
-          <StatsCard icon={Beaker} value="200K+" label="Formulas" />
-          <StatsCard icon={Shield} value="40" label="Industries" />
-          <StatsCard icon={Zap} value="AI" label="Powered" />
+          <StatCard icon={Globe} value="195" label="Countries" />
+          <StatCard icon={Zap} value="200K+" label="Formulas" />
+          <StatCard icon={Zap} value="40" label="Industries" />
+          <StatCard icon={Zap} value="AI" label="Powered" />
         </div>
         <div className="flex gap-4 justify-center">
           <Link href="/search" className="bg-green-500 text-gray-900 px-8 py-4 rounded-xl text-lg font-bold hover:bg-green-400">
@@ -35,7 +35,7 @@ export default function HomePage() {
   )
 }
 
-function StatsCard({ icon: Icon, value, label }: { icon: any, value: string, label: string }) {
+function StatCard({ icon: Icon, value, label }: { icon: any, value: string, label: string }) {
   return (
     <div className="bg-white/10 rounded-xl p-6">
       <Icon className="w-8 h-8 text-green-400 mx-auto mb-2" />
