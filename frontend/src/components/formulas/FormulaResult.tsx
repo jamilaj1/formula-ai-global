@@ -6,7 +6,6 @@ import { Download, Copy, Check, FileSpreadsheet, FileText } from 'lucide-react'
 
 interface Component {
   name: string
-  name_en?: string
   percentage: string
   cas_number?: string
   function?: string
@@ -20,6 +19,7 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
   const { t } = useLanguage()
   const { isDark } = useTheme()
   const [copied, setCopied] = useState(false)
+  const [showFull, setShowFull] = useState(false)
 
   const parsedComponents = parseComponents(rawText)
 
@@ -34,15 +34,15 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
     parsedComponents.forEach(c => {
       csv += `"${c.name}","${c.percentage}","${c.cas_number || ''}","${c.function || ''}"\n`
     })
-    downloadFile(csv, 'formula.csv', 'text/csv')
+    downloadFile('\uFEFF' + csv, 'formula.csv', 'text/csv;charset=utf-8')
   }
 
   const exportExcel = () => {
-    let html = '<table><tr><th>Component</th><th>Percentage</th><th>CAS Number</th><th>Function</th></tr>'
+    let html = `<html><body><table border="1"><tr><th>Component</th><th>Percentage</th><th>CAS Number</th><th>Function</th></tr>`
     parsedComponents.forEach(c => {
       html += `<tr><td>${c.name}</td><td>${c.percentage}</td><td>${c.cas_number || ''}</td><td>${c.function || ''}</td></tr>`
     })
-    html += '</table>'
+    html += '</table></body></html>'
     downloadFile(html, 'formula.xls', 'application/vnd.ms-excel')
   }
 
@@ -55,8 +55,6 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
     a.click()
     URL.revokeObjectURL(url)
   }
-
-  const fullText = rawText || ''
 
   return (
     <div className="space-y-4">
@@ -75,12 +73,7 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
               <tbody>
                 {parsedComponents.map((comp, idx) => (
                   <tr key={idx} className={`border-t ${isDark ? 'border-gray-700 hover:bg-gray-800/50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <td className={`py-3 px-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                      {comp.name}
-                      {comp.name_en && comp.name_en !== comp.name && (
-                        <br /><span className={isDark ? 'text-gray-500' : 'text-gray-400'}>{comp.name_en}</span>
-                      )}
-                    </td>
+                    <td className={`py-3 px-4 font-medium ${isDark ? 'text-white' : 'text-gray-900'}`}>{comp.name}</td>
                     <td className={`py-3 px-4 text-right font-mono ${isDark ? 'text-green-400' : 'text-green-600'}`}>{comp.percentage}</td>
                     <td className={`py-3 px-4 text-right font-mono text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.cas_number || '—'}</td>
                     <td className={`py-3 px-4 text-right text-xs ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{comp.function || '—'}</td>
@@ -99,14 +92,14 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
 
           <div className="flex flex-wrap gap-2">
             <button onClick={exportCSV}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20`}>
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20">
               <FileSpreadsheet className="w-4 h-4" /> CSV
             </button>
             <button onClick={exportExcel}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20`}>
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20">
               <FileText className="w-4 h-4" /> Excel
             </button>
-            <button onClick={() => copyToClipboard(fullText)}
+            <button onClick={() => copyToClipboard(rawText)}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${isDark ? 'bg-white/10 text-gray-300 hover:bg-white/20' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
               {copied ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
               {copied ? 'Copied!' : t('share')}
@@ -115,14 +108,18 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
         </>
       )}
 
-      <details className={`rounded-xl p-4 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
-        <summary className={`cursor-pointer font-medium ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>
-          📝 Full Details
-        </summary>
-        <pre className={`mt-4 whitespace-pre-wrap font-sans leading-7 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-          {fullText}
-        </pre>
-      </details>
+      <div className={`rounded-xl ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+        <button
+          onClick={() => setShowFull(!showFull)}
+          className={`w-full text-left p-4 font-medium cursor-pointer ${isDark ? 'text-gray-300 hover:text-white' : 'text-gray-700 hover:text-gray-900'}`}>
+          📝 {showFull ? 'Hide' : 'Show'} Full Details
+        </button>
+        {showFull && (
+          <pre className={`px-4 pb-4 whitespace-pre-wrap font-sans leading-7 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            {rawText}
+          </pre>
+        )}
+      </div>
     </div>
   )
 }
@@ -130,36 +127,77 @@ export default function FormulaResult({ rawText }: FormulaResultProps) {
 function parseComponents(text: string): Component[] {
   const components: Component[] = []
   const lines = text.split('\n')
-  let inTable = false
 
+  // Method 1: Markdown table parsing
+  let inTable = false
+  let headerSkipped = false
+  
   for (const line of lines) {
-    if (line.includes('|') && (line.includes('%') || line.includes('CAS') || line.includes('Function'))) {
+    const trimmed = line.trim()
+    
+    // Detect table start
+    if (trimmed.includes('|') && (trimmed.includes('%') || trimmed.includes('CAS') || trimmed.includes('Function'))) {
       inTable = true
+      headerSkipped = false
       continue
     }
-    if (inTable && line.includes('|')) {
-      const parts = line.split('|').map(p => p.trim()).filter(p => p)
+    
+    // Skip separator line (|---|---|)
+    if (inTable && !headerSkipped && trimmed.match(/^\|[\s\-|]+\|$/)) {
+      headerSkipped = true
+      continue
+    }
+    
+    // Parse table row
+    if (inTable && headerSkipped && trimmed.includes('|')) {
+      const parts = trimmed.split('|').map(p => p.replace(/\*\*/g, '').trim()).filter(p => p)
       if (parts.length >= 2) {
-        const name = parts[0].replace(/\*\*/g, '').trim()
-        const percentage = parts.length > 1 ? parts[1].replace(/\*\*/g, '').trim() : ''
-        const cas = parts.length > 2 ? parts[2].replace(/\*\*/g, '').trim() : ''
-        const func = parts.length > 3 ? parts[3].replace(/\*\*/g, '').trim() : ''
-
-        if (name && !name.includes('---') && !name.includes('Ingredient') && !name.includes('Component')) {
-          components.push({ name, percentage, cas_number: cas, function: func })
+        const comp: Component = { name: '', percentage: '', cas_number: '', function: '' }
+        
+        // Try different column orders
+        if (parts.length === 4) {
+          comp.name = parts[0]
+          comp.percentage = parts[1]
+          comp.cas_number = parts[2]
+          comp.function = parts[3]
+        } else if (parts.length === 3) {
+          comp.name = parts[0]
+          comp.percentage = parts[1]
+          comp.cas_number = parts[2]
+        } else if (parts.length === 2) {
+          comp.name = parts[0]
+          comp.percentage = parts[1]
+        }
+        
+        // Skip header-like rows
+        if (comp.name && !comp.name.includes('---') && !comp.name.includes('Component') && !comp.name.includes('Ingredient') && !comp.name.includes('المكون') && comp.name.length > 2) {
+          // Check if has percentage
+          if (comp.percentage && comp.percentage.match(/\d+\.?\d*\s*%/)) {
+            components.push(comp)
+          } else if (parts.length > 2 && parts[2].match(/\d+\.?\d*\s*%/)) {
+            comp.percentage = parts[2]
+            comp.cas_number = parts.length > 3 ? parts[1] : ''
+            components.push(comp)
+          }
         }
       }
     }
+    
+    // End of table
+    if (inTable && !trimmed.includes('|') && components.length > 0) {
+      inTable = false
+    }
   }
 
+  // Method 2: Percentage-pattern parsing (if no table found)
   if (components.length === 0) {
     for (const line of lines) {
-      const match = line.match(/(.+?)\s+(\d+\.?\d*%)\s*(\d{2,5}-\d{2}-\d)?\s*(.*)/)
-      if (match) {
+      const match = line.match(/(.+?)\s+(\d+\.?\d*\s*%)\s*(\d{2,7}-\d{2,7}-\d)?\s*(.*)/)
+      if (match && !match[1].includes('المجموع') && !match[1].includes('Total') && !match[1].includes('TOTAL')) {
         components.push({
           name: match[1].trim(),
-          percentage: match[2],
-          cas_number: match[3] || '',
+          percentage: match[2].trim(),
+          cas_number: match[3]?.trim() || '',
           function: match[4]?.trim() || ''
         })
       }
@@ -172,7 +210,7 @@ function parseComponents(text: string): Component[] {
 function calculateTotal(components: Component[]): string {
   let total = 0
   for (const c of components) {
-    const pct = parseFloat(c.percentage?.replace('%', ''))
+    const pct = parseFloat(c.percentage?.replace('%', '').replace(',', '.'))
     if (!isNaN(pct)) total += pct
   }
   return total.toFixed(2)
