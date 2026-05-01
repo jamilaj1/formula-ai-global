@@ -1,66 +1,88 @@
 @import "tailwindcss";
 
 :root { --background: #0f172a; --foreground: #f1f5f9; }
-.dark { --background: #0f172a; --foreground: #f1f5f9; }
+.dark  { --background: #0f172a; --foreground: #f1f5f9; }
 .light { --background: #f8fafc; --foreground: #0f172a; }
 
-body { background-color: var(--background); color: var(--foreground); }
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 [dir="rtl"] { direction: rtl; text-align: right; }
-* { transition: background-color 0.3s ease, color 0.3s ease; }
 
-/* ========== TABLE STYLES ========== */
-pre.table-result {
-  font-family: 'Segoe UI', system-ui, sans-serif !important;
-  line-height: 1.8 !important;
-  font-size: 14px !important;
+/* Prevent harsh layout transitions but avoid the global * selector that
+   degraded performance in earlier builds. */
+a, button, input, select, textarea {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-pre.table-result table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-  font-size: 14px;
-}
-
-pre.table-result th {
-  background: #1e293b;
-  color: #f1f5f9;
-  padding: 12px 16px;
-  text-align: left;
-  font-weight: 700;
-  border-bottom: 2px solid #475569;
-}
-
-pre.table-result td {
-  padding: 10px 16px;
-  border-bottom: 1px solid #334155;
-  color: #e2e8f0;
-}
-
-pre.table-result tr:hover td {
-  background: rgba(255,255,255,0.03);
-}
-
-pre.table-result h1 { font-size: 1.8em; font-weight: 700; margin: 20px 0 10px; color: #f1f5f9; }
-pre.table-result h2 { font-size: 1.4em; font-weight: 600; margin: 16px 0 8px; color: #e2e8f0; }
-pre.table-result h3 { font-size: 1.1em; font-weight: 600; margin: 12px 0 6px; color: #cbd5e1; }
-pre.table-result strong { color: #f1f5f9; }
-pre.table-result code { background: #334155; padding: 2px 6px; border-radius: 4px; font-size: 0.9em; }
-
-.light pre.table-result th { background: #e2e8f0; color: #0f172a; border-bottom: 2px solid #94a3b8; }
-.light pre.table-result td { color: #1e293b; border-bottom: 1px solid #cbd5e1; }
-.light pre.table-result tr:hover td { background: rgba(0,0,0,0.02); }
-.light pre.table-result h1, .light pre.table-result h2, .light pre.table-result strong { color: #0f172a; }
-
-/* ========== FORMULA CARD ========== */
+/* ============================================================ */
+/* Formula card - the container that wraps an AI response.      */
+/* ============================================================ */
 .formula-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
-  padding: 32px;
+  padding: 28px;
+  font-size: 15px;
+  line-height: 1.7;
 }
-
 .light .formula-card {
   background: white;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+/* ============================================================ */
+/* FormulaResult typography - works alongside Tailwind classes  */
+/* in the React component. These rules supply defaults that     */
+/* Tailwind v4 might not apply inside a server-rendered tree.   */
+/* ============================================================ */
+.formula-md h1 { color: var(--foreground); }
+.formula-md h2 { color: var(--foreground); opacity: 0.95; }
+.formula-md h3 { color: var(--foreground); opacity: 0.85; }
+.formula-md p,
+.formula-md li { color: var(--foreground); opacity: 0.9; }
+.formula-md strong { color: var(--foreground); font-weight: 700; }
+
+.formula-md table {
+  background: rgba(255,255,255,0.02);
+}
+.light .formula-md table {
+  background: #f8fafc;
+}
+.formula-md tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.015);
+}
+.light .formula-md tbody tr:nth-child(even) {
+  background: rgba(0,0,0,0.015);
+}
+
+/* ============================================================ */
+/* Backwards-compat: the old <pre class="table-result"> styling */
+/* is kept so any cached output still renders OK if some user   */
+/* still has the old route in their browser tab.                */
+/* ============================================================ */
+pre.table-result {
+  font-family: inherit !important;
+  line-height: 1.8 !important;
+  font-size: 14px !important;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* Print: hide everything except the formula card */
+@media print {
+  nav, footer, button, .no-print { display: none !important; }
+  body { background: white !important; color: black !important; }
+  .formula-card {
+    background: white !important;
+    border: none !important;
+    padding: 0 !important;
+  }
+  .formula-md table { page-break-inside: avoid; }
+  .formula-md th { background: #f1f5f9 !important; color: #0f172a !important; }
+  .formula-md td { border-color: #cbd5e1 !important; }
 }

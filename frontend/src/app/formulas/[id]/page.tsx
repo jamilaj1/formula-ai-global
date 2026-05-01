@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { ArrowLeft, Printer, Copy, Check, Clock } from 'lucide-react'
+import FormulaResult from '@/components/FormulaResult'
 
 type Row = {
   id: string
@@ -109,7 +110,7 @@ export default function FormulaDetailPage() {
               <span className="opacity-70">- {row.language}</span>
             </div>
             <div className="formula-card !bg-transparent !border-0 !p-0">
-              <pre className="table-result">{row.result}</pre>
+              <FormulaResult markdown={row.result} />
             </div>
           </article>
         )}

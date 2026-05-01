@@ -5,6 +5,7 @@ import { useTheme } from '@/components/providers/ThemeProvider'
 import { useAuth } from '@/components/providers/AuthProvider'
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import { downloadText, downloadCSV, downloadExcel, printFormula } from '@/lib/export'
+import FormulaResult from '@/components/FormulaResult'
 import {
   Search, Copy, Check, FileText, Bookmark, BookmarkCheck,
   FileSpreadsheet, Printer,
@@ -108,7 +109,7 @@ export default function SearchPage() {
         {result && (
           <div className="space-y-4">
             <div className="formula-card">
-              <pre className="table-result">{result}</pre>
+              <FormulaResult markdown={result} />
             </div>
             <div className="flex flex-wrap gap-2">
               <button onClick={copyAll} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${btn}`}>
