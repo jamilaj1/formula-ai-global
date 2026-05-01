@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import { useTheme } from '@/components/providers/ThemeProvider'
 import { useAuth } from '@/components/providers/AuthProvider'

@@ -8,6 +8,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import {
   Sun, Moon, Globe, Search, LayoutDashboard, CreditCard,
   History as HistoryIcon, Upload, LogOut, User, Beaker,
+  Menu as MenuIcon, X as CloseIcon,
 } from 'lucide-react'
 
 export default function Navbar() {
@@ -17,12 +18,19 @@ export default function Navbar() {
   const { user, signOut } = useAuth()
   const [showLangMenu, setShowLangMenu] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const email = user?.email || null
 
   const handleLogout = async () => {
     await signOut()
     setShowUserMenu(false)
+    setShowMobileMenu(false)
     router.push('/')
+  }
+  const closeAll = () => {
+    setShowLangMenu(false)
+    setShowUserMenu(false)
+    setShowMobileMenu(false)
   }
 
   const linkBase = isDark
@@ -32,43 +40,64 @@ export default function Navbar() {
   const menuPanel = isDark ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
   const menuItem = isDark ? 'text-gray-300 hover:bg-gray-700' : 'text-gray-700 hover:bg-gray-50'
 
+  const mainLinks = (
+    <>
+      <Link href="/search" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+        <Search className="w-4 h-4" /> {t('search')}
+      </Link>
+      <Link href="/upload" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+        <Upload className="w-4 h-4" /> {t('upload_book')}
+      </Link>
+      <Link href="/dashboard" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+        <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
+      </Link>
+      {email && (
+        <Link href="/formulas" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+          <Beaker className="w-4 h-4" /> {t('my_formulas')}
+        </Link>
+      )}
+      {email && (
+        <Link href="/history" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+          <HistoryIcon className="w-4 h-4" /> {t('history')}
+        </Link>
+      )}
+      <Link href="/pricing" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+        <CreditCard className="w-4 h-4" /> {t('pricing')}
+      </Link>
+    </>
+  )
+
   return (
     <nav className={`sticky top-0 z-50 backdrop-blur-lg border-b ${
       isDark ? 'bg-gray-900/90 border-gray-800' : 'bg-white/90 border-gray-200'
     }`}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <span className="text-2xl">🧪</span>
-            <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Formula <span className="text-emerald-500">AI</span>
-            </span>
-          </Link>
-
-          <div className="hidden md:flex items-center gap-1">
-            <Link href="/search" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-              <Search className="w-4 h-4" /> {t('search')}
-            </Link>
-            <Link href="/upload" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-              <Upload className="w-4 h-4" /> {t('upload_book')}
-            </Link>
-            <Link href="/dashboard" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-              <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
-            </Link>
-            {email && (
-              <Link href="/formulas" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-                <Beaker className="w-4 h-4" /> {t('my_formulas')}
-              </Link>
-            )}
-            <Link href="/pricing" className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
-              <CreditCard className="w-4 h-4" /> {t('pricing')}
+          {/* Logo + mobile menu toggle */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { setShowMobileMenu(!showMobileMenu); setShowLangMenu(false); setShowUserMenu(false) }}
+              className={`md:hidden p-2 rounded-lg ${iconBtn}`}
+              aria-label="Toggle navigation menu"
+            >
+              {showMobileMenu ? <CloseIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
+            </button>
+            <Link href="/" onClick={closeAll} className="flex items-center gap-2 shrink-0">
+              <span className="text-2xl">🧪</span>
+              <span className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Formula <span className="text-emerald-500">AI</span>
+              </span>
             </Link>
           </div>
 
+          {/* Desktop main nav */}
+          <div className="hidden md:flex items-center gap-1">{mainLinks}</div>
+
+          {/* Right side: language, theme, auth */}
           <div className="flex items-center gap-2">
             <div className="relative">
               <button
-                onClick={() => { setShowLangMenu(!showLangMenu); setShowUserMenu(false) }}
+                onClick={() => { setShowLangMenu(!showLangMenu); setShowUserMenu(false); setShowMobileMenu(false) }}
                 className={`flex items-center gap-1 px-2 py-2 rounded-lg text-sm ${iconBtn}`}
                 aria-label="Change language"
               >
@@ -109,8 +138,9 @@ export default function Navbar() {
             {email ? (
               <div className="relative">
                 <button
-                  onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false) }}
+                  onClick={() => { setShowUserMenu(!showUserMenu); setShowLangMenu(false); setShowMobileMenu(false) }}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${iconBtn}`}
+                  aria-label="Account menu"
                 >
                   <User className="w-4 h-4" />
                   <span className="hidden sm:inline max-w-[140px] truncate">{email}</span>
@@ -165,6 +195,15 @@ export default function Navbar() {
             )}
           </div>
         </div>
+
+        {/* Mobile dropdown menu */}
+        {showMobileMenu && (
+          <div className={`md:hidden border-t pb-3 pt-2 ${
+            isDark ? 'border-gray-800' : 'border-gray-200'
+          }`}>
+            <div className="flex flex-col gap-1">{mainLinks}</div>
+          </div>
+        )}
       </div>
     </nav>
   )
