@@ -78,7 +78,7 @@ export default function DiagnosePage() {
 
         <p className={`mb-6 text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
           This page shows the runtime configuration of the live deployment.
-          If anything below has a red ✗, fix it in Vercel → Project Settings →
+          If anything below has a red X, fix it in Vercel - Project Settings -
           Environment Variables, then Redeploy.
         </p>
 
@@ -100,7 +100,7 @@ export default function DiagnosePage() {
                 data.env.groq_key_set
                   ? 'Free, no monthly cap (Llama 3.3 70B via Groq).'
                   : data.env.anthropic_key_set
-                    ? 'Paid Anthropic only — add GROQ_API_KEY to make searches free.'
+                    ? 'Paid Anthropic only - add GROQ_API_KEY to make searches free.'
                     : 'No AI provider set. Get a free key at console.groq.com.'
               }
             />
@@ -137,4 +137,37 @@ export default function DiagnosePage() {
             <Item
               ok={data.env.supabase_key_preview !== 'NOT_SET' && data.env.supabase_key_preview !== 'TOO_SHORT'}
               label="Supabase anon key"
-          
+              value={data.env.supabase_key_preview}
+              hint="Should be ~250 chars long, starting with eyJ. Use the 'anon public' key, NOT the service_role key."
+            />
+
+            <Item
+              ok={data.env.supabase_reachable}
+              label="Supabase reachability"
+              value={data.env.supabase_reachable
+                ? `Connected (HTTP ${data.env.supabase_status ?? 'OK'})`
+                : `Cannot reach: ${data.env.supabase_error || 'unknown error'}`}
+              hint={data.env.supabase_reachable
+                ? 'Auth requests will succeed.'
+                : 'Sign-up will fail with "Failed to fetch". Most common cause: a typo in the URL above.'}
+            />
+
+            <Item
+              ok={data.env.stripe_set}
+              warn={!data.env.stripe_set}
+              label="Stripe (optional)"
+              value={data.env.stripe_set ? 'Configured' : 'Not set (free tier only)'}
+              hint={data.env.stripe_set
+                ? 'Paid subscription buttons on /pricing will work.'
+                : 'OK for launch - paid plans will show a clean error until you set STRIPE_SECRET_KEY.'}
+            />
+
+            <div className={`text-xs ${isDark ? 'text-gray-500' : 'text-gray-500'} mt-4 text-center`}>
+              v{data.version} - {new Date(data.timestamp).toLocaleString()}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

@@ -36,11 +36,9 @@ export default function UploadPage() {
     setSavedCount(0)
   }
 
-  // Persist book metadata + every formula to the user's library
   const persistResults = async (formulas: ExtractedFormula[], filename: string, sizeBytes: number) => {
     if (!user?.id || !isSupabaseConfigured) return
     try {
-      // 1. Record the upload itself so /dashboard "Books Processed" goes up
       await supabase.from('uploaded_books').insert({
         user_id: user.id,
         filename,
@@ -63,7 +61,6 @@ export default function UploadPage() {
     setSavedAll(false)
     setSavedCount(0)
 
-    // Slow progress: large books can take up to 5 minutes to process all chunks
     const tick = setInterval(() => setProgress((p) => (p < 95 ? p + 1 : p)), 2000)
 
     try {
@@ -77,7 +74,6 @@ export default function UploadPage() {
       const formulas: ExtractedFormula[] = data.formulas || []
       setResult({ formulas, pages: data.pages, chunks_processed: data.chunks_processed })
 
-      // Auto-record the upload so it shows in dashboard stats
       await persistResults(formulas, file.name, file.size)
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Upload failed')
@@ -146,9 +142,7 @@ export default function UploadPage() {
         </p>
 
         <form onSubmit={onSubmit} className={`rounded-2xl p-6 ${card}`}>
-          <label
-            className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dropZone}`}
-          >
+          <label className={`block border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${dropZone}`}>
             <input type="file" accept="application/pdf" onChange={onPick} className="hidden" />
             <Upload className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-gray-400' : 'text-gray-500'}`} />
             <div className={`font-medium ${heading}`}>
@@ -169,4 +163,92 @@ export default function UploadPage() {
                 Extracting formulas... {progress}%
               </div>
               <div className={`text-xs mt-1 ${sub}`}>
-                Large books are processed in chunks — this can 
+                Large books are processed in chunks — this can take up to 5 minutes.
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-4 flex items-start gap-2 bg-red-500/10 text-red-400 p-3 rounded-lg text-sm">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!file || uploading}
+            className="w-full mt-6 bg-green-500 text-gray-900 py-3 rounded-xl font-bold hover:bg-green-400 disabled:opacity-50"
+          >
+            {uploading ? 'Processing...' : 'Extract Formulas'}
+          </button>
+        </form>
+
+        {result && (
+          <div className={`mt-8 rounded-2xl p-6 ${card}`}>
+            <div className="flex items-center justify-between gap-2 mb-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-6 h-6 text-green-500" />
+                <h2 className={`text-xl font-bold ${heading}`}>
+                  {result.formulas.length} formula{result.formulas.length !== 1 ? 's' : ''} extracted
+                  {result.pages ? ` from ${result.pages} pages` : ''}
+                  {result.chunks_processed && result.chunks_processed > 1 ? ` (${result.chunks_processed} chunks)` : ''}
+                </h2>
+              </div>
+              {user && result.formulas.length > 0 && (
+                <button
+                  onClick={saveAllToLibrary}
+                  disabled={savedAll || savingAll}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold ${
+                    savedAll
+                      ? 'bg-emerald-500/20 text-emerald-300 cursor-default'
+                      : 'bg-emerald-500 text-gray-900 hover:bg-emerald-400 disabled:opacity-50'
+                  }`}
+                >
+                  {savedAll ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                  {savingAll
+                    ? 'Saving...'
+                    : savedAll
+                      ? `Saved ${savedCount} to library`
+                      : 'Save all to my library'}
+                </button>
+              )}
+            </div>
+
+            {result.formulas.length === 0 ? (
+              <p className={sub}>No complete formulas were found in the document.</p>
+            ) : (
+              <div className="space-y-4">
+                {result.formulas.map((f, i) => (
+                  <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-white/5' : 'bg-gray-50'}`}>
+                    <div className="flex items-start gap-3">
+                      <FileText className="w-5 h-5 text-green-500 shrink-0 mt-1" />
+                      <div className="flex-1">
+                        <div className={`font-semibold ${heading}`}>
+                          {f.name || `Formula ${i + 1}`}
+                        </div>
+                        {f.category && <div className={`text-sm ${sub}`}>{f.category}</div>}
+                        {f.components && f.components.length > 0 && (
+                          <ul className={`mt-2 text-sm space-y-1 ${sub}`}>
+                            {f.components.slice(0, 8).map((c, j) => (
+                              <li key={j}>
+                                {c.percentage ? <strong>{c.percentage}</strong> : null}{' '}
+                                {c.name}
+                                {c.cas_number ? ` (CAS ${c.cas_number})` : ''}
+                              </li>
+                            ))}
+                            {f.components.length > 8 && <li>+ {f.components.length - 8} more</li>}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
