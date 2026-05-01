@@ -103,11 +103,15 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
 async function processChunk(chunk: string, language: string, attempt = 0): Promise<Formula[]> {
   try {
+    // For PDF extraction we PREFER Anthropic (Claude) — far more accurate at
+    // structured chemistry-table parsing than Llama on Groq. Cost is ~$0.01-0.03
+    // per book, well under the $1 Anthropic cap.
     const out = await generate({
       system: `${SYSTEM_PROMPT}\nThe user prefers responses in: ${language}.`,
       user: `Extract every REAL multi-ingredient formula from this text:\n\n${chunk}`,
       maxTokens: 4096,
       temperature: 0.1,
+      preferredProvider: process.env.ANTHROPIC_API_KEY ? 'anthropic' : 'groq',
     })
     return extractFormulas(out.text)
   } catch (err: unknown) {
