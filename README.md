@@ -9,3 +9,4 @@ World's First AI-Powered Chemical Formulation Platform
 - 4 economic grades per formula
 
 **Status:** In Development
+ 
