@@ -8,7 +8,7 @@ import { useAuth } from '@/components/providers/AuthProvider'
 import {
   Sun, Moon, Globe, Search, LayoutDashboard, CreditCard,
   History as HistoryIcon, Upload, LogOut, User, Beaker,
-  Menu as MenuIcon, X as CloseIcon,
+  Menu as MenuIcon, X as CloseIcon, FileSpreadsheet,
 } from 'lucide-react'
 
 export default function Navbar() {
@@ -48,6 +48,11 @@ export default function Navbar() {
       <Link href="/upload" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
         <Upload className="w-4 h-4" /> {t('upload_book')}
       </Link>
+      {email && (
+        <Link href="/import" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
+          <FileSpreadsheet className="w-4 h-4" /> Import CSV
+        </Link>
+      )}
       <Link href="/dashboard" onClick={closeAll} className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm ${linkBase}`}>
         <LayoutDashboard className="w-4 h-4" /> {t('dashboard')}
       </Link>
