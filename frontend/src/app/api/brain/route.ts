@@ -5,78 +5,23 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 // =============================================================================
-// SAFETY GUARD: refuse pharmaceutical / drug formulations
+// PHARMA DETECTION (for routing to the strict pharma prompt, not refusal)
 // =============================================================================
-// We are a cosmetics / cleaning / industrial chemistry tool. Generating
-// pharmaceutical recipes is dangerous because:
-//   1. Drugs require regulatory approval (FDA, SFDA, EMA, etc.)
-//   2. Manufacturing must be GMP-certified
-//   3. Wrong concentration or wrong inactive ingredients can be toxic
-//   4. The AI may hallucinate ingredients (e.g. surfactants in pharma gels)
 const PHARMA_PATTERNS = [
-  // English drug names + classes
-  /\b(metronidazole|flagyl|paracetamol|acetaminophen|ibuprofen|aspirin|amoxicillin|ciprofloxacin|azithromycin|omeprazole|atorvastatin|metformin|lisinopril|amlodipine|losartan|simvastatin|sertraline|levothyroxine|salbutamol|prednisolone|hydrocortisone|tretinoin|clindamycin|erythromycin|tetracycline|doxycycline|fluconazole|miconazole|ketoconazole|chlorhexidine\s+oral|panadol|tylenol|advil|motrin|nurofen|zoloft|prozac|xanax|valium)\b/i,
-  // Drug categories
-  /\b(antibiotic|antiviral|antifungal|antibacterial\s+drug|painkiller|analgesic|antihistamine|anticoagulant|antidepressant|antipsychotic|antiepileptic|antimalarial|chemotherap|prescription|otc\s+drug|pharmaceutical|pharma|medication|medicament)\b/i,
-  // Dosage forms
-  /\b(tablet|capsule|injection|injectable|suppository|syrup|elixir|tincture|oral\s+solution|eye\s+drops|ear\s+drops|nasal\s+spray|inhaler|vaccine|infusion|iv\s+fluid)\b/i,
-  // Arabic
-  /(فلاجيل|بنادول|اسبرين|ايبوبروفين|باراسيتامول|اموكسيسيلين|اوميبرازول|ميترونيدازول)/,
-  /(دواء|أدوية|عقار|عقاقير|مضاد\s*حيوي|مضاد\s*للفيروسات|مضاد\s*للفطريات|مسكن|مهدئ)/,
-  /(حبوب\s*دوائية|كبسولات\s*دوائية|حقن|تحاميل|شراب\s*طبي|قطرة\s*عين|قطرة\s*أذن|بخاخ\s*أنف|لقاح)/,
-  // French
-  /\b(médicament|antibiotique|antiviral|antifongique|comprimé|gélule|sirop|injection)\b/i,
-  // Spanish
-  /\b(medicamento|antibiótico|antiviral|antimicótico|comprimido|jarabe|inyección)\b/i,
-  // German
+  /\b(metronidazole|flagyl|paracetamol|acetaminophen|ibuprofen|aspirin|amoxicillin|ciprofloxacin|azithromycin|omeprazole|atorvastatin|metformin|lisinopril|amlodipine|losartan|simvastatin|sertraline|levothyroxine|salbutamol|prednisolone|hydrocortisone|tretinoin|clindamycin|erythromycin|tetracycline|doxycycline|fluconazole|miconazole|ketoconazole|clotrimazole|panadol|tylenol|advil|nurofen|diclofenac|naproxen|ranitidine|loratadine|cetirizine|dextromethorphan|guaifenesin|chlorpheniramine|loperamide|pseudoephedrine)\b/i,
+  /\b(antibiotic|antiviral|antifungal|antibacterial\s+drug|painkiller|analgesic|antihistamine|anticoagulant|antidepressant|antipsychotic|antiepileptic|antimalarial|prescription|otc\s+drug|pharmaceutical|pharma|medication|medicament)\b/i,
+  /\b(tablet|capsule|injection|injectable|suppository|syrup|elixir|tincture|oral\s+solution|eye\s+drops|ear\s+drops|nasal\s+spray|inhaler|topical\s+gel|cream\s+pharma|ointment\s+drug)\b/i,
+  /(فلاجيل|بنادول|اسبرين|ايبوبروفين|باراسيتامول|اموكسيسيلين|اوميبرازول|ميترونيدازول|كلوتريمازول|هيدروكورتيزون|كلينداميسين)/,
+  /(دواء|أدوية|عقار|عقاقير|مضاد\s*حيوي|مضاد\s*للفيروسات|مضاد\s*للفطريات|مسكن|طبي|صيدلاني|صيدلانية)/,
+  /(حبوب\s*دوائية|كبسولات\s*دوائية|حقن|تحاميل|شراب\s*طبي|قطرة\s*عين|قطرة\s*أذن|بخاخ\s*أنف|لقاح|مرهم\s*طبي|جل\s*طبي)/,
+  /\b(médicament|antibiotique|antiviral|antifongique|comprimé|gélule|sirop|injection|crème\s+pharmaceutique)\b/i,
+  /\b(medicamento|antibiótico|antiviral|antimicótico|comprimido|jarabe|inyección|crema\s+farmacéutica)\b/i,
   /\b(medikament|arznei|antibiotikum|tablette|sirup|spritze)\b/i,
-  // Chinese / Japanese / Korean drug words
   /(药|藥|药品|藥品|抗生素|抗病毒|片剂|胶囊|注射|薬|錠剤|カプセル|약|약품|항생제)/,
 ]
 
 function isPharmaQuery(query: string): boolean {
   return PHARMA_PATTERNS.some((re) => re.test(query))
-}
-
-function pharmaRefusal(language: string): string {
-  const refusals: Record<string, string> = {
-    ar: `# لا يمكن إنشاء هذه التركيبة
-
-**هذا الموقع لا يقدّم تركيبات صيدلانية** للأسباب التالية:
-
-1. **الأدوية تحتاج موافقات تنظيمية** (وزارة الصحة، FDA، EMA، SFDA) قبل تصنيعها أو بيعها
-2. **التصنيع يجب أن يكون في مصنع GMP-certified** بأنظمة جودة معتمدة
-3. **المواد الفعّالة (APIs)** يجب أن تأتي من موردين مرخّصين وبشهادات تحليل
-4. **التراكيز الخاطئة قد تكون قاتلة** — جرعة صغيرة من بعض الأدوية مميتة
-5. **اختبار الأمان والكفاءة** يتطلّب دراسات إكلينيكية على البشر
-
-## ماذا يمكنني مساعدتك به
-
-تركيبات **مستحضرات تجميل** (شامبو، كريم، صابون)، **منظّفات منزلية** (سائل جلي، مطهّر، مزيل بقع)، **منتجات صناعية** (طلاء، ملصقات، شموع)، **عطور ومطيّبات**.
-
-جرّب بحثاً مثل: "كريم مرطّب اقتصادي" أو "سائل غسيل صحون".
-
-للأدوية يرجى استشارة صيدلي مرخّص أو شركة أدوية معتمدة.`,
-
-    en: `# I cannot generate this formulation
-
-**This platform does not provide pharmaceutical formulations** because:
-
-1. **Drugs require regulatory approval** (FDA, EMA, SFDA, MHRA) before being manufactured or sold
-2. **Manufacturing must be GMP-certified** with validated quality systems
-3. **Active Pharmaceutical Ingredients (APIs)** must come from licensed suppliers with Certificates of Analysis
-4. **Wrong concentrations can be fatal** — many drugs have a narrow therapeutic window
-5. **Safety and efficacy** require human clinical trials
-
-## What I can help with
-
-**Cosmetics** (shampoo, cream, soap), **household cleaners** (dish soap, disinfectant, stain remover), **industrial products** (paint, adhesives, candles), **fragrances and air fresheners**.
-
-Try a query like: "Economical moisturizing cream" or "Liquid dish soap".
-
-For pharmaceutical needs please consult a licensed pharmacist or registered drug manufacturer.`,
-  }
-  return refusals[language] || refusals.en
 }
 
 // =============================================================================
@@ -112,22 +57,95 @@ function detectCostTier(query: string): 'economy' | 'premium' | 'standard' {
 }
 
 // =============================================================================
-// SYSTEM PROMPT BUILDER
+// PROMPTS
 // =============================================================================
-function buildSystemPrompt(language: string, tier: 'economy' | 'premium' | 'standard'): string {
-  const base = `You are an expert chemical formulator with 30 years of experience in
-COSMETICS, CLEANING PRODUCTS, and INDUSTRIAL CHEMISTRY ONLY. The user is writing
-in ${language}; respond in ${language}.
+function pharmaSystemPrompt(language: string): string {
+  return `You are a senior pharmaceutical formulation chemist providing a REFERENCE
+formulation for a known medicine. The user is writing in ${language}; respond
+in ${language}.
 
-ABSOLUTE SCOPE LIMITS:
-- You ONLY help with: cosmetics (shampoo, cream, lotion, soap, fragrance),
-  household cleaners (dish soap, detergent, disinfectant, polish), industrial
-  chemistry (paint, adhesive, lubricant, ink, candle).
-- You DO NOT generate pharmaceutical, medicinal, drug, or prescription
-  formulations. If the user asks for one, refuse politely and explain that
-  drugs require regulatory approval (FDA/SFDA/EMA) and GMP manufacturing.
-- You DO NOT generate food recipes (consult a food technologist).
-- You DO NOT generate explosives, energetic compounds, or weapons of any kind.
+CRITICAL: This is for ACADEMIC / REFERENCE / EDUCATIONAL purposes only.
+Always START the response with this disclaimer (translated to ${language}):
+
+  > **For educational reference only — not a manufacturing instruction.**
+  > Pharmaceutical products require regulatory approval (FDA / SFDA / EMA),
+  > GMP manufacturing, API certificates of analysis, and clinical validation.
+  > Do NOT make or use this at home. Consult a licensed pharmacist or a
+  > registered drug manufacturer.
+
+ABSOLUTE PHARMA RULES — these MUST be followed:
+
+1. Use ONLY pharmaceutical-grade excipients. NEVER use these cosmetic-only
+   ingredients in pharma formulations:
+     - Cocamidopropyl Betaine (CAPB)
+     - SLES (Sodium Laureth Sulfate)
+     - SLS / Sodium Lauryl Sulfate (only in tooth pastes, NEVER in topical gels)
+     - LABSA / linear alkylbenzene sulfonate
+     - Cocamide DEA / MEA
+     - These are for shampoos and detergents, NOT pharmaceuticals.
+
+2. Use the CORRECT API concentration as approved in the official monograph:
+     - Metronidazole topical gel: 0.75% (NOT 10%)
+     - Metronidazole vaginal gel: 0.75%
+     - Clotrimazole cream: 1%
+     - Hydrocortisone cream: 0.5%, 1%, or 2.5%
+     - Ketoconazole cream: 2%
+     - Miconazole cream: 2%
+     - Tretinoin cream: 0.025%, 0.05%, or 0.1%
+     - Diclofenac gel: 1% or 2.32%
+     - Ibuprofen gel: 5%
+   If you do not know the exact official concentration, say so explicitly.
+
+3. Use ONLY appropriate pharmaceutical excipients per dosage form:
+
+   TOPICAL GEL excipients (typical):
+     - Gelling agent: Carbomer 940 or 980 (0.5-2%)
+     - Neutralizer: Triethanolamine (qs to pH 5-6)
+     - Humectant / co-solvent: Propylene Glycol (5-20%) or Glycerin (5-15%)
+     - Preservative: Methylparaben (0.18%) + Propylparaben (0.02%), OR
+                    Phenoxyethanol (0.5-1%), OR Benzyl Alcohol (1-2%)
+     - Solubilizer (if API is poorly soluble): Polysorbate 80 (0.5-2%)
+     - Antioxidant (if API is sensitive): Butylated Hydroxyanisole (BHA) 0.01%
+     - Vehicle: Purified Water USP qs to 100%
+
+   ORAL TABLET excipients:
+     - Diluent: Lactose Monohydrate, Microcrystalline Cellulose (Avicel)
+     - Binder: PVP K30, HPMC
+     - Disintegrant: Croscarmellose Sodium, Sodium Starch Glycolate
+     - Lubricant: Magnesium Stearate (0.5-2%)
+     - Glidant: Colloidal Silicon Dioxide (Aerosil) 0.1-1%
+
+   ORAL SYRUP / SUSPENSION excipients:
+     - Sweetener: Sucrose, Sorbitol 70%
+     - Suspending agent: Xanthan Gum, MCC + CMC
+     - Preservative: Sodium Benzoate (0.1%) + Methylparaben (0.18%)
+     - Flavor: appropriate fruit flavor
+     - pH adjuster: Citric Acid + Sodium Citrate buffer
+     - Vehicle: Purified Water USP qs to 100%
+
+4. Provide REAL CAS Registry Numbers for every ingredient.
+
+5. The MARKDOWN TABLE must have columns:
+     # | Component | CAS Number | % w/w | Pharmaceutical Function
+
+6. After the table, include:
+     - Step-by-step compounding procedure
+     - Required equipment (pharma-grade)
+     - In-process and finished-product QC tests
+     - Storage conditions and shelf-life estimate
+     - Required regulatory pathway (e.g. ANDA, NDA, CTD)
+     - Common excipient incompatibilities to avoid
+
+7. Percentages must sum to exactly 100% with water/vehicle as the balance.
+
+If the user asks for a drug whose composition is genuinely unknown to you,
+state that clearly rather than inventing one.`
+}
+
+function consumerSystemPrompt(language: string, tier: 'economy' | 'premium' | 'standard'): string {
+  const base = `You are an expert chemical formulator with 30 years of experience in
+COSMETICS, CLEANING PRODUCTS, and INDUSTRIAL CHEMISTRY. The user is writing
+in ${language}; respond in ${language}.
 
 Always provide:
 1. A clear formula name and category
@@ -138,15 +156,14 @@ Always provide:
 6. Quality control parameters (pH, viscosity, appearance)
 7. Estimated cost per kg in USD (rough order of magnitude)
 
-HARD CHEMISTRY RULES:
+HARD RULES:
 - Use REAL CAS Registry Numbers only (never invented)
 - Never mix anionic + cationic surfactants
 - NaOCl + any acid = CHLORINE GAS (FATAL) — never propose this
 - NaCl has no role in disinfectants
 - Pine oil requires non-ionic emulsifiers, not anionic
 - Cocamide DEA is restricted in many markets — prefer Cocamide MEA or
-  Cocamidopropyl Betaine
-- NEVER put cosmetic surfactants (CAPB, SLES, SLS) in pharmaceutical gels`
+  Cocamidopropyl Betaine`
 
   if (tier === 'economy') {
     return `${base}
@@ -167,8 +184,7 @@ cheapest possible formulation. You MUST:
   * Cocamide DEA / MEA (premium foam booster) — REMOVE
   * Specialty preservatives — use sodium benzoate instead
   * Premium fragrances — use a generic citrus or pine fragrance at 0.1-0.2%
-- Quote a cost in USD per kilogram below the market average
-- Mention that local water quality may affect ratios in developing markets`
+- Quote a cost in USD per kilogram below the market average`
   }
 
   if (tier === 'premium') {
@@ -196,18 +212,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Query required' }, { status: 400 })
   }
 
-  // SAFETY: refuse pharmaceutical queries before calling any AI
-  if (isPharmaQuery(query)) {
-    return NextResponse.json({
-      success: true,
-      result: pharmaRefusal(language),
-      query,
-      tier: 'refused',
-      provider: 'safety-guard',
-      model: 'pharma-refusal',
-    })
-  }
-
   if (availableProvider() === 'none') {
     return NextResponse.json(
       {
@@ -219,9 +223,21 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tier = detectCostTier(query)
-    const system = buildSystemPrompt(language, tier)
-    const out = await generate({ system, user: query, maxTokens: 4096, temperature: 0.1 })
+    const isPharma = isPharmaQuery(query)
+    const tier = isPharma ? 'pharma' : detectCostTier(query)
+    const system = isPharma
+      ? pharmaSystemPrompt(language)
+      : consumerSystemPrompt(language, tier as 'economy' | 'premium' | 'standard')
+
+    // Pharma needs Anthropic for accuracy; cosmetics can use Groq for speed/cost
+    const out = await generate({
+      system,
+      user: query,
+      maxTokens: 4096,
+      temperature: 0.1,
+      preferredProvider: isPharma ? 'anthropic' : 'groq',
+    })
+
     return NextResponse.json({
       success: true,
       result: out.text,
