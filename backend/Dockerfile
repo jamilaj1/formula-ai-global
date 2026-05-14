@@ -48,6 +48,7 @@ COPY knowledge_collector ./knowledge_collector
 COPY services ./services
 COPY app ./app
 COPY bots ./bots
+COPY ml ./ml
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash --uid 1000 formula && \
