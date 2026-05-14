@@ -14,30 +14,30 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python deps into a layer we can copy
+# Install Python deps
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir --user -r requirements.txt
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
 
 # =============================================================================
 FROM python:3.11-slim AS production
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PATH=/root/.local/bin:$PATH
+    PIP_NO_CACHE_DIR=1
 
 WORKDIR /app
 
-# Runtime deps only (libpq for psycopg, ca-certs for HTTPS)
+# Runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq5 \
         ca-certificates \
         curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
+# Copy installed Python packages
+COPY --from=builder /usr/local /usr/local
 
 # Copy app source
 COPY main.py .
@@ -49,7 +49,7 @@ COPY services ./services
 COPY app ./app
 COPY bots ./bots
 
-# Non-root user
+# Create non-root user
 RUN useradd --create-home --shell /bin/bash --uid 1000 formula && \
     chown -R formula:formula /app
 
