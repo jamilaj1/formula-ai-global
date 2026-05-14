@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Chemical Safety Engine — Formula AI Global</title>
+  <meta name="description" content="The first AI engine that understands chemical danger — detects deadly combinations, predicts thermal limits, and prevents accidents BEFORE manufacturing." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
+    .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
+    .risk-dangerous { background: linear-gradient(135deg, #3a0a00, #1a0500); border-color: #ff5722; }
+    .risk-dangerous .risk-icon { color: #ff5722; }
+    .risk-warning { background: linear-gradient(135deg, #2a2200, #14110a); border-color: #ffb800; }
+    .risk-warning .risk-icon { color: #ffb800; }
+    .risk-caution { background: linear-gradient(135deg, #1a2200, #0e1408); border-color: #ffd700; }
+    .risk-caution .risk-icon { color: #ffd700; }
+    .risk-safe { background: linear-gradient(135deg, rgba(0, 255, 136, 0.08), transparent); border-color: var(--primary); }
+    .risk-safe .risk-icon { color: var(--primary); }
+
+    .risk-card {
+      border: 2px solid;
+      border-radius: var(--radius-lg);
+      padding: 24px 26px;
+      margin-bottom: 14px;
+      transition: all 0.3s ease;
+    }
+    .risk-card:hover { transform: translateX(-3px); }
+    [dir="rtl"] .risk-card:hover { transform: translateX(3px); }
+
+    .risk-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+    .risk-icon {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem;
+      border-radius: 14px;
+      background: rgba(0, 0, 0, 0.3);
+      flex-shrink: 0;
+    }
+    .risk-level-tag {
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .risk-deadly .risk-level-tag { background: #ff003c; color: white; }
+    .risk-dangerous .risk-level-tag { background: #ff5722; color: white; }
+    .risk-warning .risk-level-tag { background: #ffb800; color: #1a1100; }
+    .risk-caution .risk-level-tag { background: #ffd700; color: #1a1500; }
+    .risk-safe .risk-level-tag { background: var(--primary); color: var(--bg-1); }
+
+    .demo-mixture {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .demo-mixture:hover {
+      border-color: var(--border-primary);
+      transform: translateY(-3px);
+    }
+    .demo-mixture.active {
+      border-color: var(--primary);
+      background: rgba(0, 255, 136, 0.06);
+      box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.15);
+    }
+    .demo-emoji { font-size: 2rem; margin-bottom: 10px; display: block; }
+    .demo-title { font-weight: 800; margin-bottom: 4px; }
+    .demo-meta { color: var(--text-3); font-size: 0.82rem; }
+
+    .stage-card {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px 20px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      transition: all 0.3s ease;
+    }
+    .stage-card.passed { border-color: var(--primary); background: rgba(0, 255, 136, 0.04); }
+    .stage-card.failed { border-color: #ff003c; background: rgba(255, 0, 60, 0.04); }
+    .stage-num {
+      width: 36px; height: 36px;
+      background: var(--bg-card-hover);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; flex-shrink: 0;
+    }
+    .stage-card.passed .stage-num { background: var(--grad-primary); color: var(--bg-1); }
+    .stage-card.failed .stage-num { background: #ff003c; color: white; }
+    .stage-name { font-weight: 700; font-size: 0.95rem; }
+    .stage-desc { color: var(--text-3); font-size: 0.82rem; margin-top: 2px; }
+    .stage-status { margin-inline-start: auto; }
+
+    .ppe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .ppe-item {
+      padding: 14px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-primary);
+      border-radius: 12px;
+      text-align: center;
+      font-size: 0.85rem;
+    }
+    .ppe-emoji { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./safety.html" class="active" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
+        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
+        <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb" style="background: #ff003c; opacity: 0.25; width: 500px; height: 500px; top: 10%; left: -100px; filter: blur(120px); animation: float 12s ease-in-out infinite;"></div>
+      <div class="hero-orb green" style="opacity: 0.3;"></div>
+    </div>
+
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 880px; margin: 0 auto 50px;">
+        <span class="eyebrow reveal" style="background: rgba(255, 0, 60, 0.1); border-color: rgba(255, 0, 60, 0.3); color: #ff5722;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
+          The killer feature ChatGPT can't do
+        </span>
+        <h1 class="reveal">The first AI that <span class="gradient-text">understands chemical danger</span></h1>
+        <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; margin-top: 22px; line-height: 1.85;">
+          ChatGPT will happily mix bleach with ammonia and tell you it's fine. <strong style="color: var(--text-1);">We refuse</strong> — and tell you it would create chloramine gas that kills in 60 seconds. Our Safety Engine runs <strong style="color: var(--primary);">6 parallel checks</strong> on real OSHA, EPA, and NFPA data — not predictions, not vibes.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats reveal delay-2" style="max-width: 1100px;">
+        <div class="stat"><div class="stat-value">6</div><div class="stat-label">Safety checks</div></div>
+        <div class="stat"><div class="stat-value">2,400+</div><div class="stat-label">Forbidden pairs</div></div>
+        <div class="stat"><div class="stat-value">0.4s</div><div class="stat-label">Analysis time</div></div>
+        <div class="stat"><div class="stat-value">100%</div><div class="stat-label">Refuses deadly mixes</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Demo -->
+  <section class="section" style="padding-top: 40px;">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Live demo</span>
+        <h2>Try it on real <span class="gradient-text">dangerous mixtures</span></h2>
+        <p>Click any scenario below — watch the engine analyze 6 risk dimensions in real time</p>
+      </div>
+
+      <!-- Scenario picker -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 32px;" class="reveal">
+        <div class="demo-mixture active" data-scenario="deadly">
+          <span class="demo-emoji">☠️</span>
+          <div class="demo-title">Bleach + Ammonia</div>
+          <div class="demo-meta">A common cleaning mistake — deadly chloramine gas</div>
+        </div>
+        <div class="demo-mixture" data-scenario="explosive">
+          <span class="demo-emoji">💥</span>
+          <div class="demo-title">Peroxide + Acetone</div>
+          <div class="demo-meta">Forms organic peroxides — explosive when concentrated</div>
+        </div>
+        <div class="demo-mixture" data-scenario="caution">
+          <span class="demo-emoji">⚠️</span>
+          <div class="demo-title">Acid + Base mix</div>
+          <div class="demo-meta">Citric acid + NaOH — heat-generating, manageable</div>
+        </div>
+        <div class="demo-mixture" data-scenario="safe">
+          <span class="demo-emoji">🧴</span>
+          <div class="demo-title">Standard shampoo</div>
+          <div class="demo-meta">SLES + CAPB + Glycerin + Water — safe formulation</div>
+        </div>
+      </div>
+
+      <!-- Result Display -->
+      <div id="safety-result" class="reveal"></div>
+    </div>
+  </section>
+
+  <!-- 6 Checks -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(255, 0, 60, 0.03), transparent);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">How it works</span>
+        <h2>6 parallel <span class="gradient-text">safety checks</span></h2>
+        <p>Each mixture runs through six independent analysis engines — backed by real regulatory data</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px;">
+        <div class="card reveal">
+          <div class="card-icon" style="background: rgba(255, 0, 60, 0.12); border-color: rgba(255, 0, 60, 0.3);"><svg viewBox="0 0 24 24" fill="none" stroke="#ff5722" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div>
+          <h3>1. Forbidden Pairs</h3>
+          <p>Detects 2,400+ deadly combinations: ammonia + bleach, acid + bleach, peroxide + organic, alkali metals + water, oxidizer + flammable.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: OSHA · EPA · NFPA</div>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon" style="background: rgba(255, 184, 0, 0.12); border-color: rgba(255, 184, 0, 0.3);"><svg viewBox="0 0 24 24" fill="none" stroke="#ffb800" stroke-width="2"><path d="M14 14a4 4 0 01-8 0V6a4 4 0 018 0v8z"/><path d="M14 6h7M14 10h7M14 14h7"/></svg></div>
+          <h3>2. Thermal Limits</h3>
+          <p>Knows decomposition temperatures: H₂O₂ at 60°C, NaOCl at 50°C, organic peroxides at 40°C. Won't approve anything beyond limits.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: NIST · CHRIS database</div>
+        </div>
+
+        <div class="card reveal delay-2">
+          <div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg></div>
+          <h3>3. Cumulative Toxicity</h3>
+          <p>Sums LD50 contributions of each component. Flags carcinogens (IARC list) and exceeded concentration limits per region.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: IARC · CIR · ECHA</div>
+        </div>
+
+        <div class="card reveal">
+          <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M5 12a7 7 0 0114 0 7 7 0 01-14 0z"/><path d="M9 12V5l-2 1M15 12V5l2 1"/></svg></div>
+          <h3>4. Corrosion & pH</h3>
+          <p>GHS Class 8 detection. Estimates pH range. Warns on acid+base heat generation. Determines container materials.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: GHS · UN classification</div>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon" style="background: rgba(255, 0, 60, 0.12); border-color: rgba(255, 0, 60, 0.3);"><svg viewBox="0 0 24 24" fill="none" stroke="#ff003c" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg></div>
+          <h3>5. Explosive Potential</h3>
+          <p>Detects oxidizer + flammable combinations, self-reactive materials above SADT, and confined space risks for ammonium nitrate.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: NFPA 432 · DOT Hazmat</div>
+        </div>
+
+        <div class="card reveal delay-2">
+          <div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg></div>
+          <h3>6. PPE & Storage</h3>
+          <p>Computes required protection: respirators, gloves, goggles. Defines storage temperature, segregation, and emergency steps.</p>
+          <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--text-3); margin-top: 12px; padding: 8px 12px; background: var(--bg-glass); border-radius: 8px;">Source: OSHA 29 CFR · CDC NIOSH</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Why ChatGPT can't</span>
+        <h2>The <span class="gradient-text">unfair advantage</span></h2>
+      </div>
+
+      <div class="card reveal" style="overflow-x: auto; padding: 0; max-width: 980px; margin: 0 auto;">
+        <table class="formula-table" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="padding: 18px 16px;">Capability</th>
+              <th style="padding: 18px 16px; text-align: center;">ChatGPT / Generic AI</th>
+              <th style="padding: 18px 16px; text-align: center; color: var(--primary);">Formula AI Safety Engine</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td style="padding: 14px 16px;">Detects bleach + ammonia</td><td style="text-align: center;">Sometimes (probabilistic)</td><td style="text-align: center; color: var(--primary); font-weight: 700;">Always — refuses to mix</td></tr>
+            <tr><td style="padding: 14px 16px;">Real CAS numbers</td><td style="text-align: center;">Often hallucinates</td><td style="text-align: center; color: var(--primary); font-weight: 700;">Grounded database</td></tr>
+            <tr><td style="padding: 14px 16px;">Thermal decomposition data</td><td style="text-align: center;">Approximate</td><td style="text-align: center; color: var(--primary); font-weight: 700;">NIST measured values</td></tr>
+            <tr><td style="padding: 14px 16px;">Suggests PPE specifically</td><td style="text-align: center;">Generic</td><td style="text-align: center; color: var(--primary); font-weight: 700;">Risk-based per category</td></tr>
+            <tr><td style="padding: 14px 16px;">Citation source per warning</td><td style="text-align: center;">No</td><td style="text-align: center; color: var(--primary); font-weight: 700;">OSHA / EPA / NFPA / IARC</td></tr>
+            <tr><td style="padding: 14px 16px;">Refuses dangerous formulas</td><td style="text-align: center;">No (provides anyway)</td><td style="text-align: center; color: var(--primary); font-weight: 700;">Hard refuse on DEADLY</td></tr>
+            <tr><td style="padding: 14px 16px;">Bilingual hazard warnings</td><td style="text-align: center;">Translates phrasing</td><td style="text-align: center; color: var(--primary); font-weight: 700;">Native AR + EN safety language</td></tr>
+            <tr><td style="padding: 14px 16px;">Reports for regulators</td><td style="text-align: center;">No</td><td style="text-align: center; color: var(--primary); font-weight: 700;">SDS-format export</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container" style="padding-bottom: 80px;">
+    <div class="cta-banner reveal">
+      <h2>The safety stamp the industry trusts</h2>
+      <p>Every formula on Formula AI Global passes the Safety Engine before it leaves the platform</p>
+      <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative;">
+        <a href="./register.html" class="btn btn-primary btn-lg">
+          Try the engine free
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="./docs.html" class="btn btn-lg" style="background: rgba(5, 8, 24, 0.1); color: var(--bg-1); border: 1px solid rgba(5, 8, 24, 0.2);">Read the API docs</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div>© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js"></script>
+  <script>
+    const SCENARIOS = {
+      deadly: {
+        title: 'Bleach + Ammonia (Common cleaning mistake)',
+        components: [
+          { name: 'Sodium Hypochlorite (Bleach)', cas: '7681-52-9', pct: '5%' },
+          { name: 'Ammonium Hydroxide (Ammonia)', cas: '1336-21-6', pct: '3%' },
+          { name: 'Water', cas: '7732-18-5', pct: '92%' }
+        ],
+        risk: 'deadly',
+        emoji: '☠️',
+        title_warning: 'DEADLY — DO NOT MIX',
+        risks: [
+          {
+            level: 'deadly',
+            icon: '☠️',
+            title: 'Chloramine gas formation',
+            desc: 'NH₃ + NaOCl → NH₂Cl + NaOH. Inhalation causes pulmonary edema and death within 30 seconds at concentrated exposure.',
+            source: 'OSHA 29 CFR 1910.1000',
+            action: 'NEVER MIX. Store containers in separate ventilated rooms.'
+          },
+          {
+            level: 'dangerous',
+            icon: '☣️',
+            title: 'Respiratory failure risk',
+            desc: 'Even small amounts release toxic chloramine vapors that destroy lung tissue.',
+            source: 'CDC NIOSH Pocket Guide',
+            action: 'EVACUATE if accidentally mixed. Open all windows.'
+          }
+        ],
+        stages: [
+          { name: 'Forbidden pairs check', status: 'failed', detail: 'Match: ammonia + hypochlorite' },
+          { name: 'Thermal stability', status: 'passed', detail: 'No thermal hazard' },
+          { name: 'Cumulative toxicity', status: 'failed', detail: 'Toxic gas on contact' },
+          { name: 'Corrosivity (pH)', status: 'passed', detail: 'pH manageable' },
+          { name: 'Explosive potential', status: 'passed', detail: 'No explosion risk' },
+          { name: 'PPE & storage rules', status: 'passed', detail: 'Computed' }
+        ],
+        ppe: [
+          { e: '🥽', name: 'Full-face respirator' },
+          { e: '🧤', name: 'Chemical gloves' },
+          { e: '🥼', name: 'Lab coat' },
+          { e: '🦺', name: 'Apron' }
+        ],
+        decision: 'REJECTED — Formula AI refuses to generate this combination.',
+        decisionColor: '#ff003c'
+      },
+      explosive: {
+        title: 'Hydrogen Peroxide + Acetone',
+        components: [
+          { name: 'Hydrogen Peroxide 30%', cas: '7722-84-1', pct: '40%' },
+          { name: 'Acetone', cas: '67-64-1', pct: '50%' },
+          { name: 'Water', cas: '7732-18-5', pct: '10%' }
+        ],
+        risk: 'dangerous',
+        emoji: '💥',
+        title_warning: 'EXPLOSIVE HAZARD',
+        risks: [
+          {
+            level: 'dangerous',
+            icon: '💥',
+            title: 'Triacetone Triperoxide (TATP) formation',
+            desc: 'Peroxide + ketone produces TATP — one of the most sensitive explosives known. Friction or heat triggers detonation.',
+            source: 'NFPA 432 · DHS Watchlist',
+            action: 'IMMEDIATELY dilute with cold water. Do not concentrate.'
+          },
+          {
+            level: 'warning',
+            icon: '⚠️',
+            title: 'Concentration above safe limit',
+            desc: 'H₂O₂ at 40% exceeds the 8% safe limit for routine handling.',
+            source: 'NFPA 432',
+            action: 'Dilute to below 8%.'
+          }
+        ],
+        stages: [
+          { name: 'Forbidden pairs check', status: 'failed', detail: 'Match: peroxide + organic solvent' },
+          { name: 'Thermal stability', status: 'failed', detail: 'H₂O₂ unstable above 40°C' },
+          { name: 'Cumulative toxicity', status: 'passed', detail: 'Acceptable LD50' },
+          { name: 'Corrosivity (pH)', status: 'passed', detail: 'pH ~5' },
+          { name: 'Explosive potential', status: 'failed', detail: 'TATP formation risk' },
+          { name: 'PPE & storage rules', status: 'passed', detail: 'Computed' }
+        ],
+        ppe: [
+          { e: '🥽', name: 'Safety goggles' },
+          { e: '🧤', name: 'Anti-static gloves' },
+          { e: '🥼', name: 'Fire-resistant coat' },
+          { e: '👞', name: 'Anti-static shoes' }
+        ],
+        decision: 'REJECTED — Explosive risk too high.',
+        decisionColor: '#ff5722'
+      },
+      caution: {
+        title: 'Citric Acid + Sodium Hydroxide (Acid-Base)',
+        components: [
+          { name: 'Citric Acid', cas: '77-92-9', pct: '10%' },
+          { name: 'Sodium Hydroxide', cas: '1310-73-2', pct: '5%' },
+          { name: 'Water', cas: '7732-18-5', pct: '85%' }
+        ],
+        risk: 'caution',
+        emoji: '⚠️',
+        title_warning: 'PROCEED WITH CAUTION',
+        risks: [
+          {
+            level: 'caution',
+            icon: '🌡️',
+            title: 'Heat generation on neutralization',
+            desc: 'Acid-base neutralization is exothermic. Adding NaOH directly may cause splashing and rapid temperature rise.',
+            source: 'Standard Lab Practice',
+            action: 'Add acid to base SLOWLY with stirring and ice bath cooling.'
+          },
+          {
+            level: 'warning',
+            icon: '🛡️',
+            title: 'NaOH is GHS Class 8 corrosive',
+            desc: 'Concentrated NaOH causes deep tissue burns. pH 14.',
+            source: 'GHS Classification',
+            action: 'Wear acid-resistant gloves and full face shield.'
+          }
+        ],
+        stages: [
+          { name: 'Forbidden pairs check', status: 'passed', detail: 'No deadly combinations' },
+          { name: 'Thermal stability', status: 'passed', detail: 'Stable up to 100°C' },
+          { name: 'Cumulative toxicity', status: 'passed', detail: 'Low toxicity' },
+          { name: 'Corrosivity (pH)', status: 'failed', detail: 'NaOH GHS 8' },
+          { name: 'Explosive potential', status: 'passed', detail: 'No risk' },
+          { name: 'PPE & storage rules', status: 'passed', detail: 'Computed' }
+        ],
+        ppe: [
+          { e: '🥽', name: 'Chemical goggles' },
+          { e: '🧤', name: 'Acid-resistant gloves' },
+          { e: '🛡️', name: 'Face shield' },
+          { e: '🦺', name: 'Apron' }
+        ],
+        decision: 'APPROVED with safety procedure — Add acid to base slowly with cooling.',
+        decisionColor: '#ffd700'
+      },
+      safe: {
+        title: 'Standard Daily Shampoo',
+        components: [
+          { name: 'Sodium Laureth Sulfate', cas: '68585-34-2', pct: '14%' },
+          { name: 'Cocamidopropyl Betaine', cas: '61789-40-0', pct: '4.5%' },
+          { name: 'Glycerin', cas: '56-81-5', pct: '3%' },
+          { name: 'Citric Acid', cas: '77-92-9', pct: '0.3%' },
+          { name: 'Water', cas: '7732-18-5', pct: '78.2%' }
+        ],
+        risk: 'safe',
+        emoji: '✅',
+        title_warning: 'SAFE TO MANUFACTURE',
+        risks: [],
+        stages: [
+          { name: 'Forbidden pairs check', status: 'passed', detail: 'All compatible' },
+          { name: 'Thermal stability', status: 'passed', detail: 'Stable up to 90°C' },
+          { name: 'Cumulative toxicity', status: 'passed', detail: 'LD50 load 0.18 (safe)' },
+          { name: 'Corrosivity (pH)', status: 'passed', detail: 'pH 5.5–6.0' },
+          { name: 'Explosive potential', status: 'passed', detail: 'No risk' },
+          { name: 'PPE & storage rules', status: 'passed', detail: 'Standard' }
+        ],
+        ppe: [
+          { e: '🥽', name: 'Safety glasses' },
+          { e: '🧤', name: 'Nitrile gloves' },
+          { e: '🥼', name: 'Lab coat' }
+        ],
+        decision: 'APPROVED — Trust score 96%. Ready for production.',
+        decisionColor: 'var(--primary)'
+      }
+    };
+
+    const WORKER_URL = 'https://formula-ai-brain.jamilaj1.workers.dev';
+    const RISK_CLASS = {
+      safe: 'risk-safe', caution: 'risk-caution', warning: 'risk-warning',
+      dangerous: 'risk-dangerous', deadly: 'risk-deadly'
+    };
+    const RISK_LABEL = {
+      safe: 'SAFE TO MANUFACTURE',
+      caution: 'PROCEED WITH CAUTION',
+      warning: 'WARNING',
+      dangerous: 'DANGEROUS',
+      deadly: 'DEADLY — DO NOT MIX'
+    };
+    const RISK_EMOJI = { safe: '✅', caution: '⚠️', warning: '⚠️', dangerous: '☣️', deadly: '☠️' };
+
+    function escapeHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function renderLoading(scenario) {
+      const componentsHtml = scenario.components.map(c => `
+        <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--bg-glass); border-radius: 10px; margin-bottom: 6px; font-size: 0.92rem;">
+          <span><strong>${escapeHtml(c.name)}</strong> <span style="color: var(--text-3); font-family: monospace; font-size: 0.82rem;">CAS ${escapeHtml(c.cas)}</span></span>
+          <span style="color: var(--primary); font-weight: 700;">${escapeHtml(c.pct)}</span>
+        </div>
+      `).join('');
+
+      document.getElementById('safety-result').innerHTML = `
+        <div class="card" style="padding: 28px;">
+          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 22px;">
+            <div style="width: 48px; height: 48px; border-radius: 12px; background: var(--bg-glass); display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">${scenario.emoji}</div>
+            <div>
+              <h3 style="margin-bottom: 4px;">${escapeHtml(scenario.title)}</h3>
+              <div style="color: var(--primary); font-size: 0.9rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="vertical-align: middle; animation: spin 1s linear infinite;"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+                Analyzing with Formula AI Safety Engine...
+              </div>
+            </div>
+          </div>
+          <h4 style="margin-bottom: 14px;">Mixture composition</h4>
+          ${componentsHtml}
+        </div>
+        <style>@keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }</style>
+      `;
+    }
+
+    function renderError(scenario, message) {
+      document.getElementById('safety-result').innerHTML = `
+        <div class="card risk-warning" style="padding: 28px;">
+          <h3 style="margin-bottom: 12px;">${escapeHtml(scenario.title)}</h3>
+          <p style="color: var(--text-2);">
+            <strong>AI analysis unavailable.</strong> ${escapeHtml(message)}
+          </p>
+          <p style="color: var(--text-3); font-size: 0.9rem; margin-top: 10px;">
+            Please retry, or check the Worker status at <code>${WORKER_URL}/</code>.
+          </p>
+        </div>
+      `;
+    }
+
+    function renderAnalysis(scenario, analysis) {
+      const risk = (analysis.overall_risk || 'caution').toLowerCase();
+      const riskClass = RISK_CLASS[risk] || 'risk-caution';
+      const riskLabel = RISK_LABEL[risk] || risk.toUpperCase();
+      const riskEmoji = RISK_EMOJI[risk] || '⚠️';
+
+      const componentsHtml = scenario.components.map(c => `
+        <div style="display: flex; justify-content: space-between; padding: 10px 14px; background: var(--bg-glass); border-radius: 10px; margin-bottom: 6px; font-size: 0.92rem;">
+          <span><strong>${escapeHtml(c.name)}</strong> <span style="color: var(--text-3); font-family: monospace; font-size: 0.82rem;">CAS ${escapeHtml(c.cas)}</span></span>
+          <span style="color: var(--primary); font-weight: 700;">${escapeHtml(c.pct)}</span>
+        </div>
+      `).join('');
+
+      const ghsHtml = (analysis.ghs_classes && analysis.ghs_classes.length)
+        ? `<div style="margin: 18px 0;">
+             <h4 style="margin-bottom: 10px;">GHS classification</h4>
+             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+               ${analysis.ghs_classes.map(g => `<span style="padding: 6px 12px; background: rgba(255, 184, 0, 0.15); border: 1px solid rgba(255, 184, 0, 0.4); border-radius: 8px; font-family: monospace; font-size: 0.85rem; color: #ffb800;">${escapeHtml(g)}</span>`).join('')}
+             </div>
+           </div>`
+        : '';
+
+      const warnings = Array.isArray(analysis.warnings) ? analysis.warnings : [];
+      const warningsHtml = warnings.length === 0
+        ? `<div class="risk-card risk-safe"><div class="risk-header"><div class="risk-icon">🟢</div><div><strong>No specific warnings flagged</strong><div style="color: var(--text-3); font-size: 0.88rem;">Formula reviewed without ingredient-level alerts.</div></div></div></div>`
+        : warnings.map(w => {
+            const level = (w.level || 'caution').toLowerCase();
+            const lvlClass = RISK_CLASS[level] || 'risk-caution';
+            return `
+              <div class="risk-card ${lvlClass}">
+                <div class="risk-header">
+                  <div class="risk-icon">${RISK_EMOJI[level] || '⚠️'}</div>
+                  <div style="flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+                      <strong style="font-size: 1.05rem;">${escapeHtml(w.ingredient || 'General')}</strong>
+                      <span class="risk-level-tag">${escapeHtml(level)}</span>
+                    </div>
+                  </div>
+                </div>
+                <p style="color: var(--text-2); margin-top: 8px; line-height: 1.7;">${escapeHtml(w.note || '')}</p>
+              </div>
+            `;
+          }).join('');
+
+      const regFlags = Array.isArray(analysis.regulatory_flags) ? analysis.regulatory_flags : [];
+      const regHtml = regFlags.length
+        ? `<div style="margin: 28px 0 0;">
+             <h4 style="margin-bottom: 14px;">Regulatory flags</h4>
+             ${regFlags.map(r => `
+               <div style="padding: 12px 16px; background: var(--bg-glass); border-radius: 10px; margin-bottom: 8px;">
+                 <strong style="color: var(--secondary);">${escapeHtml(r.region || 'Region')}</strong>
+                 <div style="color: var(--text-2); font-size: 0.92rem; margin-top: 4px;">${escapeHtml(r.note || '')}</div>
+               </div>
+             `).join('')}
+           </div>`
+        : '';
+
+      const ppe = Array.isArray(analysis.ppe_required) ? analysis.ppe_required : [];
+      const ppeHtml = ppe.length
+        ? `<div style="margin: 28px 0 0;">
+             <h4 style="margin-bottom: 14px;">Required Personal Protective Equipment</h4>
+             <div class="ppe-grid">${ppe.map(p => `<div class="ppe-item"><span class="ppe-emoji">🛡️</span>${escapeHtml(p)}</div>`).join('')}</div>
+           </div>`
+        : '';
+
+      const storageHtml = analysis.storage
+        ? `<div style="margin: 28px 0 0; padding: 14px 18px; background: var(--bg-glass); border-radius: 12px; border-inline-start: 3px solid var(--secondary);">
+             <strong style="font-size: 0.92rem; color: var(--secondary);">Storage</strong>
+             <div style="color: var(--text-2); margin-top: 6px; line-height: 1.7;">${escapeHtml(analysis.storage)}</div>
+           </div>`
+        : '';
+
+      const summaryAr = analysis.summary_ar
+        ? `<div style="margin: 22px 0 0; padding: 14px 18px; background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.2); border-radius: 12px; direction: rtl; text-align: right;">
+             <strong style="font-size: 0.92rem; color: var(--primary);">ملخص بالعربية</strong>
+             <div style="color: var(--text-2); margin-top: 6px; line-height: 1.9;">${escapeHtml(analysis.summary_ar)}</div>
+           </div>`
+        : '';
+
+      document.getElementById('safety-result').innerHTML = `
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div style="padding: 24px 28px; background: linear-gradient(180deg, var(--bg-glass), transparent); border-bottom: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div style="width: 60px; height: 60px; border-radius: 16px; background: var(--bg-glass); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1.8rem;">${riskEmoji}</div>
+                <div>
+                  <h3 style="margin-bottom: 4px;">${escapeHtml(scenario.title)}</h3>
+                  <div style="color: var(--text-3); font-size: 0.9rem;">${scenario.components.length} components · live AI analysis</div>
+                </div>
+              </div>
+              <div class="${riskClass}" style="border: 2px solid; padding: 12px 18px; border-radius: 14px; max-width: 360px;">
+                <div style="font-size: 0.78rem; color: var(--text-3); margin-bottom: 4px;">AI VERDICT</div>
+                <strong style="font-size: 0.92rem;">${riskLabel}</strong>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 28px;">
+            <h4 style="margin-bottom: 14px;">Mixture composition</h4>
+            ${componentsHtml}
+            ${ghsHtml}
+            <h4 style="margin: 28px 0 14px;">Ingredient-level findings</h4>
+            ${warningsHtml}
+            ${regHtml}
+            ${ppeHtml}
+            ${storageHtml}
+            ${summaryAr}
+          </div>
+        </div>
+      `;
+    }
+
+    async function runScenario(key) {
+      const s = SCENARIOS[key];
+      if (!s) return;
+      renderLoading(s);
+
+      const payload = {
+        name_en: s.title,
+        form_type: 'liquid',
+        components: s.components.map(c => ({
+          name_en: c.name,
+          cas_number: c.cas,
+          percentage: parseFloat(String(c.pct).replace('%', '')) || 0
+        }))
+      };
+
+      try {
+        const r = await fetch(`${WORKER_URL}/safety`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) {
+          renderError(s, data.error ? `${data.error}${data.detail ? ': ' + data.detail : ''}` : `HTTP ${r.status}`);
+          return;
+        }
+        renderAnalysis(s, data);
+      } catch (err) {
+        renderError(s, err.message || 'Network error');
+      }
+    }
+
+    document.querySelectorAll('.demo-mixture').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.demo-mixture').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        runScenario(card.dataset.scenario);
+        document.getElementById('safety-result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+
+    // Initial AI analysis
+    runScenario('deadly');
+  </script>
+</body>
+</html>

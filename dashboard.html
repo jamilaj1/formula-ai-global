@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Dashboard — Formula AI Global</title>
+  <meta name="description" content="Formula AI dashboard — manage your formulas, library, and usage in one place" />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+        <li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./search.html" class="btn btn-ghost">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span data-i18n-ar="بحث سريع">Quick Search</span>
+        </a>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--grad-primary); display: flex; align-items: center; justify-content: center; color: var(--bg-1); font-weight: 900;" data-i18n-ar="ج">J</div>
+        </div>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 110px 0 40px;">
+    <div class="container">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 18px;">
+        <div>
+          <h1 style="font-size: 2rem; margin-bottom: 6px;" data-i18n-ar='مرحباً <span class="gradient-text">جميل</span> 👋'>Welcome back <span class="gradient-text">Jamil</span> 👋</h1>
+          <p style="color: var(--text-3);" data-i18n-ar="إليك ملخص نشاطك وفورمولاتك اليوم">Here's a summary of your activity and formulas today</p>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="./search.html" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            <span data-i18n-ar="فورمولا جديدة">New formula</span>
+          </a>
+          <button class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+            <span data-i18n-ar="تصدير الكل">Export all</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Chat banner — directs to chat.html for the real conversational AI -->
+      <div class="reveal" style="margin-bottom: 32px;">
+        <div class="card" style="padding: 32px; background: linear-gradient(135deg, rgba(0,255,136,0.06), rgba(0,212,255,0.04)); border: 1px solid var(--border-primary);">
+          <div style="display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+            <div style="font-size: 3.5rem;">🧠</div>
+            <div style="flex: 1; min-width: 240px;">
+              <span class="eyebrow" data-i18n-ar="الذكاء الكيميائي الحقيقي">Real chemistry intelligence</span>
+              <h2 style="font-size: 1.5rem; margin: 8px 0;" data-i18n-ar='تحدّث مع <span class="gradient-text">ذكائك الكيميائي</span>'>Talk to your <span class="gradient-text">chemistry expert AI</span></h2>
+              <p style="color: var(--text-2); line-height: 1.7; margin-bottom: 0;" data-i18n-ar="ذكاء حقيقي يبحث في 3,381 فورمولا، يسأل أسئلة توضيحية، يقترح تعديلات، ويحفظ كل محادثاتك للأبد.">A real AI that searches 3,381 formulas, asks clarifying questions, proposes modifications, and saves every conversation forever.</p>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <a href="./chat.html" class="btn btn-primary btn-lg">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+                <span data-i18n-ar="افتح المحادثة">Open chat</span>
+              </a>
+              <a href="./learn.html" class="btn btn-ghost">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                <span data-i18n-ar="علّم الذكاء (ارفع كتاب)">Teach the AI (upload a book)</span>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="dash-stat-grid">
+        <div class="dash-stat reveal">
+          <div class="dash-stat-icon" style="background: rgba(0, 255, 136, 0.12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M9 11h6m-3-3v6"/><circle cx="12" cy="12" r="9"/></svg>
+          </div>
+          <div class="label" data-i18n-ar="الفورمولات المستخدمة">Formulas used</div>
+          <div class="value">42<span style="color: var(--text-3); font-size: 1rem; font-weight: 600;">/100</span></div>
+          <div class="progress-bar"><div class="progress-bar-fill" style="width: 42%;"></div></div>
+          <div class="delta" data-i18n-ar="+8 هذا الأسبوع">+8 this week</div>
+        </div>
+
+        <div class="dash-stat reveal delay-1">
+          <div class="dash-stat-icon" style="background: rgba(0, 212, 255, 0.12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <div class="label" data-i18n-ar="عمليات البحث">Searches</div>
+          <div class="value">387</div>
+          <div class="delta" data-i18n-ar="+24% عن الشهر الماضي">+24% vs. last month</div>
+        </div>
+
+        <div class="dash-stat reveal delay-2">
+          <div class="dash-stat-icon" style="background: rgba(192, 132, 252, 0.12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          </div>
+          <div class="label" data-i18n-ar="الكتب المرفوعة">Books uploaded</div>
+          <div class="value">12</div>
+          <div class="delta" data-i18n-ar="3,420 فورمولا مستخرجة">3,420 formulas extracted</div>
+        </div>
+
+        <div class="dash-stat reveal delay-3">
+          <div class="dash-stat-icon" style="background: rgba(255, 215, 0, 0.12);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+          </div>
+          <div class="label" data-i18n-ar="معدل النجاح">Success rate</div>
+          <div class="value">96%</div>
+          <div class="delta" data-i18n-ar="↑ 2.3% عن الأسبوع الماضي">↑ 2.3% vs. last week</div>
+        </div>
+      </div>
+
+      <!-- Two-Column Layout -->
+      <div style="display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; margin-top: 8px;">
+        <!-- Recent Formulas -->
+        <div class="card reveal">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="font-size: 1.2rem;" data-i18n-ar="آخر الفورمولات">Recent formulas</h3>
+            <a href="./formulas.html" style="color: var(--primary); font-size: 0.9rem; font-weight: 700;" data-i18n-ar="عرض الكل ←">View all →</a>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            <a href="./formulas.html" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-glass); border-radius: 12px; transition: all 0.2s; border: 1px solid var(--border);">
+              <div style="width: 44px; height: 44px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🧴</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700;" data-i18n-ar="شامبو طبيعي للشعر الجاف">Natural shampoo for dry hair</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="9 مكونات · مستحضرات تجميل">9 ingredients · Cosmetics</div>
+              </div>
+              <span class="confidence-badge" style="font-size: 0.75rem; padding: 4px 10px;">96%</span>
+            </a>
+
+            <a href="./formulas.html" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-glass); border-radius: 12px; transition: all 0.2s; border: 1px solid var(--border);">
+              <div style="width: 44px; height: 44px; background: rgba(0, 212, 255, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🦠</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700;" data-i18n-ar="مطهر مستشفيات واسع الطيف">Broad-spectrum hospital disinfectant</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="7 مكونات · مطهرات طبية">7 ingredients · Medical disinfectants</div>
+              </div>
+              <span class="confidence-badge" style="font-size: 0.75rem; padding: 4px 10px;">98%</span>
+            </a>
+
+            <a href="./formulas.html" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-glass); border-radius: 12px; transition: all 0.2s; border: 1px solid var(--border);">
+              <div style="width: 44px; height: 44px; background: rgba(192, 132, 252, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🧼</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700;" data-i18n-ar="منظف أرضيات صناعي">Industrial floor cleaner</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="8 مكونات · منظفات صناعية">8 ingredients · Industrial cleaners</div>
+              </div>
+              <span class="confidence-badge" style="font-size: 0.75rem; padding: 4px 10px;">94%</span>
+            </a>
+
+            <a href="./formulas.html" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-glass); border-radius: 12px; transition: all 0.2s; border: 1px solid var(--border);">
+              <div style="width: 44px; height: 44px; background: rgba(255, 215, 0, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">💄</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700;" data-i18n-ar="كريم مرطب للبشرة الحساسة">Moisturizer for sensitive skin</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="9 مكونات · العناية بالبشرة">9 ingredients · Skin care</div>
+              </div>
+              <span class="confidence-badge" style="font-size: 0.75rem; padding: 4px 10px;">95%</span>
+            </a>
+
+            <a href="./formulas.html" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--bg-glass); border-radius: 12px; transition: all 0.2s; border: 1px solid var(--border);">
+              <div style="width: 44px; height: 44px; background: rgba(233, 69, 96, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">🚗</div>
+              <div style="flex: 1;">
+                <div style="font-weight: 700;" data-i18n-ar="شامبو سيارات احترافي">Professional car wash shampoo</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="6 مكونات · منتجات السيارات">6 ingredients · Automotive</div>
+              </div>
+              <span class="confidence-badge" style="font-size: 0.75rem; padding: 4px 10px;">93%</span>
+            </a>
+          </div>
+        </div>
+
+        <!-- Right Column -->
+        <div style="display: flex; flex-direction: column; gap: 22px;">
+          <!-- Activity Chart -->
+          <div class="card reveal delay-1">
+            <h3 style="font-size: 1.1rem; margin-bottom: 18px;" data-i18n-ar="نشاط الأسبوع">Weekly activity</h3>
+            <div style="display: flex; gap: 8px; align-items: flex-end; height: 140px; margin-bottom: 14px;">
+              <div style="flex: 1; height: 40%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.7;"></div>
+              <div style="flex: 1; height: 60%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.8;"></div>
+              <div style="flex: 1; height: 35%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.6;"></div>
+              <div style="flex: 1; height: 80%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.9;"></div>
+              <div style="flex: 1; height: 55%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.7;"></div>
+              <div style="flex: 1; height: 95%; background: var(--grad-primary); border-radius: 6px 6px 0 0;"></div>
+              <div style="flex: 1; height: 70%; background: var(--grad-primary); border-radius: 6px 6px 0 0; opacity: 0.85;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; color: var(--text-3); font-size: 0.78rem;">
+              <span data-i18n-ar="السبت">Sat</span><span data-i18n-ar="الأحد">Sun</span><span data-i18n-ar="الإثنين">Mon</span><span data-i18n-ar="الثلاثاء">Tue</span><span data-i18n-ar="الأربعاء">Wed</span><span data-i18n-ar="الخميس">Thu</span><span data-i18n-ar="الجمعة">Fri</span>
+            </div>
+          </div>
+
+          <!-- Plan Status -->
+          <div class="card reveal delay-2" style="background: linear-gradient(135deg, rgba(0, 255, 136, 0.08), rgba(0, 212, 255, 0.05));">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <div class="card-icon" style="margin-bottom: 0; width: 40px; height: 40px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              </div>
+              <div>
+                <div style="font-weight: 800;" data-i18n-ar="خطة Professional">Professional plan</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="تجدد في 14 ديسمبر">Renews on December 14</div>
+              </div>
+            </div>
+            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7;" data-i18n-ar="لقد استخدمت 42 فورمولا من أصل 100 المتاحة هذا الشهر.">
+              You've used 42 of 100 formulas available this month.
+            </p>
+            <a href="./pricing.html" class="btn btn-primary btn-block" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg> ترقية للخطة Business'>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+              Upgrade to Business
+            </a>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="card reveal delay-3">
+            <h3 style="font-size: 1.1rem; margin-bottom: 16px;" data-i18n-ar="إجراءات سريعة">Quick actions</h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <a href="./search.html" class="btn btn-ghost btn-block" style="justify-content: flex-start;" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> البحث عن فورمولا'>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                Search for a formula
+              </a>
+              <a href="#" class="btn btn-ghost btn-block" style="justify-content: flex-start;" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg> رفع كتاب جديد'>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                Upload a new book
+              </a>
+              <a href="./compliance.html" class="btn btn-ghost btn-block" style="justify-content: flex-start;" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> فحص الامتثال'>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                Check compliance
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+</body>
+</html>

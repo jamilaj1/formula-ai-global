@@ -1,0 +1,22 @@
+{
+  "name": "Formula AI Global - AI for Chemical Formulations",
+  "short_name": "Formula AI",
+  "description": "AI for chemical formulations: search, chat, modify, and learn from your own books. Thousands of formulas, growing daily.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050818",
+  "theme_color": "#00ff88",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "./assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "productivity", "education"]
+}

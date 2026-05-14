@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Discover — harvest formulas from academic papers and patents</title>
+  <meta name="description" content="Search Semantic Scholar, PubMed, arXiv and patent databases for chemical formulations. The AI extracts and saves them to your knowledge base." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .disc-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
+    .source-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .source-card {
+      padding: 14px 16px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .source-card.active {
+      border-color: var(--border-primary);
+      background: rgba(0,255,136,0.06);
+    }
+    .source-card input[type="checkbox"] {
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .source-card .name { font-weight: 800; font-size: 0.95rem; }
+    .source-card .desc { color: var(--text-3); font-size: 0.78rem; margin-top: 3px; }
+    .progress-row {
+      margin-top: 18px;
+      padding: 16px;
+      background: var(--bg-glass);
+      border-radius: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .spinner-mini {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(0,255,136,0.2);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .result-card {
+      margin-top: 20px;
+      padding: 22px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-primary);
+      border-radius: 16px;
+    }
+    .result-card .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .result-card .stat-grid > div {
+      background: var(--bg-glass);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+    .result-card .stat-grid .num {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--primary);
+    }
+    .result-card .stat-grid .lbl {
+      color: var(--text-3);
+      font-size: 0.82rem;
+      margin-top: 4px;
+    }
+    .source-list { margin-top: 14px; }
+    .source-row {
+      padding: 12px 14px;
+      background: var(--bg-glass);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+    .source-row .meta {
+      color: var(--text-3);
+      font-size: 0.78rem;
+      margin-top: 4px;
+    }
+    .source-row .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      background: rgba(0,255,136,0.15);
+      color: var(--primary);
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-inline-start: 8px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./discover.html" class="active" data-i18n-ar="اكتشاف">Discover</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <div class="disc-shell">
+    <div style="text-align:center; margin-bottom: 28px;">
+      <span class="eyebrow" data-i18n-ar="القمة — اكتشاف من المصادر العالمية">Top of the stack — discover from global sources</span>
+      <h1 data-i18n-ar='اكتشف فورمولات من <span class="gradient-text">الأبحاث والبراءات</span><br/>حول العالم'>Discover formulas from <span class="gradient-text">papers & patents</span><br/>around the world</h1>
+      <p style="color: var(--text-2); font-size: 1.05rem; max-width: 720px; margin: 16px auto 0; line-height: 1.7;" data-i18n-ar="الذكاء يبحث في Semantic Scholar (200M بحث) و PubMed (36M بحث طبي/كيمياء) و arXiv و قواعد البراءات، يقرأ الملخصات، ويستخرج كل فورمولا متوازنة فيها — تلقائياً.">
+        The AI searches Semantic Scholar (200M papers), PubMed (36M medical/chemistry papers), arXiv, and patent databases — reads abstracts and extracts every balanced formula it finds, automatically.
+      </p>
+    </div>
+
+    <div id="auth-required" style="display:none; padding:18px; background: rgba(251,146,60,0.08); border:1px solid rgba(251,146,60,0.3); border-radius:12px; margin-bottom:18px; text-align:center;">
+      <span data-i18n-ar="يلزم تسجيل الدخول لاستخدام Discover.">Sign-in is required to use Discover.</span>
+      <a href="./login.html" class="btn btn-primary" style="margin-inline-start:10px;" data-i18n-ar="تسجيل الدخول">Sign in</a>
+    </div>
+
+    <div class="card" style="padding: 24px;">
+      <h3 style="margin-bottom: 14px;" data-i18n-ar="ما الذي تريد البحث عنه؟">What do you want to discover?</h3>
+
+      <input id="disc-query" type="text" class="form-input" style="font-size: 1.05rem;"
+             placeholder="e.g. antimicrobial hand sanitizer formulation, solid lipid nanoparticles, eco-friendly detergent"
+             data-i18n-attr="placeholder"
+             data-i18n-placeholder-ar="مثال: antimicrobial hand sanitizer formulation" />
+
+      <div style="margin-top: 18px;">
+        <div style="font-weight: 700; margin-bottom: 10px;" data-i18n-ar="المصادر التي يبحث فيها الذكاء">Sources the AI will search</div>
+        <div class="source-grid">
+          <label class="source-card active">
+            <input type="checkbox" value="semantic_scholar" checked />
+            <div>
+              <div class="name">Semantic Scholar</div>
+              <div class="desc">200M+ academic papers</div>
+            </div>
+          </label>
+          <label class="source-card active">
+            <input type="checkbox" value="pubmed" checked />
+            <div>
+              <div class="name">PubMed</div>
+              <div class="desc">36M+ medical / chemistry</div>
+            </div>
+          </label>
+          <label class="source-card active">
+            <input type="checkbox" value="arxiv" checked />
+            <div>
+              <div class="name">arXiv</div>
+              <div class="desc">2.4M+ preprints</div>
+            </div>
+          </label>
+          <label class="source-card active">
+            <input type="checkbox" value="lens" checked />
+            <div>
+              <div class="name">Patents (CrossRef)</div>
+              <div class="desc">Patent metadata</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px; display:flex; gap:14px; align-items:center;">
+        <label style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="عدد النتائج لكل مصدر">Per-source results</label>
+        <input id="disc-max" type="number" class="form-input" style="width: 100px;" value="8" min="1" max="20" />
+      </div>
+
+      <button id="disc-btn" class="btn btn-primary btn-lg" style="margin-top:18px; width:100%;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span data-i18n-ar="ابدأ الاكتشاف">Start discovery</span>
+      </button>
+
+      <div id="progress" class="progress-row" style="display:none;">
+        <div class="spinner-mini"></div>
+        <span data-i18n-ar="الذكاء يبحث في كل المصادر بالتوازي... قد يستغرق 60-180 ثانية.">AI is searching all sources in parallel... may take 60-180 seconds.</span>
+      </div>
+
+      <div id="result"></div>
+    </div>
+
+    <div style="margin-top: 36px;">
+      <h3 style="margin-bottom: 14px;" data-i18n-ar="بحوث الاكتشاف السابقة">Previous discovery jobs</h3>
+      <div id="jobs-list">
+        <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="لم تُجرِ أي بحث بعد.">No discovery jobs yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/discover-live.js"></script>
+</body>
+</html>

@@ -1,0 +1,71 @@
+# Formula AI Global - Hostinger / LiteSpeed config
+# Forces HTTPS, sets caching, friendly URLs (Home → /index.html)
+
+# ---------- HTTPS redirect ----------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP_HOST} ^(www\.)?jamilformula\.com$ [NC]
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+  # Optional: redirect www → non-www (uncomment if you prefer naked domain)
+  # RewriteCond %{HTTP_HOST} ^www\.jamilformula\.com$ [NC]
+  # RewriteRule ^(.*)$ https://jamilformula.com/$1 [R=301,L]
+
+  # Friendly URLs: /pricing → /pricing.html
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME}.html -f
+  RewriteRule ^(.+?)/?$ /$1.html [L]
+</IfModule>
+
+# ---------- Caching (long for assets, short for HTML) ----------
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresDefault                              "access plus 1 hour"
+  ExpiresByType text/html                     "access plus 1 hour"
+  ExpiresByType text/css                      "access plus 1 year"
+  ExpiresByType application/javascript        "access plus 1 year"
+  ExpiresByType image/svg+xml                 "access plus 1 month"
+  ExpiresByType image/png                     "access plus 1 month"
+  ExpiresByType image/jpeg                    "access plus 1 month"
+  ExpiresByType image/webp                    "access plus 1 month"
+  ExpiresByType font/woff2                    "access plus 1 year"
+  ExpiresByType application/manifest+json     "access plus 1 day"
+</IfModule>
+
+# Service worker should NEVER be cached aggressively
+<IfModule mod_headers.c>
+  <FilesMatch "sw\.js$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Security headers (modern, safe defaults)
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+</IfModule>
+
+# ---------- Compression ----------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml application/xml
+</IfModule>
+
+# ---------- MIME safety (LiteSpeed/Apache) ----------
+AddType application/manifest+json .webmanifest
+AddType application/manifest+json .json
+AddType image/svg+xml .svg
+
+# ---------- Default document ----------
+DirectoryIndex index.html
+
+# ---------- Hide hidden files from web ----------
+<FilesMatch "^\.">
+  Order allow,deny
+  Deny from all
+</FilesMatch>
+
+# ---------- 404 fallback (optional — sends to home) ----------
+ErrorDocument 404 /index.html

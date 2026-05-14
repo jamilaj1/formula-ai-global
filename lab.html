@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Virtual Laboratory — Predict Before You Mix | Formula AI Global</title>
+  <meta name="description" content="Predict pH, viscosity, stability, and shelf life of any chemical mixture before manufacturing. Save weeks of trial-and-error in the real lab." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .lab-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) { .lab-grid { grid-template-columns: 1fr; } }
+
+    .builder {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      backdrop-filter: blur(12px);
+    }
+
+    .ingredient-row {
+      display: grid;
+      grid-template-columns: 1fr 100px 36px;
+      gap: 8px;
+      margin-bottom: 8px;
+      align-items: center;
+    }
+    .ingredient-row select, .ingredient-row input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text-1);
+      font-size: 0.9rem;
+    }
+    .ingredient-row .remove-btn {
+      width: 36px; height: 36px;
+      background: rgba(255, 0, 60, 0.1);
+      border: 1px solid rgba(255, 0, 60, 0.3);
+      border-radius: 10px;
+      color: #ff5722;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .ingredient-row .remove-btn:hover {
+      background: rgba(255, 0, 60, 0.2);
+    }
+
+    .total-pct {
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 14px;
+      margin-top: 14px;
+      background: var(--bg-glass);
+      border-radius: 10px;
+      font-weight: 700;
+    }
+    .total-pct.balanced { color: var(--primary); }
+    .total-pct.unbalanced { color: #ff5722; }
+
+    .conditions-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .condition-input label {
+      display: block;
+      color: var(--text-3);
+      font-size: 0.78rem;
+      margin-bottom: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Result panel */
+    .result-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 90px;
+    }
+
+    .gauge-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .gauge {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .gauge .label {
+      color: var(--text-3);
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .gauge .value {
+      font-size: 2rem;
+      font-weight: 900;
+      background: var(--grad-text);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 4px 0;
+    }
+    .gauge .unit {
+      color: var(--text-3);
+      font-size: 0.85rem;
+    }
+    .gauge .delta {
+      color: var(--text-3);
+      font-size: 0.78rem;
+      margin-top: 4px;
+    }
+
+    .ph-bar {
+      height: 8px;
+      background: linear-gradient(90deg, #ff003c 0%, #ff5722 20%, #ffd700 35%, #00ff88 50%, #00d4ff 65%, #c084fc 85%, #4a0080 100%);
+      border-radius: 999px;
+      margin-top: 8px;
+      position: relative;
+    }
+    .ph-pointer {
+      position: absolute;
+      top: -4px;
+      width: 4px;
+      height: 16px;
+      background: var(--text-1);
+      border-radius: 2px;
+      box-shadow: 0 0 8px rgba(255,255,255,0.6);
+      transition: left 0.5s ease;
+    }
+
+    .stability-bar {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-1);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .stability-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff003c, #ff5722, #ffd700, #00ff88);
+      border-radius: 999px;
+      transition: width 0.6s ease;
+    }
+
+    .warning-list {
+      margin-top: 18px;
+    }
+    .warning-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 10px 14px;
+      background: rgba(255, 184, 0, 0.05);
+      border: 1px solid rgba(255, 184, 0, 0.3);
+      border-radius: 10px;
+      margin-bottom: 8px;
+      font-size: 0.88rem;
+    }
+    .warning-item svg { color: #ffb800; flex-shrink: 0; width: 18px; height: 18px; }
+
+    .process-rec {
+      background: var(--bg-glass);
+      border: 1px solid var(--border-primary);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 18px;
+    }
+    .process-rec-header {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 8px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .process-rec-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .process-rec-item {
+      text-align: center;
+    }
+    .process-rec-item .num {
+      font-size: 1.4rem;
+      font-weight: 900;
+      color: var(--text-1);
+    }
+    .process-rec-item .lbl {
+      color: var(--text-3);
+      font-size: 0.78rem;
+    }
+
+    .preset-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+    .preset-pill {
+      padding: 8px 14px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text-2);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preset-pill:hover {
+      border-color: var(--border-primary);
+      color: var(--primary);
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
+        <li><a href="./lab.html" class="active" data-i18n-ar="المختبر الافتراضي">Virtual Lab</a></li>
+        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding: 130px 0 30px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.25;"></div>
+      <div class="hero-orb blue" style="opacity: 0.25;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 780px; margin: 0 auto 30px;">
+        <span class="eyebrow reveal">⚗️ Virtual Laboratory</span>
+        <h1 class="reveal">Predict before you <span class="gradient-text">mix</span></h1>
+        <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.05rem; margin-top: 18px;">
+          Build your formula. We simulate pH, viscosity, surface tension, stability, and shelf life — in real time, no real chemicals needed. Save weeks of trial-and-error.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Lab Workspace -->
+  <section style="padding-bottom: 60px;">
+    <div class="container">
+      <div class="lab-grid reveal">
+        <!-- Builder -->
+        <div class="builder">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="font-size: 1.2rem;">Formula Builder</h3>
+            <button id="add-ingredient" class="btn btn-ghost" style="padding: 8px 14px; font-size: 0.85rem;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+              Add ingredient
+            </button>
+          </div>
+
+          <!-- Quick presets -->
+          <div class="preset-pills">
+            <span style="color: var(--text-3); font-size: 0.85rem; padding: 6px 0;">Quick start:</span>
+            <button class="preset-pill" data-preset="shampoo">🧴 Daily shampoo</button>
+            <button class="preset-pill" data-preset="conditioner">💆 Conditioner</button>
+            <button class="preset-pill" data-preset="bodywash">🛁 Body wash</button>
+            <button class="preset-pill" data-preset="detergent">🧼 Liquid detergent</button>
+            <button class="preset-pill" data-preset="sanitizer">✋ Hand sanitizer</button>
+          </div>
+
+          <div id="ingredients-list"></div>
+
+          <div class="total-pct" id="total-display">
+            <span>Total</span>
+            <span id="total-value">0.0%</span>
+          </div>
+
+          <div style="margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border);">
+            <h4 style="margin-bottom: 12px; font-size: 1rem;">Process Conditions</h4>
+            <div class="conditions-row">
+              <div class="condition-input">
+                <label>Temperature (°C)</label>
+                <input type="number" id="cond-temp" value="25" min="0" max="200" />
+              </div>
+              <div class="condition-input">
+                <label>Mixing speed (RPM)</label>
+                <input type="number" id="cond-speed" value="500" min="50" max="3000" />
+              </div>
+              <div class="condition-input">
+                <label>Mixing time (min)</label>
+                <input type="number" id="cond-time" value="30" min="1" max="240" />
+              </div>
+            </div>
+          </div>
+
+          <button id="simulate-btn" class="btn btn-primary btn-lg btn-block" style="margin-top: 22px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+            Run simulation
+          </button>
+        </div>
+
+        <!-- Results -->
+        <div class="result-panel" id="result-panel">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+            <h3 style="font-size: 1.2rem;">Live Predictions</h3>
+            <span id="result-status" class="confidence-badge">⏸️ Idle</span>
+          </div>
+
+          <div class="gauge-grid">
+            <div class="gauge">
+              <div class="label">pH</div>
+              <div class="value" id="gauge-ph">—</div>
+              <div class="unit">target 5.5–7.0 for skin</div>
+              <div class="ph-bar">
+                <div class="ph-pointer" id="ph-pointer" style="left: 50%;"></div>
+              </div>
+            </div>
+            <div class="gauge">
+              <div class="label">Viscosity</div>
+              <div class="value" id="gauge-visc">—</div>
+              <div class="unit">cP @ 25°C</div>
+              <div class="delta" id="visc-delta">—</div>
+            </div>
+            <div class="gauge">
+              <div class="label">Surface tension</div>
+              <div class="value" id="gauge-st">—</div>
+              <div class="unit">mN/m (water = 72.8)</div>
+            </div>
+            <div class="gauge">
+              <div class="label">Shelf life</div>
+              <div class="value" id="gauge-shelf">—</div>
+              <div class="unit">days at room temp</div>
+            </div>
+          </div>
+
+          <!-- Stability -->
+          <div style="margin-bottom: 18px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px;">
+              <span style="color: var(--text-3); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">Stability score</span>
+              <span id="stability-value" style="color: var(--primary); font-weight: 800;">—</span>
+            </div>
+            <div class="stability-bar">
+              <div class="stability-fill" id="stability-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <!-- Appearance -->
+          <div style="margin-bottom: 18px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <div style="background: var(--bg-glass); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center;">
+                <div style="color: var(--text-3); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Color</div>
+                <div id="appearance-color" style="font-size: 0.85rem; margin-top: 4px;">—</div>
+              </div>
+              <div style="background: var(--bg-glass); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center;">
+                <div style="color: var(--text-3); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Odor</div>
+                <div id="appearance-odor" style="font-size: 0.85rem; margin-top: 4px;">—</div>
+              </div>
+              <div style="background: var(--bg-glass); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center;">
+                <div style="color: var(--text-3); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">Texture</div>
+                <div id="appearance-texture" style="font-size: 0.85rem; margin-top: 4px;">—</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Process recommendations -->
+          <div class="process-rec">
+            <div class="process-rec-header">⚙️ Recommended process</div>
+            <div class="process-rec-grid">
+              <div class="process-rec-item">
+                <div class="num" id="rec-temp">—</div>
+                <div class="lbl">Temperature</div>
+              </div>
+              <div class="process-rec-item">
+                <div class="num" id="rec-speed">—</div>
+                <div class="lbl">RPM</div>
+              </div>
+              <div class="process-rec-item">
+                <div class="num" id="rec-time">—</div>
+                <div class="lbl">Minutes</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Warnings -->
+          <div class="warning-list" id="warning-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">How the simulator works</span>
+        <h2>15+ properties predicted from <span class="gradient-text">first principles</span></h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;">
+        <div class="card reveal"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M5 12a7 7 0 0114 0 7 7 0 01-14 0z"/></svg></div><h3>pH calculation</h3><p>Henderson-Hasselbalch with ingredient pKa values + buffer capacity adjustment.</p></div>
+        <div class="card reveal delay-1"><div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20M6 18l3-5 3 5 3-7 3 7"/></svg></div><h3>Viscosity</h3><p>Concentration × interaction matrix (SLES + salt curve, etc.) with Arrhenius temperature correction.</p></div>
+        <div class="card reveal delay-2"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg></div><h3>Surface tension</h3><p>Szyszkowski equation for surfactants above CMC, weighted average across ingredients.</p></div>
+        <div class="card reveal"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><h3>Stability score</h3><p>Penalty stack: anionic+cationic, pH extremes, oil-water without emulsifier, microbial risk.</p></div>
+        <div class="card reveal delay-1"><div class="card-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><h3>Shelf life</h3><p>Base 730 days × pH penalty × stability multiplier × ingredient sensitivity (peroxide capped at 180d).</p></div>
+        <div class="card reveal delay-2"><div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06"/></svg></div><h3>Process recommendations</h3><p>Optimal mixing temperature (45°C if surfactant), RPM and time tuned to viscosity range.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div>© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js"></script>
+  <script>
+    // Ingredient catalog (mirrors VirtualLaboratory.properties keys)
+    const CATALOG = [
+      { id: 'water', name: 'Water (Aqua)', cas: '7732-18-5', defaultPct: 70 },
+      { id: 'sles', name: 'Sodium Laureth Sulfate (SLES)', cas: '68585-34-2', defaultPct: 14 },
+      { id: 'sls', name: 'Sodium Lauryl Sulfate (SLS)', cas: '151-21-3', defaultPct: 10 },
+      { id: 'capb', name: 'Cocamidopropyl Betaine (CAPB)', cas: '61789-40-0', defaultPct: 4.5 },
+      { id: 'glycerin', name: 'Glycerin', cas: '56-81-5', defaultPct: 3 },
+      { id: 'panthenol', name: 'Panthenol (Vitamin B5)', cas: '81-13-0', defaultPct: 1.5 },
+      { id: 'citric_acid', name: 'Citric Acid', cas: '77-92-9', defaultPct: 0.3 },
+      { id: 'sodium_benzoate', name: 'Sodium Benzoate', cas: '532-32-1', defaultPct: 0.4 },
+      { id: 'phenoxyethanol', name: 'Phenoxyethanol', cas: '122-99-6', defaultPct: 0.8 },
+      { id: 'sodium_chloride', name: 'Sodium Chloride (Salt)', cas: '7647-14-5', defaultPct: 1.5 },
+      { id: 'fragrance', name: 'Fragrance', cas: '—', defaultPct: 0.5 },
+      { id: 'argan_oil', name: 'Argan Oil', cas: '223747-87-3', defaultPct: 1 },
+      { id: 'cetearyl_alcohol', name: 'Cetearyl Alcohol', cas: '67762-27-0', defaultPct: 5 },
+      { id: 'isopropyl_alcohol', name: 'Isopropyl Alcohol', cas: '67-63-0', defaultPct: 70 },
+      { id: 'hydrogen_peroxide', name: 'Hydrogen Peroxide', cas: '7722-84-1', defaultPct: 3 },
+    ];
+
+    // Material physical properties (lightweight client-side mirror)
+    const PROPS = {
+      water: { density: 1.0, viscosity: 0.89, st: 72.8, ph: 0, ionic: 0 },
+      sles: { density: 1.05, viscosity: 500, st: 32, ph: -0.5, ionic: 0.3, cmc: 0.008 },
+      sls: { density: 1.05, viscosity: 600, st: 35, ph: -0.4, ionic: 0.32, cmc: 0.008 },
+      capb: { density: 1.04, viscosity: 200, st: 34, ph: 0.2, ionic: 0.1, cmc: 0.005 },
+      glycerin: { density: 1.26, viscosity: 1410, st: 63, ph: 0, ionic: 0 },
+      panthenol: { density: 1.20, viscosity: 250, st: 60, ph: 0, ionic: 0 },
+      citric_acid: { density: 1.67, viscosity: 5, st: 65, ph: -2.5, ionic: 0.05, buffer: 0.1 },
+      sodium_benzoate: { density: 1.50, viscosity: 5, st: 70, ph: 0.5, ionic: 0.05 },
+      phenoxyethanol: { density: 1.10, viscosity: 30, st: 41, ph: 0, ionic: 0 },
+      sodium_chloride: { density: 2.16, viscosity: 1, st: 70, ph: 0, ionic: 1.0, thicken: 0.8 },
+      fragrance: { density: 0.95, viscosity: 5, st: 30, ph: 0, ionic: 0 },
+      argan_oil: { density: 0.91, viscosity: 80, st: 33, ph: 0, ionic: 0 },
+      cetearyl_alcohol: { density: 0.85, viscosity: 50, st: 30, ph: 0, ionic: 0 },
+      isopropyl_alcohol: { density: 0.78, viscosity: 2.4, st: 23, ph: 0, ionic: 0 },
+      hydrogen_peroxide: { density: 1.45, viscosity: 1.2, st: 80, ph: -0.5, ionic: 0.1 },
+    };
+
+    // Presets
+    const PRESETS = {
+      shampoo: [
+        { id: 'sles', pct: 14 }, { id: 'capb', pct: 4.5 }, { id: 'glycerin', pct: 3 },
+        { id: 'panthenol', pct: 1.5 }, { id: 'argan_oil', pct: 1 }, { id: 'citric_acid', pct: 0.3 },
+        { id: 'sodium_benzoate', pct: 0.4 }, { id: 'fragrance', pct: 0.5 }, { id: 'water', pct: 74.8 }
+      ],
+      conditioner: [
+        { id: 'cetearyl_alcohol', pct: 5 }, { id: 'capb', pct: 2 }, { id: 'glycerin', pct: 3 },
+        { id: 'panthenol', pct: 1 }, { id: 'argan_oil', pct: 2 }, { id: 'citric_acid', pct: 0.4 },
+        { id: 'phenoxyethanol', pct: 0.8 }, { id: 'fragrance', pct: 0.5 }, { id: 'water', pct: 85.3 }
+      ],
+      bodywash: [
+        { id: 'sles', pct: 12 }, { id: 'capb', pct: 5 }, { id: 'glycerin', pct: 4 },
+        { id: 'sodium_chloride', pct: 1.5 }, { id: 'citric_acid', pct: 0.3 },
+        { id: 'sodium_benzoate', pct: 0.4 }, { id: 'fragrance', pct: 0.6 }, { id: 'water', pct: 76.2 }
+      ],
+      detergent: [
+        { id: 'sles', pct: 8 }, { id: 'capb', pct: 3 }, { id: 'sodium_chloride', pct: 2 },
+        { id: 'citric_acid', pct: 0.5 }, { id: 'phenoxyethanol', pct: 0.3 },
+        { id: 'fragrance', pct: 0.7 }, { id: 'water', pct: 85.5 }
+      ],
+      sanitizer: [
+        { id: 'isopropyl_alcohol', pct: 70 }, { id: 'glycerin', pct: 1.45 },
+        { id: 'hydrogen_peroxide', pct: 0.125 }, { id: 'water', pct: 28.425 }
+      ],
+    };
+
+    let ingredients = [];
+
+    function ingredientRow(idx, ing) {
+      const div = document.createElement('div');
+      div.className = 'ingredient-row';
+      div.innerHTML = `
+        <select data-idx="${idx}" class="ing-select">
+          ${CATALOG.map(c => `<option value="${c.id}" ${c.id === ing.id ? 'selected' : ''}>${c.name}</option>`).join('')}
+        </select>
+        <input type="number" step="0.1" min="0" max="100" data-idx="${idx}" class="ing-pct" value="${ing.pct}" />
+        <button class="remove-btn" data-idx="${idx}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16"><path d="M6 6l12 12M6 18L18 6"/></svg>
+        </button>
+      `;
+      return div;
+    }
+
+    function renderIngredients() {
+      const list = document.getElementById('ingredients-list');
+      list.innerHTML = '';
+      ingredients.forEach((ing, idx) => list.appendChild(ingredientRow(idx, ing)));
+
+      list.querySelectorAll('.ing-select').forEach(s => {
+        s.addEventListener('change', e => {
+          ingredients[+e.target.dataset.idx].id = e.target.value;
+          updateTotal();
+        });
+      });
+      list.querySelectorAll('.ing-pct').forEach(i => {
+        i.addEventListener('input', e => {
+          ingredients[+e.target.dataset.idx].pct = parseFloat(e.target.value) || 0;
+          updateTotal();
+        });
+      });
+      list.querySelectorAll('.remove-btn').forEach(b => {
+        b.addEventListener('click', e => {
+          ingredients.splice(+e.currentTarget.dataset.idx, 1);
+          renderIngredients();
+          updateTotal();
+        });
+      });
+      updateTotal();
+    }
+
+    function updateTotal() {
+      const total = ingredients.reduce((s, i) => s + (i.pct || 0), 0);
+      const el = document.getElementById('total-display');
+      const v = document.getElementById('total-value');
+      v.textContent = total.toFixed(1) + '%';
+      el.classList.toggle('balanced', Math.abs(total - 100) < 0.5);
+      el.classList.toggle('unbalanced', Math.abs(total - 100) >= 0.5);
+    }
+
+    document.getElementById('add-ingredient').addEventListener('click', () => {
+      ingredients.push({ id: 'water', pct: 0 });
+      renderIngredients();
+    });
+
+    document.querySelectorAll('.preset-pill').forEach(p => {
+      p.addEventListener('click', () => {
+        ingredients = JSON.parse(JSON.stringify(PRESETS[p.dataset.preset] || []));
+        renderIngredients();
+        // Auto-simulate
+        setTimeout(simulate, 100);
+      });
+    });
+
+    const WORKER_URL = 'https://formula-ai-brain.jamilaj1.workers.dev';
+
+    function parseNumRange(value) {
+      if (value == null) return NaN;
+      const m = String(value).match(/-?\d+(\.\d+)?/g);
+      if (!m || !m.length) return NaN;
+      const nums = m.map(Number).filter(n => !isNaN(n));
+      if (!nums.length) return NaN;
+      return nums.reduce((s, n) => s + n, 0) / nums.length;
+    }
+
+    function setStatusBadge(label, color, bg) {
+      const status = document.getElementById('result-status');
+      status.textContent = label;
+      status.style.background = bg;
+      status.style.color = color;
+    }
+
+    function showLoadingState() {
+      setStatusBadge('🤖 AI predicting…', 'var(--secondary)', 'rgba(0, 212, 255, 0.15)');
+      ['gauge-ph', 'gauge-visc', 'gauge-st', 'gauge-shelf'].forEach(id => {
+        document.getElementById(id).textContent = '…';
+      });
+      document.getElementById('visc-delta').textContent = '';
+      document.getElementById('warning-list').innerHTML = '';
+    }
+
+    function renderPrediction(prediction) {
+      const phNum = parseNumRange(prediction.ph_estimate);
+      const viscNum = parseNumRange(prediction.viscosity_cp);
+      const shelfMonths = parseFloat(prediction.shelf_life_months);
+
+      document.getElementById('gauge-ph').textContent = isNaN(phNum) ? (prediction.ph_estimate || '—') : phNum.toFixed(2);
+      if (!isNaN(phNum)) {
+        document.getElementById('ph-pointer').style.left = Math.max(0, Math.min(100, (phNum / 14) * 100)) + '%';
+      }
+
+      if (!isNaN(viscNum)) {
+        document.getElementById('gauge-visc').textContent = viscNum > 999 ? (viscNum / 1000).toFixed(1) + 'k' : Math.round(viscNum);
+        document.getElementById('visc-delta').textContent = viscNum > 1000 ? 'Gel range' : viscNum > 100 ? 'Cream range' : 'Liquid range';
+      } else {
+        document.getElementById('gauge-visc').textContent = prediction.viscosity_cp || '—';
+        document.getElementById('visc-delta').textContent = '';
+      }
+
+      // Surface tension not in /lab response; show density instead if present
+      if (prediction.density_g_ml) {
+        const stLabel = document.querySelector('#gauge-st').parentElement.querySelector('.label');
+        const stUnit = document.querySelector('#gauge-st').parentElement.querySelector('.unit');
+        if (stLabel) stLabel.textContent = 'Density';
+        if (stUnit) stUnit.textContent = 'g/mL';
+        document.getElementById('gauge-st').textContent = prediction.density_g_ml;
+      } else {
+        document.getElementById('gauge-st').textContent = '—';
+      }
+
+      if (!isNaN(shelfMonths)) {
+        const days = Math.round(shelfMonths * 30);
+        document.getElementById('gauge-shelf').textContent = days.toLocaleString();
+        const unit = document.querySelector('#gauge-shelf').parentElement.querySelector('.unit');
+        if (unit) unit.textContent = `days (${shelfMonths} months) at room temp`;
+      } else {
+        document.getElementById('gauge-shelf').textContent = '—';
+      }
+
+      // Stability — Claude returns text like "stable", map to score
+      const stab = String(prediction.stability || '').toLowerCase();
+      let score = 60;
+      if (stab.includes('very stable') || stab.includes('excellent')) score = 95;
+      else if (stab.includes('stable')) score = 85;
+      else if (stab.includes('moderate')) score = 65;
+      else if (stab.includes('unstable') || stab.includes('poor')) score = 35;
+      document.getElementById('stability-fill').style.width = score + '%';
+      document.getElementById('stability-value').textContent = (prediction.stability || `${score}/100`);
+
+      // Appearance
+      const appearance = prediction.appearance || '';
+      document.getElementById('appearance-color').textContent = appearance || '—';
+      document.getElementById('appearance-odor').textContent = '—';
+      document.getElementById('appearance-texture').textContent = '—';
+
+      // Process recommendations (not provided by /lab — keep current user input)
+      const temp = parseFloat(document.getElementById('cond-temp').value);
+      const speed = parseFloat(document.getElementById('cond-speed').value);
+      const time = parseFloat(document.getElementById('cond-time').value);
+      document.getElementById('rec-temp').textContent = (temp || 25) + '°C';
+      document.getElementById('rec-speed').textContent = speed || 500;
+      document.getElementById('rec-time').textContent = time || 30;
+
+      // Status badge from overall stability
+      if (score >= 80) {
+        setStatusBadge('✓ AI: Safe to manufacture', 'var(--primary)', 'rgba(0, 255, 136, 0.15)');
+      } else if (score >= 60) {
+        setStatusBadge('⚠️ AI: Caution', '#ffb800', 'rgba(255, 184, 0, 0.15)');
+      } else {
+        setStatusBadge('🛑 AI: Stability concerns', '#ff5722', 'rgba(255, 0, 60, 0.15)');
+      }
+
+      // Warnings = predicted_issues + compatibility_notes
+      const issues = Array.isArray(prediction.predicted_issues) ? prediction.predicted_issues : [];
+      const notes = Array.isArray(prediction.compatibility_notes) ? prediction.compatibility_notes : [];
+      const allWarns = [...issues, ...notes];
+
+      const warnList = document.getElementById('warning-list');
+      warnList.innerHTML = allWarns.length === 0
+        ? '<div style="color: var(--text-3); font-size: 0.88rem; text-align: center; padding: 12px;">✓ No issues flagged by AI</div>'
+        : allWarns.map(w => `<div class="warning-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>${escapeText(w)}</span></div>`).join('');
+    }
+
+    function escapeText(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[c]));
+    }
+
+    function showError(message) {
+      setStatusBadge('⚠️ ' + message, '#ff5722', 'rgba(255, 0, 60, 0.15)');
+      document.getElementById('warning-list').innerHTML =
+        `<div class="warning-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg><span>AI lab unavailable. Please retry, or check the Worker at ${WORKER_URL}.</span></div>`;
+    }
+
+    async function simulate() {
+      if (!ingredients.length) return;
+      showLoadingState();
+
+      const payload = {
+        name_en: 'User formula',
+        form_type: 'liquid',
+        components: ingredients.map(i => {
+          const cat = CATALOG.find(c => c.id === i.id);
+          return {
+            name_en: cat ? cat.name : i.id,
+            cas_number: cat ? cat.cas : '',
+            percentage: i.pct || 0
+          };
+        })
+      };
+
+      try {
+        const r = await fetch(`${WORKER_URL}/lab`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await r.json();
+        if (!r.ok || data.error) {
+          showError(data.error || `HTTP ${r.status}`);
+          return;
+        }
+        renderPrediction(data);
+      } catch (err) {
+        showError(err.message || 'Network error');
+      }
+    }
+
+    document.getElementById('simulate-btn').addEventListener('click', simulate);
+    // Note: removed auto-simulate on every input change to avoid spending AI calls on each keystroke.
+    // User must explicitly click "Run simulation" to invoke /lab.
+
+    // Auto-load shampoo preset and render its ingredients (without auto-simulating)
+    ingredients = JSON.parse(JSON.stringify(PRESETS.shampoo));
+    renderIngredients();
+  </script>
+</body>
+</html>

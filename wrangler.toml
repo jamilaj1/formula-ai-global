@@ -1,0 +1,39 @@
+# wrangler.toml — Cloudflare Workers deployment config.
+#
+# The worker is bundled by esbuild (`npm run build:worker`) into ./worker.js,
+# which is the file Wrangler then uploads. This keeps the source modular
+# while the deploy artifact stays a single file.
+#
+# To deploy:
+#   1. `npx wrangler login`              (once per machine)
+#   2. `npm run build:worker`            (bundles worker-src/ → worker.js)
+#   3. `npx wrangler deploy`             (uploads worker.js)
+#
+# Secrets are NOT in this file. Set them once with:
+#   npx wrangler secret put ANTHROPIC_API_KEY
+#   npx wrangler secret put SUPABASE_ANON_KEY
+#   npx wrangler secret put SUPABASE_SERVICE_KEY
+#   npx wrangler secret put PAYSTACK_SECRET_KEY
+#   npx wrangler secret put STRIPE_SECRET_KEY        # optional
+#   npx wrangler secret put STRIPE_WEBHOOK_SECRET    # optional
+
+name = "formula-ai-brain"
+main = "worker.js"
+compatibility_date = "2024-10-01"
+
+# Public (non-secret) values
+[vars]
+SUPABASE_URL = "https://ivabcssceeaqgqjzgmdx.supabase.co"
+# Paystack subscription plan codes (created in Paystack dashboard).
+# Override with `wrangler secret put` if you'd rather not commit them here.
+# PAYSTACK_PLAN_PRO = "PLN_..."
+# PAYSTACK_PLAN_BIZ = "PLN_..."
+# PAYSTACK_PLAN_ENT = "PLN_..."
+# Stripe (optional, legacy)
+# STRIPE_PRICE_PRO = "price_..."
+# STRIPE_PRICE_BIZ = "price_..."
+# STRIPE_PRICE_ENT = "price_..."
+
+# To enable observability with Cloudflare's built-in logs:
+[observability]
+enabled = true

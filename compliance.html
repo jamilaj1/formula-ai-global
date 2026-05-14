@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Regulatory compliance checker — Formula AI Global</title>
+  <meta name="description" content="Regulatory compliance checking for chemical formulas across global frameworks — FDA, ECHA, SFDA, NMPA, NAFDAC and more." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./compliance.html" class="active" data-i18n-ar="الامتثال">Compliance</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.3;"></div>
+      <div class="hero-orb blue" style="opacity: 0.3;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 48px;">
+        <span class="eyebrow" data-i18n-ar="توافق تنظيمي عالمي">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Global regulatory alignment
+        </span>
+        <h1 data-i18n-ar='مدقق <span class="gradient-text">الامتثال التنظيمي</span>'>Regulatory <span class="gradient-text">compliance checker</span></h1>
+        <p style="color: var(--text-2); font-size: 1.1rem; margin-top: 18px;" data-i18n-ar="فحص فوري لتوافق فورمولاتك مع لوائح أي دولة في العالم - من FDA الأمريكية إلى SFDA السعودية وحتى NAFDAC النيجيرية">
+          Instant compliance checking for your formulas against regulations in any country in the world — from the US FDA to Saudi SFDA and Nigeria's NAFDAC.
+        </p>
+      </div>
+
+      <!-- Selection Bar -->
+      <div class="card reveal" style="padding: 22px; margin-bottom: 24px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 14px; align-items: end;">
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" data-i18n-ar="فئة المنتج">Product category</label>
+            <select class="form-select">
+              <option data-i18n-ar="مستحضرات تجميل · شامبو">Cosmetics · Shampoo</option>
+              <option data-i18n-ar="منظفات منزلية">Household cleaners</option>
+              <option data-i18n-ar="منظفات صناعية">Industrial cleaners</option>
+              <option data-i18n-ar="مطهرات طبية">Medical disinfectants</option>
+              <option data-i18n-ar="مستحضرات صيدلانية">Pharmaceuticals</option>
+              <option data-i18n-ar="منتجات السيارات">Automotive products</option>
+              <option data-i18n-ar="إضافات الأغذية">Food additives</option>
+              <option data-i18n-ar="الكيماويات الزراعية">Agricultural chemicals</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom: 0;">
+            <label class="form-label" data-i18n-ar="الفورمولا المراد فحصها">Formula to check</label>
+            <select class="form-select">
+              <option data-i18n-ar="شامبو طبيعي للشعر الجاف · FA-2026-04891">Natural shampoo for dry hair · FA-2026-04891</option>
+              <option data-i18n-ar="منظف أرضيات صناعي · FA-2026-04892">Industrial floor cleaner · FA-2026-04892</option>
+              <option data-i18n-ar="مطهر مستشفيات · FA-2026-04893">Hospital disinfectant · FA-2026-04893</option>
+            </select>
+          </div>
+          <button class="btn btn-primary btn-lg" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> فحص الامتثال'>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+            Check compliance
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Layout -->
+      <div class="compliance-grid reveal">
+        <!-- Country List -->
+        <div class="country-list">
+          <div style="padding: 8px 12px; color: var(--text-3); font-size: 0.85rem; font-weight: 700; margin-bottom: 8px;" data-i18n-ar="اختر الدولة">Select a country</div>
+          <div class="country-item active" data-country="SA"><span class="country-flag">🇸🇦</span><div><div style="font-weight: 700;" data-i18n-ar="السعودية">Saudi Arabia</div><div style="color: var(--text-3); font-size: 0.78rem;">SFDA · SASO</div></div></div>
+          <div class="country-item" data-country="AE"><span class="country-flag">🇦🇪</span><div><div style="font-weight: 700;" data-i18n-ar="الإمارات">UAE</div><div style="color: var(--text-3); font-size: 0.78rem;">ESMA</div></div></div>
+          <div class="country-item" data-country="EG"><span class="country-flag">🇪🇬</span><div><div style="font-weight: 700;" data-i18n-ar="مصر">Egypt</div><div style="color: var(--text-3); font-size: 0.78rem;">EDA · EOS</div></div></div>
+          <div class="country-item" data-country="GH"><span class="country-flag">🇬🇭</span><div><div style="font-weight: 700;" data-i18n-ar="غانا">Ghana</div><div style="color: var(--text-3); font-size: 0.78rem;">GSA · FDA</div></div></div>
+          <div class="country-item" data-country="NG"><span class="country-flag">🇳🇬</span><div><div style="font-weight: 700;" data-i18n-ar="نيجيريا">Nigeria</div><div style="color: var(--text-3); font-size: 0.78rem;">NAFDAC</div></div></div>
+          <div class="country-item" data-country="US"><span class="country-flag">🇺🇸</span><div><div style="font-weight: 700;" data-i18n-ar="الولايات المتحدة">United States</div><div style="color: var(--text-3); font-size: 0.78rem;">FDA · EPA</div></div></div>
+          <div class="country-item" data-country="EU"><span class="country-flag">🇪🇺</span><div><div style="font-weight: 700;" data-i18n-ar="الاتحاد الأوروبي">European Union</div><div style="color: var(--text-3); font-size: 0.78rem;">ECHA · REACH</div></div></div>
+          <div class="country-item" data-country="CN"><span class="country-flag">🇨🇳</span><div><div style="font-weight: 700;" data-i18n-ar="الصين">China</div><div style="color: var(--text-3); font-size: 0.78rem;">NMPA</div></div></div>
+        </div>
+
+        <!-- Compliance Result -->
+        <div id="compliance-result" class="compliance-result">
+          <!-- Filled by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="تغطية شاملة">Comprehensive coverage</span>
+        <h2 data-i18n-ar='أكبر قاعدة بيانات تنظيمية <span class="gradient-text">في العالم</span>'>The world's largest <span class="gradient-text">regulatory database</span></h2>
+      </div>
+      <div class="stats reveal" style="max-width: 1100px;">
+        <div class="stat">
+          <div class="stat-value">195</div>
+          <div class="stat-label" data-i18n-ar="دولة مغطاة">Countries covered</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">2,400+</div>
+          <div class="stat-label" data-i18n-ar="معيار فني">Technical standards</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">86</div>
+          <div class="stat-label" data-i18n-ar="هيئة تنظيمية">Regulatory bodies</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">0.4s</div>
+          <div class="stat-label" data-i18n-ar="زمن الفحص">Check time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Regulators -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="الهيئات التنظيمية">Regulatory authorities</span>
+        <h2 data-i18n-ar='نتعامل مع <span class="gradient-text">أكبر الجهات</span> الرقابية في العالم'>We work with the <span class="gradient-text">largest regulators</span> in the world</h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇺🇸</div><div style="font-weight: 800; font-size: 1.1rem;">FDA</div><div style="color: var(--text-3); font-size: 0.85rem;">Food & Drug Admin</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇪🇺</div><div style="font-weight: 800; font-size: 1.1rem;">ECHA</div><div style="color: var(--text-3); font-size: 0.85rem;">European Chem Agency</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇸🇦</div><div style="font-weight: 800; font-size: 1.1rem;">SFDA</div><div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="الغذاء والدواء">Saudi FDA</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇨🇳</div><div style="font-weight: 800; font-size: 1.1rem;">NMPA</div><div style="color: var(--text-3); font-size: 0.85rem;">National Medical Products</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇦🇪</div><div style="font-weight: 800; font-size: 1.1rem;">ESMA</div><div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="الإمارات للمواصفات">UAE Standards Authority</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇳🇬</div><div style="font-weight: 800; font-size: 1.1rem;">NAFDAC</div><div style="color: var(--text-3); font-size: 0.85rem;">Nigerian Drug Agency</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇬🇭</div><div style="font-weight: 800; font-size: 1.1rem;">GSA</div><div style="color: var(--text-3); font-size: 0.85rem;">Ghana Standards</div></div>
+        <div class="card" style="padding: 20px; text-align: center;"><div style="font-size: 2rem; margin-bottom: 8px;">🇪🇬</div><div style="font-weight: 800; font-size: 1.1rem;">EDA</div><div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="هيئة الدواء المصرية">Egyptian Drug Authority</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+</body>
+</html>

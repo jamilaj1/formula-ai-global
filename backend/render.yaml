@@ -1,0 +1,39 @@
+# Render.com Blueprint — one-click deploy of the FastAPI chem backend.
+#
+# Usage:
+#   1. Push the repo to GitHub.
+#   2. Render → New → Blueprint → connect the repo.
+#   3. Render reads this file, provisions the service, and asks you to
+#      supply the secret env vars listed below.
+#
+# To deploy via CLI instead:
+#   render blueprint launch
+
+services:
+  - type: web
+    name: formula-ai-chem
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: starter            # $7/mo — sufficient for Phase 1
+    region: oregon           # closest to most CDN edges; switch to frankfurt for EU users
+    healthCheckPath: /health
+    autoDeploy: true         # redeploy on git push
+
+    envVars:
+      # Secrets (set in Render dashboard, NOT in code)
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: ANTHROPIC_MODEL
+        value: claude-haiku-4-5
+      - key: CORS_ORIGINS
+        value: https://jamilformula.com,https://formula-ai-brain.jamilaj1.workers.dev
+      # Python tuning
+      - key: PYTHONUNBUFFERED
+        value: '1'

@@ -1,0 +1,49 @@
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+backend/venv/
+venv/
+.venv/
+.pytest_cache/
+
+# --- Node / Next.js ---
+node_modules/
+.next/
+out/
+dist/
+build/
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Editors ---
+.vscode/
+.idea/
+*.swp
+
+# --- OS ---
+Thumbs.db
+
+# --- Logs ---
+*.log
+
+# --- Misc ---
+*.tmp
+.cache/
+
+# --- Archive (local deploy snapshots, zip bundles) ---
+_archive/
+*.zip
+
+# --- Wrangler ---
+.wrangler/
+.dev.vars
+

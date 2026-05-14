@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pricing — Formula AI Global</title>
+  <meta name="description" content="Flexible plans from Formula AI Global — start free and scale as your business grows. 4 plans: Starter, Professional, Business, Enterprise." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li>
+        <li><a href="./pricing.html" class="active" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 60px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.4;"></div>
+      <div class="hero-orb blue" style="opacity: 0.4;"></div>
+    </div>
+
+    <div class="container" style="text-align: center; position: relative; z-index: 2;">
+      <span class="eyebrow reveal" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M16 8L8 16M8 8l8 8"/></svg> خطط مرنة لكل مرحلة'>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="12" cy="12" r="10"/><path d="M16 8L8 16M8 8l8 8"/></svg>
+        Flexible plans for every stage
+      </span>
+      <h1 class="reveal" data-i18n-ar='اختر خطتك <span class="gradient-text">المثالية</span>'>Choose your <span class="gradient-text">perfect plan</span></h1>
+      <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; max-width: 640px; margin: 18px auto 36px;" data-i18n-ar="ابدأ مجاناً وارتقِ مع نمو أعمالك - بدون رسوم خفية، بدون التزامات طويلة الأمد. ألغِ في أي وقت.">
+        Start free and scale as your business grows — no hidden fees, no long-term commitments. Cancel anytime.
+      </p>
+
+      <div class="pricing-toggle reveal delay-2">
+        <button id="billing-monthly" class="active" data-i18n-ar="شهري">Monthly</button>
+        <button id="billing-yearly" data-i18n-ar='سنوي
+          <span class="save-badge">وفر 20%</span>'>
+          Yearly
+          <span class="save-badge">Save 20%</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section style="padding: 0 0 80px;">
+    <div class="container">
+      <div class="pricing-grid">
+        <!-- Starter -->
+        <div class="plan reveal">
+          <div class="plan-name" data-i18n-ar="المبتدئ Starter">Starter</div>
+          <div class="plan-price">
+            <span class="currency">$</span>0
+          </div>
+          <div class="plan-period" data-i18n-ar="إلى الأبد · مجاناً">Free forever</div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>10 فورمولات شهرياً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>10 formulas/month</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>ذاكرة دردشة أبدية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Persistent chat memory</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل فورمولا مع مصدرها'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Every formula with its source</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصدير PDF'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>PDF export</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 صناعات · 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 industries · 20 languages</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم عبر البريد الإلكتروني'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Email support</li>
+          </ul>
+          <a href="./register.html" class="btn btn-ghost btn-block btn-lg" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+        </div>
+
+        <!-- Professional -->
+        <div class="plan popular reveal delay-1">
+          <span class="plan-badge" data-i18n-ar="★ الأكثر شعبية">★ Most popular</span>
+          <div class="plan-name" data-i18n-ar="المحترف Professional">Professional</div>
+          <div class="plan-price">
+            <span class="currency">$</span><span data-monthly>25</span><span data-yearly style="display:none;">20</span>
+          </div>
+          <div class="plan-period"><span data-monthly data-i18n-ar="شهرياً">/month</span><span data-yearly style="display:none;" data-i18n-ar="شهرياً (يُدفع سنوياً)">/month (billed yearly)</span></div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 فورمولا شهرياً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 formulas/month</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>ذاكرة دردشة أبدية + بدون إعلانات'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Persistent chat memory + ad-free</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل فورمولا مع مصدرها (CAS + كتاب/براءة)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Every formula with source (CAS + book/patent)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>بحث متقدم بالذكاء الاصطناعي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Advanced AI search</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصدير Excel + PDF + MSDS'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Excel + PDF + MSDS export</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تحليل تعارضات + محاكاة افتراضية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Conflict analysis + virtual simulation</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>وصول API محدود (1,000 طلب/يوم)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Limited API access (1,000 requests/day)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>صناعات متعددة · لغات متعددة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Many industries · multiple languages</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم بالأولوية خلال 24 ساعة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Priority support within 24 hours</li>
+          </ul>
+          <button class="btn btn-primary btn-block btn-lg" data-checkout="professional" data-i18n-ar="اشترك الآن">Subscribe</button>
+        </div>
+
+        <!-- Business -->
+        <div class="plan reveal delay-2">
+          <div class="plan-name" data-i18n-ar="الأعمال Business">Business</div>
+          <div class="plan-price">
+            <span class="currency">$</span><span data-monthly>50</span><span data-yearly style="display:none;">40</span>
+          </div>
+          <div class="plan-period"><span data-monthly data-i18n-ar="شهرياً">/month</span><span data-yearly style="display:none;" data-i18n-ar="شهرياً (يُدفع سنوياً)">/month (billed yearly)</span></div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>فورمولات غير محدودة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Unlimited formulas</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل ميزات Professional'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>All Professional features</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>رفع كتب غير محدود'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Unlimited book uploads</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تدريب AI على بياناتك'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>AI training on your data</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تطبيق موبايل + سطح مكتب'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Mobile + desktop apps</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>فريق حتى 10 مستخدمين'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Team up to 10 users</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تحليلات وتقارير متقدمة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Advanced analytics & reports</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>API كامل (50K طلب/يوم) · توافق تنظيمي عالمي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full API (50K requests/day) · Global regulatory alignment</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم 24/7 (هاتف + Slack)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>24/7 support (phone + Slack)</li>
+          </ul>
+          <button class="btn btn-ghost btn-block btn-lg" data-checkout="business" data-i18n-ar="اشترك الآن">Subscribe</button>
+        </div>
+
+        <!-- Enterprise -->
+        <div class="plan reveal delay-3">
+          <div class="plan-name" data-i18n-ar="المؤسسات Enterprise">Enterprise</div>
+          <div class="plan-price">
+            <span class="currency">$</span><span data-monthly>125</span><span data-yearly style="display:none;">100</span>
+          </div>
+          <div class="plan-period"><span data-monthly data-i18n-ar="شهرياً">/month</span><span data-yearly style="display:none;" data-i18n-ar="شهرياً (يُدفع سنوياً)">/month (billed yearly)</span></div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل شيء غير محدود'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Everything unlimited</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>علامة بيضاء كاملة (White Label)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full White Label</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>نشر خاص On-Premise'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Private On-Premise deployment</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تدريب فريق كامل (50+ موظف)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full team training (50+ staff)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تطوير ميزات مخصصة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Custom feature development</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>مدير حساب مخصص'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Dedicated account manager</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم بـ 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Support in 20 languages</li>
+          </ul>
+          <a href="#" class="btn btn-outline btn-block btn-lg" data-i18n-ar="تواصل مع المبيعات">Contact sales</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Comparison Table -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="مقارنة شاملة">Full comparison</span>
+        <h2 data-i18n-ar='كل الميزات في <span class="gradient-text">جدول واحد</span>'>All features in <span class="gradient-text">one table</span></h2>
+      </div>
+
+      <div class="card reveal" style="overflow-x: auto; padding: 0;">
+        <table class="formula-table" style="margin: 0;">
+          <thead>
+            <tr>
+              <th style="padding: 18px 16px; min-width: 220px;" data-i18n-ar="الميزة">Feature</th>
+              <th style="padding: 18px 16px; text-align: center;">Starter</th>
+              <th style="padding: 18px 16px; text-align: center; color: var(--primary);">Professional</th>
+              <th style="padding: 18px 16px; text-align: center;">Business</th>
+              <th style="padding: 18px 16px; text-align: center;">Enterprise</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="عدد الفورمولات شهرياً">Formulas per month</td>
+              <td style="text-align: center;">10</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;">100</td>
+              <td style="text-align: center;">∞</td>
+              <td style="text-align: center;">∞</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="عدد المستخدمين">Number of users</td>
+              <td style="text-align: center;">1</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;">3</td>
+              <td style="text-align: center;">10</td>
+              <td style="text-align: center;">∞</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="طلبات API يومياً">API requests / day</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;">1,000</td>
+              <td style="text-align: center;">50,000</td>
+              <td style="text-align: center;">∞</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="رفع كتب وأبحاث">Upload books & research</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="تحليل التعارضات">Conflict analysis</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="المحاكاة الافتراضية">Virtual simulation</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="توافق تنظيمي عالمي">Global regulatory alignment</td>
+              <td style="text-align: center;" data-i18n-ar="أساسي">Basic</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;" data-i18n-ar="موسّع">Extended</td>
+              <td style="text-align: center;" data-i18n-ar="عالمي">Global</td>
+              <td style="text-align: center;" data-i18n-ar="عالمي">Global</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="نشر خاص On-Premise">Private On-Premise deployment</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center;">—</td>
+              <td style="text-align: center; color: var(--primary);">✓</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;">SLA</td>
+              <td style="text-align: center;">99%</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;">99.5%</td>
+              <td style="text-align: center;">99.9%</td>
+              <td style="text-align: center;">99.99%</td>
+            </tr>
+            <tr>
+              <td style="padding: 16px;" data-i18n-ar="الدعم الفني">Technical support</td>
+              <td style="text-align: center;" data-i18n-ar="بريد إلكتروني">Email</td>
+              <td style="text-align: center; color: var(--primary); font-weight: 700;" data-i18n-ar="أولوية 24h">Priority 24h</td>
+              <td style="text-align: center;">24/7 + Slack</td>
+              <td style="text-align: center;" data-i18n-ar="مدير مخصص">Dedicated manager</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="أسئلة مالية">Billing FAQ</span>
+        <h2 data-i18n-ar='أسئلة <span class="gradient-text">الأسعار والفوترة</span>'>Pricing & <span class="gradient-text">billing questions</span></h2>
+      </div>
+
+      <div class="faq-list reveal">
+        <div class="faq-item open">
+          <button class="faq-q">
+            <span data-i18n-ar="هل يمكنني الترقية أو التراجع في أي وقت؟">Can I upgrade or downgrade at any time?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم بكل سهولة. ترقية الخطة تتم فوراً، والتراجع يتم في نهاية دورة الفوترة الحالية. نحسب الفرق تلقائياً (proration) حتى لا تدفع شيئاً زائداً.">
+            Yes, easily. Upgrades take effect immediately, and downgrades happen at the end of the current billing cycle. We calculate the difference automatically (proration) so you never pay extra.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="ما طرق الدفع المقبولة؟">What payment methods are accepted?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نقبل جميع البطاقات الائتمانية الرئيسية (Visa, Mastercard, Amex)، Apple Pay, Google Pay، وللعملاء في الشرق الأوسط نقبل mada وSTC Pay. للخطط Enterprise نقبل التحويل البنكي وفواتير ACH.">
+            We accept all major credit cards (Visa, Mastercard, Amex), Apple Pay, Google Pay, and for Middle East customers we accept mada and STC Pay. For Enterprise plans we accept bank transfers and ACH invoices.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل هناك خصومات للجامعات والمؤسسات التعليمية؟">Are there discounts for universities and educational institutions?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم! نقدّم خصم 50% للجامعات ومراكز البحث العلمي على خطط Professional و Business. الطلاب يحصلون على Professional مجاناً مدى دراستهم. أرسل لنا بريداً جامعياً للحصول على الخصم.">
+            Yes! We offer 50% off for universities and research centers on Professional and Business plans. Students get Professional free for the duration of their studies. Send us a university email to claim the discount.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل أحتاج بطاقة ائتمان للتسجيل المجاني؟">Do I need a credit card to sign up free?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="لا. خطة Starter مجانية تماماً ولا تتطلب بطاقة ائتمان. لن نطلب معلومات الدفع إلا عندما تختار الترقية لخطة مدفوعة.">
+            No. The Starter plan is completely free and requires no credit card. We will not ask for payment info unless you choose to upgrade to a paid plan.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل تقدمون استرداد المبلغ؟">Do you offer refunds?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم، نقدّم ضمان استرداد المبلغ خلال 14 يوماً على جميع الخطط المدفوعة، بدون أسئلة وبدون شروط. نحن واثقون من قيمة منتجنا ولا نريد أن تدفع إذا لم يلبِّ توقعاتك.">
+            Yes — we offer a 14-day money-back guarantee on all paid plans, no questions asked. We're confident in our product and don't want you to pay if it doesn't meet your expectations.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container" style="padding-bottom: 60px;">
+    <div class="cta-banner reveal">
+      <h2 data-i18n-ar="جاهز لتجربة قوة Formula AI؟">Ready to experience the power of Formula AI?</h2>
+      <p data-i18n-ar="10 فورمولات مجانية شهرياً - بدون بطاقة ائتمان">10 free formulas per month — no credit card required</p>
+      <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;" data-i18n-ar='ابدأ التجربة المجانية <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
+        Start free trial
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="أول منصة ذكاء اصطناعي كيميائي عالمية">The world's first global AI chemical platform</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="المنتج">Product</h4><ul><li><a href="./search.html" data-i18n-ar="البحث">Search</a></li><li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li><li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="#" data-i18n-ar="المدوّنة">Blog</a></li><li><a href="#" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="#" data-i18n-ar="التوثيق">Docs</a></li><li><a href="#">API</a></li><li><a href="#" data-i18n-ar="المساعدة">Help</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script>
+    // Wire pricing buttons to Stripe checkout (via the AI Worker)
+    (function () {
+      function wireCheckout() {
+        if (!window.FAI_DB || !window.FAI_AUTH) {
+          return setTimeout(wireCheckout, 100);
+        }
+        document.querySelectorAll('[data-checkout]').forEach(btn => {
+          btn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            if (!window.FAI_AUTH.user) {
+              // Send them to register first, then redirect back
+              localStorage.setItem('fai_post_login_action', JSON.stringify({ action: 'checkout', plan: btn.dataset.checkout }));
+              window.location.href = './register.html';
+              return;
+            }
+            btn.disabled = true;
+            const oldText = btn.textContent;
+            btn.textContent = 'Loading…';
+            const r = await window.FAI_DB.startCheckout(btn.dataset.checkout);
+            if (r.error) {
+              alert('Checkout error: ' + (r.error || 'Unknown error') + (r.detail ? '\n\n' + r.detail : ''));
+              btn.disabled = false;
+              btn.textContent = oldText;
+            }
+            // On success, FAI_DB.startCheckout already redirects to Stripe
+          });
+        });
+        // Resume checkout if user just signed in
+        try {
+          const saved = JSON.parse(localStorage.getItem('fai_post_login_action') || 'null');
+          if (saved?.action === 'checkout' && window.FAI_AUTH.user) {
+            localStorage.removeItem('fai_post_login_action');
+            window.FAI_DB.startCheckout(saved.plan);
+          }
+        } catch {}
+      }
+      wireCheckout();
+    })();
+  </script>
+</body>
+</html>

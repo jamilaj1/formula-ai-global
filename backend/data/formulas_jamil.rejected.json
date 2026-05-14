@@ -1,0 +1,130 @@
+{
+  "rejected": [
+    {
+      "formula_name": "Auxiliary Laundry Washing For Solving Soil, Oil And Blood (High Quality) (Variant #1)",
+      "row_count": 6,
+      "problems": [
+        "percentages sum to 45.35%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Foam Handwash Soap With Moisturizers (High Quality)",
+      "row_count": 10,
+      "problems": [
+        "percentages sum to 98.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Copper Glitter Effect Spray Paint (Variant #1) (Variant #2)",
+      "row_count": 1,
+      "problems": [
+        "percentages sum to 10.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Epoxy And Urethane Paint Remover Spray (Variant #1) (Variant #2)",
+      "row_count": 3,
+      "problems": [
+        "percentages sum to 44.50%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Car Interior Cleaning Spray (Variant #3) (Variant #2)",
+      "row_count": 6,
+      "problems": [
+        "percentages sum to 98.95%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Hair Care Serum Spray (Variant #3) (Variant #2)",
+      "row_count": 2,
+      "problems": [
+        "percentages sum to 10.25%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Touchless And Brushless Ammonia And Solvent Based Car Wash Snow Foam Shampoo (Variant #2)",
+      "row_count": 7,
+      "problems": [
+        "percentages sum to 98.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Color Foam And Anti Corrosion Agent Added Touchless / Brushless Car Wash Foam Shampoo (Variant #3)",
+      "row_count": 8,
+      "problems": [
+        "percentages sum to 98.50%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Neutral And Non - Foaming Car Wheel Cleaner And Polisher (Variant #3)",
+      "row_count": 3,
+      "problems": [
+        "percentages sum to 98.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "QAC And Glutaraldehyde Based And Glyoxal Added High Level Surgical Instruments Disinfectant (Variant #2) (Variant #1)",
+      "row_count": 7,
+      "problems": [
+        "percentages sum to 31.90%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Alkyldimethylbenzyl Ammonium Chloride Based Surgical Instruments Disinfectant (Variant #1) (Variant #1)",
+      "row_count": 7,
+      "problems": [
+        "percentages sum to 14.45%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Didecyl Dimethyl Ammonium Chloride Based Medical Surface Disinfectant (Variant #2) (Variant #1)",
+      "row_count": 7,
+      "problems": [
+        "percentages sum to 17.90%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Oxygene Based Garbage Trucks And Garbage Container Cleaner And Disinfectant Powder (Variant #2) (Variant #2)",
+      "row_count": 1,
+      "problems": [
+        "percentages sum to 35.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Triclosan Based Liquid Hand Soap (Variant #1) (Variant #1)",
+      "row_count": 5,
+      "problems": [
+        "percentages sum to 12.10%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Extra Volume Conditioner For Oily Hair (Variant #3) (Variant #2)",
+      "row_count": 3,
+      "problems": [
+        "percentages sum to 0.60%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Shine Soft To Hold Aerosol Hair Spray (Variant #3) (Variant #2)",
+      "row_count": 1,
+      "problems": [
+        "percentages sum to 48.00%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Double Phase Blow Dry Volumizing Lotion (Variant #2) (Variant #1)",
+      "row_count": 9,
+      "problems": [
+        "percentages sum to 32.50%, not 100% ± 1.0%"
+      ]
+    },
+    {
+      "formula_name": "Almond Oil Based And Nourishing Heat Protection Style Serum (Variant #3)",
+      "row_count": 11,
+      "problems": [
+        "percentages sum to 98.00%, not 100% ± 1.0%"
+      ]
+    }
+  ]
+}

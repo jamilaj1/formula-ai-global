@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Formula AI Global — World's First AI Chemical Formulation Platform</title>
+  <meta name="description" content="Formula AI Global — thousands of verified chemical formulas across many industries with AI search, chat, compliance and an ever-growing knowledge base." />
+  <meta name="keywords" content="chemical formulas, formulation, shampoo, detergents, disinfectants, cosmetics, AI chemistry, Formula AI, Jamil Abduljalil, regulatory compliance" />
+  <meta name="author" content="Jamil Abduljalil" />
+  <meta name="theme-color" content="#00ff88" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Formula AI Global — World's First AI Chemical Formulation Platform" />
+  <meta property="og:description" content="Thousands of chemical formulas · AI search, chat & extraction" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:site_name" content="Formula AI Global" />
+  <meta property="og:image" content="./assets/icon.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Formula AI Global" />
+  <meta name="twitter:description" content="World's first AI chemical formulation platform" />
+
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="apple-touch-icon" href="./assets/icon.svg" />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="./index.html" class="active" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./safety.html" data-i18n-ar="السلامة">Safety</a></li>
+        <li><a href="./lab.html" data-i18n-ar="المختبر">Lab</a></li>
+        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+        <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary"><span data-i18n-ar="ابدأ مجاناً">Get Started Free</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-bg">
+      <div class="hero-orb green"></div>
+      <div class="hero-orb blue"></div>
+      <div class="hero-orb purple"></div>
+      <div class="hero-grid-overlay"></div>
+    </div>
+
+    <div class="container hero-content">
+      <span class="eyebrow reveal" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg> مدعوم بأحدث نماذج الذكاء الاصطناعي'>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+        Powered by the latest AI models
+      </span>
+
+      <h1 class="reveal" data-i18n-ar='أول منصة <span class="gradient-text">ذكاء اصطناعي كيميائي</span><br/>عالمية على الإطلاق'>
+        The world's first <span class="gradient-text">AI Chemical Platform</span><br/>
+        ever built
+      </h1>
+
+      <p class="hero-sub reveal delay-1" data-i18n-ar="منصة Formula AI Global لاستخراج وتركيب وتدقيق الفورمولات الكيميائية، تغطي العديد من الصناعات، مع آلاف الفورمولات المُتحقَّق منها وقاعدة تنمو يوميًا، وذكاء اصطناعي يبحث ويقترح ويعدّل ويتعلّم من كتبك.">
+        Formula AI Global — extract, generate and validate chemical formulations across many industries, with thousands of verified formulas, a knowledge base that grows daily, and AI that searches, suggests, modifies, and learns from your own books.
+      </p>
+
+      <div class="hero-cta reveal delay-2">
+        <a href="./search.html" class="btn btn-primary btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span data-i18n-ar="جرّب البحث الذكي">Try Smart Search</span>
+        </a>
+        <a href="./pricing.html" class="btn btn-ghost btn-lg">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v6m0 0l-3-3m3 3l3-3M5 12h14M5 12l3 3m-3-3l3-3M19 12l-3 3m3-3l-3-3M12 22v-6m0 0l-3 3m3-3l3 3"/></svg>
+          <span data-i18n-ar="شاهد الخطط">See plans</span>
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats reveal delay-3">
+        <div class="stat">
+          <div class="stat-value"><span data-counter="3400" data-suffix="+">0</span></div>
+          <div class="stat-label" data-i18n-ar="فورمولا موثّقة، تنمو يومياً">Verified formulas · growing daily</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value"><span data-counter="40" data-suffix="+">0</span></div>
+          <div class="stat-label" data-i18n-ar="صناعة كيميائية">Chemical industries</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value"><span data-counter="195">0</span></div>
+          <div class="stat-label" data-i18n-ar="دولة مغطاة">Countries covered</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value"><span data-counter="12" data-suffix="">0</span></div>
+          <div class="stat-label" data-i18n-ar="لغات مدعومة">Languages supported</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Trusted by / Social proof -->
+  <section class="section-sm">
+    <div class="container">
+      <p style="text-align: center; color: var(--text-3); font-size: 0.95rem; margin-bottom: 28px; font-weight: 600;" data-i18n-ar="مصادر معرفتنا تشمل أكبر القواعد العلمية والمواصفات في العالم">
+        Our knowledge sources include the world's largest scientific databases and standards
+      </p>
+      <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 36px; opacity: 0.7;">
+        <div style="font-weight: 800; font-size: 1.1rem;">Google Scholar</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">PubChem</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">Google Patents</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">FDA</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">ECHA REACH</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">SFDA</div>
+        <div style="font-weight: 800; font-size: 1.1rem;">ISO Standards</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="المميزات الجوهرية">Core capabilities</span>
+        <h2 data-i18n-ar='لماذا <span class="gradient-text">Formula AI</span>؟'>Why <span class="gradient-text">Formula AI</span>?</h2>
+        <p data-i18n-ar="ثماني قدرات استثنائية تجعل المنصة الأقوى في عالم الكيمياء الصناعية">Eight exceptional capabilities that make this the most powerful platform in industrial chemistry</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 22px;">
+        <div class="card reveal memory-pulse">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+          </div>
+          <h3 data-i18n-ar="ذاكرة دردشة أبدية">Forever chat memory</h3>
+          <p data-i18n-ar="كل سؤال تطرحه وكل فورمولا تستخرجها يُحفظ <strong>إلى الأبد</strong>. عُد لمحادثاتك بعد سنوات بنفس السياق ونفس الفورمولات. لا حذف تلقائي أبداً.">Every question you ask and every formula you generate is saved <strong>forever</strong>. Come back to your conversations years later with the same context and the same formulas. Never auto-deleted.</p>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          </div>
+          <h3 data-i18n-ar="آلاف الفورمولا مع المصدر">Thousands of formulas with sources</h3>
+          <p data-i18n-ar="كل فورمولا مُلحقة بمصدرها الأصلي: كتاب، براءة اختراع، أو بحث محكَّم — ومرقّمة بـ <strong>CAS</strong> ومتوازنة 100%. لا فورمولات مجهولة المصدر.">Every formula is tied to its original source: book, patent, or peer-reviewed research — annotated with <strong>CAS</strong> numbers and balanced to 100%. No formulas of unknown origin.</p>
+        </div>
+
+        <div class="card reveal delay-2">
+          <div class="card-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
+          <h3 data-i18n-ar="امتثال تنظيمي عالمي">Global regulatory compliance</h3>
+          <p data-i18n-ar="توافق مع كبرى الهيئات التنظيمية الدولية: FDA, ECHA REACH, SFDA, NMPA, NAFDAC وما يزيد عنها.">Alignment with major international regulatory frameworks including FDA, ECHA REACH, SFDA, NMPA, NAFDAC and more.</p>
+        </div>
+
+        <div class="card reveal">
+          <div class="card-icon gold">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+          </div>
+          <h3 data-i18n-ar="4 درجات اقتصادية لكل فورمولا">4 economic grades per formula</h3>
+          <p data-i18n-ar="مخبرية، ممتازة، صناعية، <strong>اقتصادية</strong> — 80% من فورمولاتنا في المتناول لدعم المصنّع الصغير وليس فقط الشركات الكبرى.">Laboratory, premium, industrial, <strong>economy</strong> — 80% of our formulas are affordable to support the small manufacturer, not just big corporations.</p>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon pink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3 data-i18n-ar="كاشف التعارضات">Conflict detector</h3>
+          <p data-i18n-ar="محرك تحقق متقدم يكشف التعارضات الكيميائية، المخاطر الصحية، والمواد المحظورة قبل التصنيع وليس بعده.">An advanced verification engine that catches chemical conflicts, health hazards, and banned substances before manufacturing — not after.</p>
+        </div>
+
+        <div class="card reveal delay-2">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+          </div>
+          <h3 data-i18n-ar="صديقة للبيئة بالضرورة">Environmentally safe by design</h3>
+          <p data-i18n-ar="كل فورمولا يجب أن تكون آمنة بيئياً قبل النشر — لا تركيبات بمواد محظورة عالمياً، ودرجة بيئية واضحة من 100 لكل تركيبة.">Every formula must be environmentally safe before publishing — no formulations using globally banned substances, and a clear environmental score out of 100 for each one.</p>
+        </div>
+
+        <div class="card reveal">
+          <div class="card-icon blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg>
+          </div>
+          <h3 data-i18n-ar="20 لغة + ذكاء يفهم لغتك">20 languages + AI that speaks yours</h3>
+          <p data-i18n-ar="إنجليزية افتراضياً، عربية متاحة، و18 لغة أخرى. يجيبك الذكاء الاصطناعي تلقائياً <strong>بنفس لغة سؤالك</strong> — لا حاجة لتبديل يدوي.">English by default, Arabic available, plus 18 more. The AI automatically answers you in <strong>the same language</strong> as your question — no manual switching needed.</p>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a9 9 0 119 9M3 9V3m0 6h6"/><path d="M16 8l-4 4M12 12l4 4"/></svg>
+          </div>
+          <h3 data-i18n-ar="تعلم مستمر ذاتي">Continuous self-learning</h3>
+          <p data-i18n-ar="كل فورمولا تَستخدمها وكل تصحيح تُجريه يجعل النظام أذكى. شبكة عصبية تتطور يومياً مع كل تفاعل.">Every formula you use and every correction you make makes the system smarter. A neural network that evolves daily with every interaction.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Safety Engine spotlight (THE KILLER FEATURE) -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(255, 0, 60, 0.04), transparent);">
+    <div class="container">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;">
+        <div class="reveal">
+          <span class="eyebrow" style="background: rgba(255, 0, 60, 0.1); border-color: rgba(255, 0, 60, 0.3); color: #ff5722;" data-i18n-ar='⚠️ الميزة التي ChatGPT لا يستطيع'>
+            ⚠️ The killer feature ChatGPT can't do
+          </span>
+          <h2 style="margin: 14px 0 22px;" data-i18n-ar='يفهم <span class="gradient-text">الخطر الكيميائي</span> فعلاً'>Actually understands <span class="gradient-text">chemical danger</span></h2>
+          <p style="color: var(--text-2); font-size: 1.1rem; line-height: 1.85; margin-bottom: 24px;" data-i18n-ar="ChatGPT يخلط البيتش مع الأمونيا ويقول لك آمن. نحن نرفض - ونقول لك إنه ينتج غاز الكلورامين الذي يقتل في 30 ثانية. محرك السلامة لدينا يطبق 6 فحوصات متوازية على بيانات OSHA و EPA و NFPA حقيقية - ليست توقعات، ليست تخمينات.">
+            ChatGPT will happily mix bleach with ammonia and tell you it's fine. <strong style="color: var(--text-1);">We refuse</strong> — and explain it forms chloramine gas that kills in 30 seconds. Our Safety Engine runs <strong style="color: var(--primary);">6 parallel checks</strong> on real OSHA, EPA, and NFPA data.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 28px;">
+            <li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: var(--primary); font-weight: 900; font-size: 1.2rem; line-height: 1;">✓</span><span data-i18n-ar="2,400+ زوج ممنوع من المواد الكيميائية في قاعدة البيانات">2,400+ forbidden chemical pairs in our database</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: var(--primary); font-weight: 900; font-size: 1.2rem; line-height: 1;">✓</span><span data-i18n-ar="بيانات حرارة التفكك من NIST · بيانات سمية من IARC">NIST decomposition data · IARC toxicity data</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: var(--primary); font-weight: 900; font-size: 1.2rem; line-height: 1;">✓</span><span data-i18n-ar="تحديد PPE تلقائياً حسب فئة الخطر">Auto-determines PPE by risk category</span></li>
+            <li style="display: flex; gap: 10px; align-items: flex-start;"><span style="color: var(--primary); font-weight: 900; font-size: 1.2rem; line-height: 1;">✓</span><span data-i18n-ar="رفض قاطع للتركيبات القاتلة - بدون استثناء">Hard refusal on deadly combinations — no exceptions</span></li>
+          </ul>
+          <a href="./safety.html" class="btn btn-primary btn-lg">
+            <span data-i18n-ar="جرّب محرك السلامة">Try the Safety Engine</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </a>
+        </div>
+
+        <div class="reveal delay-2">
+          <div style="background: linear-gradient(135deg, rgba(255, 0, 60, 0.06), rgba(0, 0, 0, 0.4)); border: 2px solid rgba(255, 0, 60, 0.3); border-radius: var(--radius-xl); padding: 32px; position: relative; overflow: hidden;">
+            <!-- Demo mockup -->
+            <div style="display: flex; gap: 8px; margin-bottom: 18px;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f;"></span>
+              <span style="margin-inline-start: auto; color: var(--text-3); font-size: 0.82rem; font-family: monospace;">safety-engine.ai</span>
+            </div>
+
+            <div style="font-family: 'JetBrains Mono', 'Courier New', monospace; font-size: 0.85rem; line-height: 1.8;">
+              <div style="color: var(--text-3); margin-bottom: 8px;">$ analyze --mix "bleach + ammonia"</div>
+              <div style="color: #ff5722; margin-bottom: 4px;">⚠ Forbidden pair detected</div>
+              <div style="color: #ff5722; margin-bottom: 4px;">⚠ Chloramine gas formation risk</div>
+              <div style="color: var(--text-3); margin-bottom: 14px;">Source: OSHA 29 CFR 1910.1000</div>
+
+              <div style="background: linear-gradient(135deg, #4a0008, #1a0000); border: 2px solid #ff003c; border-radius: 14px; padding: 16px; margin-bottom: 14px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                  <span style="font-size: 1.6rem;">☠️</span>
+                  <strong style="color: #ff003c; font-size: 1.05rem;">DEADLY — REJECTED</strong>
+                </div>
+                <div style="color: var(--text-2); font-size: 0.82rem; line-height: 1.6;">Formula AI refuses to generate this combination. Causes pulmonary edema and death within 30 seconds.</div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div style="background: var(--bg-glass); border: 1px solid var(--border); padding: 10px; border-radius: 10px; text-align: center;">
+                  <div style="color: #ff003c; font-size: 1.4rem; font-weight: 900;">FAIL</div>
+                  <div style="color: var(--text-3); font-size: 0.72rem;">Forbidden pairs</div>
+                </div>
+                <div style="background: var(--bg-glass); border: 1px solid var(--border); padding: 10px; border-radius: 10px; text-align: center;">
+                  <div style="color: #ff003c; font-size: 1.4rem; font-weight: 900;">FAIL</div>
+                  <div style="color: var(--text-3); font-size: 0.72rem;">Toxicity check</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Open Encyclopedia teaser -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="هدية للعالم">A gift to the world</span>
+        <h2 data-i18n-ar='موسوعة كيميائية <span class="gradient-text">مفتوحة ومجانية</span> للعالم'>An open and free <span class="gradient-text">chemical encyclopedia</span> for the world</h2>
+        <p data-i18n-ar="موسوعة Formula AI المفتوحة - كل فورمولا تحت ترخيص Creative Commons - استخدمها، عدّلها، شاركها. تنمو يومياً.">The Formula AI Open Encyclopedia — every formula under Creative Commons. Use it, modify it, share it. Growing daily.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto 32px;">
+        <div class="card reveal" style="text-align: center;">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">📜</div>
+          <strong data-i18n-ar="ترخيص CC-BY-SA-4.0">CC-BY-SA-4.0 license</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="استخدام تجاري مسموح">Commercial use allowed</p>
+        </div>
+        <div class="card reveal delay-1" style="text-align: center;">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🎓</div>
+          <strong data-i18n-ar="مجاني للجامعات">Free for universities</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="500 جامعة مستهدفة">500 universities target</p>
+        </div>
+        <div class="card reveal delay-2" style="text-align: center;">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🏆</div>
+          <strong data-i18n-ar="جائزة $10,000 سنوياً">$10,000 yearly award</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="لأفضل فورمولا خضراء">For greenest formula</p>
+        </div>
+        <div class="card reveal delay-3" style="text-align: center;">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🛡️</div>
+          <strong data-i18n-ar="شهادات Gold Standard">Gold Standard certificates</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="ختم رقمي موثوق">Verifiable digital seal</p>
+        </div>
+      </div>
+
+      <div style="text-align: center; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+        <a href="./encyclopedia.html" class="btn btn-primary btn-lg">
+          <span data-i18n-ar="استعرض الموسوعة">Browse encyclopedia</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="./programs.html" class="btn btn-outline btn-lg">
+          <span data-i18n-ar="اكتشف البرامج">Discover programs</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Industries -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="صناعات متعددة">Many industries</span>
+        <h2 data-i18n-ar='تغطية شاملة لكل <span class="gradient-text">القطاعات الكيميائية</span>'>Comprehensive coverage across every <span class="gradient-text">chemical sector</span></h2>
+        <p data-i18n-ar="من المنظفات اليومية إلى الصيدلانيات المتقدمة - منصتنا تغطي كل ما يحتاجه مصنعك">From everyday detergents to advanced pharmaceuticals — our platform covers everything your factory needs</p>
+      </div>
+
+      <div class="industries reveal">
+        <div class="industry"><span class="industry-icon">🧴</span><div class="industry-name" data-i18n-ar="المنظفات">Detergents</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">💄</span><div class="industry-name" data-i18n-ar="مستحضرات تجميل">Cosmetics</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🧼</span><div class="industry-name" data-i18n-ar="العناية الشخصية">Personal care</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🦠</span><div class="industry-name" data-i18n-ar="المطهرات">Disinfectants</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">💊</span><div class="industry-name" data-i18n-ar="الصيدلانيات">Pharmaceuticals</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🌿</span><div class="industry-name" data-i18n-ar="الزراعة">Agriculture</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🏭</span><div class="industry-name" data-i18n-ar="الكيماويات الصناعية">Industrial chemicals</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🍔</span><div class="industry-name" data-i18n-ar="إضافات الأغذية">Food additives</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🚗</span><div class="industry-name" data-i18n-ar="منتجات السيارات">Automotive products</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🎨</span><div class="industry-name" data-i18n-ar="الدهانات والطلاءات">Paints & coatings</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">🏗️</span><div class="industry-name" data-i18n-ar="مواد البناء">Construction materials</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+        <div class="industry"><span class="industry-icon">⚗️</span><div class="industry-name" data-i18n-ar="البوليمرات">Polymers</div><div class="industry-count" data-i18n-ar="فورمولات متعددة">Multiple formulas</div></div>
+      </div>
+
+      <div style="text-align: center; margin-top: 36px;">
+        <a href="./industries.html" class="btn btn-outline btn-lg">
+          <span data-i18n-ar="استعرض الصناعات">Browse industries</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="كيف تعمل المنصة">How the platform works</span>
+        <h2 data-i18n-ar='من الفكرة إلى <span class="gradient-text">المنتج النهائي</span> في 4 خطوات'>From idea to <span class="gradient-text">finished product</span> in 4 steps</h2>
+        <p data-i18n-ar="عملية متقنة تجمع بين الذكاء الاصطناعي و25+ سنة خبرة في إدارة تصنيع كيميائي يتجاوز 2,000 طن شهرياً">A polished process combining AI with 25+ years of industrial-chemistry expertise — overseeing manufacturing of 2,000+ tons per month</p>
+      </div>
+
+      <div class="steps reveal">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="card-icon" style="margin-top: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <h3 data-i18n-ar="أخبرنا ما تحتاج">Tell us what you need</h3>
+          <p data-i18n-ar="اكتب اسم المنتج بالعربية أو الإنجليزية - شامبو، منظف، مطهر، كريم - وحدد القطاع والدولة المستهدفة.">Type the product name in any language — shampoo, detergent, disinfectant, cream — then pick the sector and target country.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="card-icon blue" style="margin-top: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8m-4-4h8"/></svg>
+          </div>
+          <h3 data-i18n-ar="الذكاء الاصطناعي يبحث">AI searches</h3>
+          <p data-i18n-ar="نبحث في آلاف الفورمولا، نختار الأفضل، نكمل النواقص، ونوازن النسب لـ 100% خلال أقل من ثانيتين.">We search thousands of formulas, pick the best match, fill in any gaps, and balance percentages to 100% — all in under two seconds.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="card-icon purple" style="margin-top: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/></svg>
+          </div>
+          <h3 data-i18n-ar="تحقق وامتثال">Validate & comply</h3>
+          <p data-i18n-ar="فحص الامتثال التنظيمي تلقائياً مع قوانين دولتك، كشف التعارضات، وتقييم الجودة من 100.">Automatic regulatory compliance checks against your country's rules, conflict detection, and a quality score out of 100.</p>
+        </div>
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="card-icon gold" style="margin-top: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          </div>
+          <h3 data-i18n-ar="صدّر وانطلق">Export & ship</h3>
+          <p data-i18n-ar="تصدير PDF/Excel جاهز للمصنع، طريقة التحضير، ورقة السلامة (MSDS)، وملصق المنتج بكل اللغات.">Export PDF/Excel that's factory-ready: preparation steps, safety sheet (MSDS), and product label in every language.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI Showcase -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(192, 132, 252, 0.04), transparent);">
+    <div class="container">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center;">
+        <div class="reveal" style="grid-column: span 1;">
+          <span class="eyebrow" data-i18n-ar="قلب المنصة">The platform's heart</span>
+          <h2 style="margin-bottom: 24px;" data-i18n-ar='العقل الكيميائي <span class="gradient-text">المتطور</span>'>The advanced <span class="gradient-text">chemical brain</span></h2>
+          <p style="color: var(--text-2); font-size: 1.1rem; margin-bottom: 28px; line-height: 1.9;" data-i18n-ar="بُني محرّكنا على نموذج Claude المتقدم مع طبقة معرفة كيميائية مدربة على ملايين الفورمولات. النتيجة؟ نظام يفهم الكيمياء على مستوى الذرات وليس مجرد الكلمات.">
+            Built on the advanced Claude model with a chemistry knowledge layer trained on millions of formulas. The result? A system that understands chemistry at the atomic level, not just at the keyword level.
+          </p>
+          <ul style="list-style: none; display: flex; flex-direction: column; gap: 14px;">
+            <li style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="background: rgba(0, 255, 136, 0.15); color: var(--primary); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;">✓</span>
+              <span data-i18n-ar="<strong>4 طرق استخراج متوازية</strong> - أنماط Regex + Claude AI + معالج الجداول + محلل القوائم"><strong>4 parallel extraction methods</strong> — Regex patterns + Claude AI + table processor + list parser</span>
+            </li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="background: rgba(0, 255, 136, 0.15); color: var(--primary); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;">✓</span>
+              <span data-i18n-ar="<strong>إكمال الفورمولات الناقصة</strong> - يضيف الماء، يصلح الأسماء المقطوعة، يقترح المكونات"><strong>Completes missing formulas</strong> — adds water, fixes truncated names, suggests ingredients</span>
+            </li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="background: rgba(0, 255, 136, 0.15); color: var(--primary); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;">✓</span>
+              <span data-i18n-ar="<strong>ذاكرة طويلة المدى</strong> - يتذكر تفضيلاتك ويتعلم من كل فورمولا تستخدمها"><strong>Long-term memory</strong> — remembers your preferences and learns from every formula you use</span>
+            </li>
+            <li style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="background: rgba(0, 255, 136, 0.15); color: var(--primary); width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 900;">✓</span>
+              <span data-i18n-ar="<strong>محاكي تفاعلات افتراضي</strong> - يتنبأ بالنتائج قبل خلط أي مادة في المعمل"><strong>Virtual reaction simulator</strong> — predicts outcomes before mixing anything in the lab</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="reveal delay-2" style="position: relative;">
+          <div class="card" style="background: linear-gradient(180deg, rgba(0, 255, 136, 0.06), rgba(0, 212, 255, 0.04));">
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ff5f56;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #ffbd2e;"></span>
+              <span style="width: 10px; height: 10px; border-radius: 50%; background: #27c93f;"></span>
+              <span style="color: var(--text-3); font-size: 0.85rem; margin-inline-start: auto; font-family: monospace;">formula-engine.ai</span>
+            </div>
+
+            <div style="font-family: 'Courier New', monospace; font-size: 0.88rem; line-height: 1.9;">
+              <div style="color: var(--text-3);" data-i18n-ar='<span style="color: var(--primary);">$</span> ai analyze "شامبو طبيعي"'><span style="color: var(--primary);">$</span> ai analyze "natural shampoo"</div>
+              <div style="color: var(--secondary); margin-top: 8px;" data-i18n-ar="⚡ تحليل بالذكاء الاصطناعي...">⚡ Running AI analysis…</div>
+              <div style="color: var(--text-2); margin-top: 6px;" data-i18n-ar="→ تم العثور على 247 فورمولا مشابهة">→ Found 247 similar formulas</div>
+              <div style="color: var(--text-2);" data-i18n-ar="→ اختيار أفضل تركيبة...">→ Picking the best match…</div>
+              <div style="color: var(--text-2);" data-i18n-ar='→ موازنة النسب: <span style="color: var(--primary);">100.0%</span> ✓'>→ Balancing percentages: <span style="color: var(--primary);">100.0%</span> ✓</div>
+              <div style="color: var(--text-2);" data-i18n-ar='→ فحص التعارضات: <span style="color: var(--primary);">لا توجد</span> ✓'>→ Conflict scan: <span style="color: var(--primary);">none</span> ✓</div>
+              <div style="color: var(--text-2);" data-i18n-ar='→ التحقق من الامتثال: <span style="color: var(--primary);">FDA, SFDA, ECHA</span> ✓'>→ Compliance check: <span style="color: var(--primary);">FDA, SFDA, ECHA</span> ✓</div>
+              <div style="margin-top: 14px; padding: 12px; background: rgba(0, 255, 136, 0.1); border-radius: 10px; border-inline-start: 3px solid var(--primary);">
+                <div style="color: var(--primary); font-weight: 700; margin-bottom: 6px;" data-i18n-ar="✓ النتيجة جاهزة">✓ Result ready</div>
+                <div style="color: var(--text-2); font-size: 0.82rem;" data-i18n-ar="9 مكونات · ثقة 96% · 1.2 ثانية">9 ingredients · 96% confidence · 1.2 sec</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Floating badges -->
+          <div style="position: absolute; top: -18px; inset-inline-end: -18px; background: var(--bg-2); border: 1px solid var(--border-primary); border-radius: 14px; padding: 12px 16px; backdrop-filter: blur(20px); box-shadow: var(--shadow-glow);">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <div class="spinner" style="width: 14px; height: 14px; border-width: 2px;"></div>
+              <span style="font-weight: 700; font-size: 0.85rem;" data-i18n-ar="يعالج الآن">Processing now</span>
+            </div>
+          </div>
+
+          <div style="position: absolute; bottom: -18px; inset-inline-start: -18px; background: var(--bg-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; backdrop-filter: blur(20px);">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="background: var(--grad-primary); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--bg-1); font-weight: 900;">AI</span>
+              <div>
+                <div style="font-weight: 700; font-size: 0.85rem;">Claude Sonnet</div>
+                <div style="font-size: 0.75rem; color: var(--text-3);">+ Custom Layer</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="شهادات العملاء">Customer testimonials</span>
+        <h2 data-i18n-ar='كيميائيون ومصنعون <span class="gradient-text">يثقون بنا</span>'>Chemists & manufacturers <span class="gradient-text">trust us</span></h2>
+        <p data-i18n-ar="من أصحاب المصانع الصغيرة إلى الشركات متعددة الجنسيات">From small factory owners to multinational corporations</p>
+      </div>
+
+      <div class="testimonials">
+        <div class="testimonial reveal">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text" data-i18n-ar='"وفّرت لنا Formula AI شهوراً من العمل المخبري. ما كان يستغرق 3 أشهر في التطوير، الآن نحصل عليه في يوم واحد. والأهم: الفورمولات تعمل بنفس الكفاءة من المرة الأولى."'>
+            "Formula AI saved us months of lab work. What used to take three months of R&D now arrives in a single day — and the formulas work just as well on the first try."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" data-i18n-ar="م">M</div>
+            <div>
+              <div class="testimonial-name" data-i18n-ar="د. محمد العبيدي">Dr. Mohammed Al-Obaidi</div>
+              <div class="testimonial-role" data-i18n-ar="رئيس قسم البحث · مصنع الرواد للكيماويات">Head of R&D · Pioneers Chemicals</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial reveal delay-1">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text" data-i18n-ar='"الميزة الأقوى هي فحص الامتثال التنظيمي. نصدّر منتجاتنا لـ 12 دولة، والمنصة تتأكد من توافقنا مع لوائح كل دولة تلقائياً. وفّرت علينا غرامات بمئات الآلاف."'>
+            "The strongest feature is the regulatory compliance check. We export to 12 countries, and the platform automatically verifies we meet each country's rules. It has saved us hundreds of thousands in fines."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" style="background: linear-gradient(135deg, #00d4ff, #c084fc);" data-i18n-ar="س">S</div>
+            <div>
+              <div class="testimonial-name" data-i18n-ar="سارة عبدالله">Sarah Abdullah</div>
+              <div class="testimonial-role" data-i18n-ar="مدير الجودة · شركة المرحبة للمنظفات">Quality Manager · Marhaba Detergents</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial reveal delay-2">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text" data-i18n-ar='"كنت أكره الكتب الكيميائية القديمة بأسماء مكوناتها المقطوعة. منصة Formula AI تكمل هذه النواقص بدقة مذهلة. أصبحت معلوماتي أكمل وأدق من أي مرجع آخر."'>
+            "I used to hate old chemistry books with their truncated ingredient names. Formula AI fills in those gaps with stunning accuracy. My data is now more complete and more accurate than any other reference."
+          </p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar" style="background: linear-gradient(135deg, #ffd700, #e94560);" data-i18n-ar="أ">A</div>
+            <div>
+              <div class="testimonial-name" data-i18n-ar="أحمد كوامي">Ahmed Kwame</div>
+              <div class="testimonial-role" data-i18n-ar="كيميائي مستقل · غرب أفريقيا">Independent chemist · West Africa</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="الأسئلة الشائعة">FAQ</span>
+        <h2 data-i18n-ar='كل ما تريد <span class="gradient-text">معرفته</span>'>Everything you want to <span class="gradient-text">know</span></h2>
+      </div>
+
+      <div class="faq-list reveal">
+        <div class="faq-item open">
+          <button class="faq-q">
+            <span data-i18n-ar="هل يمكنني استخدام الفورمولات تجارياً للإنتاج الصناعي؟">Can I use the formulas commercially for industrial production?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم، جميع الفورمولات في خطط Professional و Business و Enterprise مرخّصة للاستخدام التجاري والإنتاج الصناعي بدون قيود. تحصل على ملكية كاملة لكل فورمولا تستخرجها أو تطورها على المنصة.">
+            Yes — all formulas on Professional, Business, and Enterprise plans are licensed for commercial use and industrial production without restrictions. You get full ownership of every formula you extract or develop on the platform.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="كيف يضمن الذكاء الاصطناعي دقة الفورمولات؟">How does the AI guarantee formula accuracy?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نطبّق 7 طبقات تحقق متتابعة: التحقق من المصدر العلمي، موازنة النسب لـ 100%، فحص التعارضات الكيميائية، التحقق من قواعد السلامة، الامتثال التنظيمي للدولة المستهدفة، تقييم الجودة، والمراجعة البشرية للفورمولات الحيوية. النتيجة: متوسط دقة 99.7%.">
+            We apply 7 sequential validation layers: scientific source check, balancing percentages to 100%, chemical conflict detection, safety rule verification, target-country regulatory compliance, quality scoring, and human review for critical formulas. The result: an average accuracy of 99.7%.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل يدعم النظام رفع كتبي وأبحاثي الخاصة؟">Can I upload my own books and research?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم بالتأكيد. خططنا Business و Enterprise تتيح لك رفع كتبك وأبحاثك (PDF/EPUB) ليقوم النظام باستخراج وفهرسة الفورمولات منها تلقائياً. كل بياناتك تبقى خاصة بك ولا تتم مشاركتها مع أي مستخدم آخر.">
+            Absolutely. Business and Enterprise plans let you upload your own books and research (PDF/EPUB) so the system can automatically extract and index formulas from them. All your data stays private and is never shared with other users.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل المنصة متاحة بلغات أخرى غير العربية؟">Is the platform available in languages other than English?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="المنصة تدعم 20 لغة حالياً: الإنجليزية (الافتراضية)، العربية، الفرنسية، الإسبانية، البرتغالية، التركية، الألمانية، الإيطالية، الصينية، اليابانية، الكورية، الروسية، الهندية، الأردية، الفارسية، الماليزية، الإندونيسية، السواحيلية، الهوسا، والأمهرية. الذكاء الاصطناعي يجيبك بنفس لغتك تلقائياً، ويمكنك التبديل بين الوضع الليلي والنهاري ولغتك المفضلة من شريط التنقّل.">
+            The platform supports 20 languages today: English (default), Arabic, French, Spanish, Portuguese, Turkish, German, Italian, Chinese, Japanese, Korean, Russian, Hindi, Urdu, Persian, Malay, Indonesian, Swahili, Hausa, and Amharic. The AI automatically replies in your own language, and you can toggle between dark/light mode and your preferred language right from the navbar.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="ما الذي يميزكم عن المنصات الكيميائية الأخرى؟">What makes you different from other chemistry platforms?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="ثلاث مزايا حصرية: (1) <strong>إكمال الفورمولات الناقصة</strong> — نُكمل ما نقص في الكتب القديمة بمساعدة الذكاء الاصطناعي. (2) <strong>تغطية صناعية واسعة</strong> — فورمولات لمنظفات، تجميل، صناعات غذائية، أدوية، طلاءات وغيرها. (3) <strong>توافق تنظيمي عالمي</strong> — مرجعية كبرى الهيئات التنظيمية بدلاً من البحث اليدوي.">
+            Three exclusive advantages: (1) <strong>Completing missing formulas</strong> — we fill the gaps in old reference books with AI assistance. (2) <strong>Broad industry coverage</strong> — formulations for detergents, cosmetics, food, pharma, coatings and more. (3) <strong>Global regulatory alignment</strong> — references to major regulatory frameworks instead of manual research.
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل يمكنني الإلغاء في أي وقت؟">Can I cancel anytime?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم، يمكنك إلغاء اشتراكك في أي وقت بضغطة واحدة من لوحة التحكم. لا توجد رسوم إلغاء، ولا أسئلة، ويستمر اشتراكك حتى نهاية الفترة المدفوعة.">
+            Yes — you can cancel your subscription anytime with one click from your dashboard. No cancellation fees, no questions asked, and your subscription continues until the end of the paid period.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Banner -->
+  <section class="container">
+    <div class="cta-banner reveal">
+      <h2 data-i18n-ar="جاهز لتحويل مصنعك بالذكاء الاصطناعي؟">Ready to transform your factory with AI?</h2>
+      <p data-i18n-ar="ابدأ مجاناً اليوم - بدون بطاقة ائتمان، بدون التزامات">Start free today — no credit card, no commitment</p>
+      <div style="display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; position: relative;">
+        <a href="./register.html" class="btn btn-primary btn-lg">
+          <span data-i18n-ar="ابدأ مجاناً الآن">Get started free now</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="./pricing.html" class="btn btn-lg" style="background: rgba(5, 8, 24, 0.1); color: var(--bg-1); border: 1px solid rgba(5, 8, 24, 0.2);" data-i18n-ar="تصفح الخطط">
+          See pricing
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+            </span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="أول منصة ذكاء اصطناعي كيميائي عالمية. مهمتنا: تمكين كل كيميائي ومصنّع في العالم بأحدث تقنيات الذكاء الاصطناعي وأشمل قاعدة معرفة كيميائية.">The world's first AI chemical formulation platform. Our mission: empower every chemist and manufacturer worldwide with the latest AI and the most comprehensive chemical knowledge base.</p>
+          <div class="footer-social">
+            <a href="#" aria-label="Twitter"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></a>
+            <a href="#" aria-label="LinkedIn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.5 2h-17A1.5 1.5 0 002 3.5v17A1.5 1.5 0 003.5 22h17a1.5 1.5 0 001.5-1.5v-17A1.5 1.5 0 0020.5 2zM8 19H5v-9h3v9zM6.5 8.25A1.75 1.75 0 118.3 6.5a1.78 1.78 0 01-1.8 1.75zM19 19h-3v-4.74c0-1.42-.6-1.93-1.38-1.93a1.74 1.74 0 00-1.62 1.91V19h-3v-9h2.9v1.3a3.11 3.11 0 012.7-1.4c1.55 0 3.36.86 3.36 3.66z"/></svg></a>
+            <a href="#" aria-label="YouTube"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M23.498 6.186a3.016 3.016 0 00-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 00.502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 002.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 002.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+            <a href="#" aria-label="GitHub"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.111.82-.261.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg></a>
+          </div>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n-ar="المنتج">Product</h4>
+          <ul>
+            <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+            <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
+            <li><a href="./lab.html" data-i18n-ar="المختبر الافتراضي">Virtual Lab</a></li>
+            <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+            <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+            <li><a href="./compliance.html" data-i18n-ar="الامتثال التنظيمي">Regulatory compliance</a></li>
+            <li><a href="./learn.html" data-i18n-ar="تعليم الذكاء الاصطناعي">Teach the AI</a></li>
+            <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n-ar="الشركة">Company</h4>
+          <ul>
+            <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+            <li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li>
+            <li><a href="#" data-i18n-ar="المدوّنة">Blog</a></li>
+            <li><a href="#" data-i18n-ar="الوظائف">Careers</a></li>
+            <li><a href="#" data-i18n-ar="الشركاء">Partners</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4 data-i18n-ar="الموارد">Resources</h4>
+          <ul>
+            <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Open Encyclopedia</a></li>
+            <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
+            <li><a href="./docs.html" data-i18n-ar="التوثيق">Documentation</a></li>
+            <li><a href="./docs.html#sdk" data-i18n-ar="واجهة API">API reference</a></li>
+            <li><a href="./dashboard.html" data-i18n-ar="لوحة التحكم">Dashboard</a></li>
+            <li><a href="#" data-i18n-ar="المساعدة">Help center</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة. تأسست بواسطة جميل عبدالجليل.">© <span data-year>2026</span> Formula AI Global. All rights reserved. Founded by Jamil Abduljalil.</div>
+        <div style="display: flex; gap: 18px; flex-wrap: wrap;">
+          <a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a>
+          <a href="./terms.html" data-i18n-ar="الشروط">Terms</a>
+          <a href="#" data-i18n-ar="الأمان">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+</body>
+</html>

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>My Library — saved formulas, prices, cost & scaling</title>
+  <meta name="description" content="Your personal formula library with cost calculator and production scaler." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .lib-shell { max-width: 1200px; margin: 0 auto; padding: 100px 16px 40px; }
+    .lib-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    .lib-tab {
+      padding: 12px 18px;
+      border: none;
+      background: transparent;
+      color: var(--text-2);
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .lib-tab:hover { color: var(--text-1); }
+    .lib-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+    .lib-panel { display: none; }
+    .lib-panel.active { display: block; }
+
+    .formula-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    .formula-tile {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .formula-tile:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-primary);
+    }
+    .formula-tile .cat-pill {
+      display: inline-block;
+      padding: 3px 10px;
+      background: rgba(0,255,136,0.1);
+      color: var(--primary);
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .formula-tile h4 { font-size: 1rem; margin-bottom: 6px; line-height: 1.4; }
+    .formula-tile .meta { color: var(--text-3); font-size: 0.82rem; }
+    .formula-tile .actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .formula-tile .btn-mini {
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border: 1px solid var(--border);
+      background: var(--bg-glass);
+      color: var(--text-1);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .formula-tile .btn-mini:hover { background: var(--bg-card-hover); border-color: var(--border-primary); }
+    .formula-tile .btn-mini.danger { color: #f87171; border-color: rgba(239,68,68,0.3); }
+    .formula-tile .btn-mini.danger:hover { background: rgba(239,68,68,0.08); }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      max-width: 720px;
+      width: 100%;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 28px;
+    }
+    .modal-box h3 { margin-bottom: 16px; }
+    .modal-close {
+      float: right;
+      cursor: pointer;
+      color: var(--text-3);
+      font-size: 1.4rem;
+      line-height: 1;
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    /* Prices table */
+    .price-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 80px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-glass);
+      border-radius: 10px;
+      margin-bottom: 6px;
+      align-items: center;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 700px) {
+      .price-row { grid-template-columns: 1fr; }
+    }
+
+    /* Cost result */
+    .cost-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .cost-summary > div {
+      background: var(--bg-glass);
+      padding: 14px;
+      border-radius: 12px;
+      text-align: center;
+    }
+    .cost-summary .num { font-size: 1.6rem; font-weight: 900; color: var(--primary); }
+    .cost-summary .lbl { color: var(--text-3); font-size: 0.78rem; margin-top: 4px; }
+
+    /* Scale table */
+    .scale-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      font-size: 0.92rem;
+    }
+    .scale-table th, .scale-table td {
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+    }
+    .scale-table th { color: var(--text-3); font-size: 0.78rem; text-transform: uppercase; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./library.html" class="active" data-i18n-ar="مكتبتي">My Library</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./discover.html" data-i18n-ar="اكتشاف">Discover</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg><svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg></button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language"><span class="flag">🇸🇦</span><span class="label">AR</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="lib-shell">
+    <div style="margin-bottom: 22px;">
+      <h1 data-i18n-ar="مكتبتي الشخصية">My Library</h1>
+      <p style="color: var(--text-2); margin-top: 4px;" data-i18n-ar="فورمولاتك المحفوظة، أسعار المكونات، حاسبة التكاليف، ومحوّل الإنتاج.">
+        Your saved formulas, ingredient prices, cost calculator, and production scaler.
+      </p>
+    </div>
+
+    <div id="auth-required" style="display:none; padding:18px; background: rgba(251,146,60,0.08); border:1px solid rgba(251,146,60,0.3); border-radius:12px; margin-bottom:18px; text-align:center;">
+      <span data-i18n-ar="يلزم تسجيل الدخول لعرض مكتبتك.">Sign in to view your library.</span>
+      <a href="./login.html" class="btn btn-primary" style="margin-inline-start:10px;" data-i18n-ar="تسجيل الدخول">Sign in</a>
+    </div>
+
+    <div class="lib-tabs">
+      <button class="lib-tab active" data-tab="formulas" data-i18n-ar="فورمولاتي">My formulas</button>
+      <button class="lib-tab" data-tab="prices" data-i18n-ar="أسعار المكونات">Ingredient prices</button>
+      <button class="lib-tab" data-tab="cost" data-i18n-ar="حاسبة التكاليف">Cost calculator</button>
+      <button class="lib-tab" data-tab="scale" data-i18n-ar="محوّل الإنتاج">Production scaler</button>
+    </div>
+
+    <!-- Formulas tab -->
+    <div class="lib-panel active" data-panel="formulas">
+      <div style="display:flex; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+        <h3 data-i18n-ar="فورمولاتك المحفوظة">Your saved formulas</h3>
+        <a href="./chat.html" class="btn btn-primary btn-sm" data-i18n-ar="أنشئ جديدة من الدردشة">Create new via Chat</a>
+      </div>
+      <div id="formulas-list" class="formula-grid">
+        <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="لا توجد فورمولات بعد. استخدم AI Chat لحفظ تعديلاتك.">No formulas yet. Use AI Chat to save modifications.</div>
+      </div>
+    </div>
+
+    <!-- Prices tab -->
+    <div class="lib-panel" data-panel="prices">
+      <h3 style="margin-bottom: 14px;" data-i18n-ar="أسعار المكونات لديك">Your ingredient prices</h3>
+      <p style="color:var(--text-3); font-size:0.88rem; margin-bottom: 16px;" data-i18n-ar="أضف أسعار شراء مكوناتك (لكل كيلوغرام). تُستخدم في حاسبة التكاليف.">Add purchase prices per kilogram. Used by the cost calculator.</p>
+
+      <div class="card" style="padding: 18px; margin-bottom: 20px;">
+        <h4 style="margin-bottom: 12px;" data-i18n-ar="أضف سعر جديد">Add new price</h4>
+        <div class="price-row" style="background: transparent; padding: 0;">
+          <input id="p-name" class="form-input" placeholder="Ingredient name (e.g. SLES)" data-i18n-attr="placeholder" data-i18n-placeholder-ar="اسم المكوّن (مثل SLES)" />
+          <input id="p-price" class="form-input" type="number" step="0.01" placeholder="Price/kg" data-i18n-attr="placeholder" data-i18n-placeholder-ar="السعر/كغ" />
+          <select id="p-cur" class="form-select">
+            <option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="SAR">SAR</option><option value="AED">AED</option><option value="EGP">EGP</option>
+          </select>
+          <button id="p-add" class="btn btn-primary btn-sm" data-i18n-ar="إضافة">Add</button>
+        </div>
+      </div>
+
+      <div id="prices-list"></div>
+    </div>
+
+    <!-- Cost tab -->
+    <div class="lib-panel" data-panel="cost">
+      <h3 style="margin-bottom: 14px;" data-i18n-ar="حاسبة تكاليف الفورمولا">Formula cost calculator</h3>
+      <div class="card" style="padding: 20px;">
+        <p style="color:var(--text-3); font-size:0.88rem; margin-bottom: 12px;" data-i18n-ar="اختر فورمولا من مكتبتك أو الزق UUID لفورمولا من قاعدة البيانات.">Pick a formula from your library or paste a UUID from the public database.</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 110px 100px; gap:10px; margin-bottom: 14px;">
+          <select id="c-source" class="form-select">
+            <option value="library">From my library</option>
+            <option value="public">Public UUID</option>
+          </select>
+          <input id="c-formula" class="form-input" placeholder="(select or paste UUID)" />
+          <input id="c-batch" class="form-input" type="number" value="100" min="0.1" step="0.1" />
+          <button id="c-run" class="btn btn-primary" data-i18n-ar="احسب">Calculate</button>
+        </div>
+        <div id="cost-result"></div>
+      </div>
+    </div>
+
+    <!-- Scale tab -->
+    <div class="lib-panel" data-panel="scale">
+      <h3 style="margin-bottom: 14px;" data-i18n-ar="محوّل الإنتاج">Production scaler</h3>
+      <div class="card" style="padding: 20px;">
+        <p style="color:var(--text-3); font-size:0.88rem; margin-bottom: 12px;" data-i18n-ar="حوّل فورمولا من نسب مئوية إلى كميات فعلية لحجم الإنتاج الذي تريد.">Convert a formula from percentages to actual masses for any batch size.</p>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 110px 90px 100px; gap:10px; margin-bottom: 14px;">
+          <select id="s-source" class="form-select">
+            <option value="library">From my library</option>
+            <option value="public">Public UUID</option>
+          </select>
+          <input id="s-formula" class="form-input" placeholder="(select or paste UUID)" />
+          <input id="s-target" class="form-input" type="number" value="200" min="0.1" step="0.1" />
+          <select id="s-unit" class="form-select">
+            <option value="kg">kg</option><option value="g">g</option><option value="L">L</option><option value="mL">mL</option>
+          </select>
+          <button id="s-run" class="btn btn-primary" data-i18n-ar="حوّل">Scale</button>
+        </div>
+        <div id="scale-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formula detail modal -->
+  <div id="modal" class="modal-backdrop">
+    <div class="modal-box">
+      <button class="modal-close" id="modal-close">×</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/library-live.js"></script>
+</body>
+</html>

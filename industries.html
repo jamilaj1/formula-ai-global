@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Industries — Formula AI Global</title>
+  <meta name="description" content="Broad coverage of chemical industries — from detergents to pharmaceuticals to agriculture. Thousands of formulas across many sectors and growing." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .ind-category { margin-bottom: 50px; }
+    .ind-cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .ind-cat-icon { width: 48px; height: 48px; border-radius: 12px; background: var(--grad-primary); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+    .ind-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .ind-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; cursor: pointer; transition: all 0.25s ease; position: relative; overflow: hidden; }
+    .ind-card:hover { border-color: var(--border-primary); background: var(--bg-card-hover); transform: translateY(-3px); }
+    .ind-emoji { font-size: 2.4rem; margin-bottom: 10px; display: block; }
+    .ind-name { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+    .ind-en { color: var(--text-3); font-size: 0.78rem; margin-bottom: 8px; }
+    .ind-formulas { color: var(--primary); font-size: 0.85rem; font-weight: 700; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 4px; }
+    .filter-btn { padding: 10px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; color: var(--text-2); font-weight: 600; font-size: 0.9rem; white-space: nowrap; cursor: pointer; transition: all 0.2s ease; }
+    .filter-btn:hover { background: var(--bg-card-hover); }
+    .filter-btn.active { background: var(--grad-primary); color: var(--bg-1); border-color: transparent; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+        <li><a href="./industries.html" class="active" data-i18n-ar="الصناعات">Industries</a></li>
+        <li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.3;"></div>
+      <div class="hero-orb blue" style="opacity: 0.3;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 40px;">
+        <span class="eyebrow reveal" data-i18n-ar="تغطية كاملة">Full coverage</span>
+        <h1 class="reveal" data-i18n-ar='الصناعات الكيميائية <span class="gradient-text">في منصة واحدة</span>'>Chemical industries <span class="gradient-text">in one platform</span></h1>
+        <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.1rem; margin-top: 18px;" data-i18n-ar="من العناية الشخصية اليومية إلى الكيماويات الصناعية المتخصصة - منصة Formula AI تغطي كل القطاعات">
+          From everyday personal care to specialty industrial chemicals — Formula AI covers every sector.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats reveal delay-2" style="max-width: 1100px; margin-bottom: 40px;">
+        <div class="stat"><div class="stat-value">40</div><div class="stat-label" data-i18n-ar="صناعة">Industries</div></div>
+        <div class="stat"><div class="stat-value">8</div><div class="stat-label" data-i18n-ar="فئات رئيسية">Main categories</div></div>
+        <div class="stat"><div class="stat-value">3,381+</div><div class="stat-label" data-i18n-ar="فورمولا">Formulas</div></div>
+        <div class="stat"><div class="stat-value">1.2M+</div><div class="stat-label" data-i18n-ar="مادة كيميائية">Chemicals</div></div>
+      </div>
+
+      <!-- Filter -->
+      <div class="filter-bar reveal">
+        <button class="filter-btn active" data-i18n-ar="الكل (40)">All (40)</button>
+        <button class="filter-btn" data-i18n-ar="العناية الشخصية">Personal Care</button>
+        <button class="filter-btn" data-i18n-ar="المنظفات">Detergents</button>
+        <button class="filter-btn" data-i18n-ar="الصناعات الثقيلة">Heavy Industry</button>
+        <button class="filter-btn" data-i18n-ar="الزراعة والأغذية">Agriculture & Food</button>
+        <button class="filter-btn" data-i18n-ar="الصيدلة والصحة">Pharma & Health</button>
+        <button class="filter-btn" data-i18n-ar="الطاقة والبيئة">Energy & Environment</button>
+        <button class="filter-btn" data-i18n-ar="المتخصصة">Specialty</button>
+      </div>
+
+      <!-- Categories -->
+
+      <!-- Personal Care & Cosmetics -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">💄</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="العناية الشخصية ومستحضرات التجميل">Personal Care & Cosmetics</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="5 صناعات · 67,500+ فورمولا">5 industries · 67,500+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧴</span><div class="ind-name" data-i18n-ar="رعاية الشعر">Hair Care</div><div class="ind-formulas" data-i18n-ar="18,200 فورمولا">18,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧖</span><div class="ind-name" data-i18n-ar="العناية بالبشرة">Skin Care</div><div class="ind-formulas" data-i18n-ar="22,400 فورمولا">22,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">💋</span><div class="ind-name" data-i18n-ar="المكياج">Color Cosmetics</div><div class="ind-formulas" data-i18n-ar="14,300 فورمولا">14,300 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🛁</span><div class="ind-name" data-i18n-ar="منتجات الاستحمام">Bath & Body</div><div class="ind-formulas" data-i18n-ar="8,900 فورمولا">8,900 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🦷</span><div class="ind-name" data-i18n-ar="معاجين الأسنان">Oral Care</div><div class="ind-formulas" data-i18n-ar="3,700 فورمولا">3,700 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Detergents & Cleaning -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">🧼</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="المنظفات والتنظيف">Detergents & Cleaning</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="7 صناعات · 38,400+ فورمولا">7 industries · 38,400+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧴</span><div class="ind-name" data-i18n-ar="المنظفات السائلة">Liquid Detergents</div><div class="ind-formulas" data-i18n-ar="8,200 فورمولا">8,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧺</span><div class="ind-name" data-i18n-ar="مساحيق الغسيل">Laundry Powders</div><div class="ind-formulas" data-i18n-ar="6,400 فورمولا">6,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧹</span><div class="ind-name" data-i18n-ar="منظفات الأرضيات">Floor Cleaners</div><div class="ind-formulas" data-i18n-ar="5,300 فورمولا">5,300 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🚿</span><div class="ind-name" data-i18n-ar="منظفات الحمام">Bathroom Cleaners</div><div class="ind-formulas" data-i18n-ar="4,100 فورمولا">4,100 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🍽️</span><div class="ind-name" data-i18n-ar="سوائل الجلي">Dishwashing</div><div class="ind-formulas" data-i18n-ar="5,600 فورمولا">5,600 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🦠</span><div class="ind-name" data-i18n-ar="المطهرات">Disinfectants</div><div class="ind-formulas" data-i18n-ar="8,900 فورمولا">8,900 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">✋</span><div class="ind-name" data-i18n-ar="معقمات اليدين">Hand Sanitizers</div><div class="ind-formulas" data-i18n-ar="2,800 فورمولا">2,800 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Industrial -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">🏭</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="الكيماويات الصناعية">Industrial Chemicals</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="6 صناعات · 51,200+ فورمولا">6 industries · 51,200+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">⚗️</span><div class="ind-name" data-i18n-ar="الكيماويات الأساسية">Bulk Chemicals</div><div class="ind-formulas" data-i18n-ar="12,400 فورمولا">12,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🎨</span><div class="ind-name" data-i18n-ar="الدهانات والطلاءات">Paints & Coatings</div><div class="ind-formulas" data-i18n-ar="11,200 فورمولا">11,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧪</span><div class="ind-name" data-i18n-ar="الراتنجات والبوليمرات">Polymers</div><div class="ind-formulas" data-i18n-ar="8,100 فورمولا">8,100 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🏗️</span><div class="ind-name" data-i18n-ar="مواد البناء">Construction</div><div class="ind-formulas" data-i18n-ar="6,500 فورمولا">6,500 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧷</span><div class="ind-name" data-i18n-ar="المواد اللاصقة">Adhesives & Sealants</div><div class="ind-formulas" data-i18n-ar="5,800 فورمولا">5,800 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🛢️</span><div class="ind-name" data-i18n-ar="الزيوت والشحوم">Lubricants</div><div class="ind-formulas" data-i18n-ar="7,200 فورمولا">7,200 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Auto & Transport -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">🚗</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="السيارات والنقل">Automotive & Transport</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="4 صناعات · 16,800+ فورمولا">4 industries · 16,800+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🚿</span><div class="ind-name" data-i18n-ar="شامبو السيارات">Car Wash</div><div class="ind-formulas" data-i18n-ar="3,200 فورمولا">3,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">✨</span><div class="ind-name" data-i18n-ar="الملمعات والشمع">Polish & Wax</div><div class="ind-formulas" data-i18n-ar="4,100 فورمولا">4,100 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧯</span><div class="ind-name" data-i18n-ar="سوائل الفرامل">Brake Fluids</div><div class="ind-formulas" data-i18n-ar="2,300 فورمولا">2,300 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">⚙️</span><div class="ind-name" data-i18n-ar="مضادات التجمد">Antifreeze & Coolants</div><div class="ind-formulas" data-i18n-ar="7,200 فورمولا">7,200 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Pharmaceuticals -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">💊</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="الصيدلة والصحة">Pharmaceuticals & Health</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="5 صناعات · 48,300+ فورمولا">5 industries · 48,300+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">💊</span><div class="ind-name" data-i18n-ar="الأدوية الفموية">Oral Drugs</div><div class="ind-formulas" data-i18n-ar="18,200 فورمولا">18,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🩹</span><div class="ind-name" data-i18n-ar="المراهم والكريمات الطبية">Topical Creams</div><div class="ind-formulas" data-i18n-ar="9,400 فورمولا">9,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">💉</span><div class="ind-name" data-i18n-ar="المحاليل الوريدية">Injectables</div><div class="ind-formulas" data-i18n-ar="5,600 فورمولا">5,600 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🌿</span><div class="ind-name" data-i18n-ar="المكملات الغذائية">Nutraceuticals</div><div class="ind-formulas" data-i18n-ar="8,700 فورمولا">8,700 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🐾</span><div class="ind-name" data-i18n-ar="الأدوية البيطرية">Veterinary</div><div class="ind-formulas" data-i18n-ar="6,400 فورمولا">6,400 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Agriculture & Food -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">🌾</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="الزراعة والأغذية">Agriculture & Food</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="5 صناعات · 24,100+ فورمولا">5 industries · 24,100+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🌱</span><div class="ind-name" data-i18n-ar="المبيدات الحشرية">Pesticides</div><div class="ind-formulas" data-i18n-ar="7,200 فورمولا">7,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🌾</span><div class="ind-name" data-i18n-ar="الأسمدة">Fertilizers</div><div class="ind-formulas" data-i18n-ar="5,800 فورمولا">5,800 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🍔</span><div class="ind-name" data-i18n-ar="إضافات الأغذية">Food Additives</div><div class="ind-formulas" data-i18n-ar="5,400 فورمولا">5,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🥤</span><div class="ind-name" data-i18n-ar="المشروبات">Beverages</div><div class="ind-formulas" data-i18n-ar="2,900 فورمولا">2,900 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🍫</span><div class="ind-name" data-i18n-ar="الحلويات والكاكاو">Confectionery</div><div class="ind-formulas" data-i18n-ar="2,800 فورمولا">2,800 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Energy & Environment -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">⚡</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="الطاقة والبيئة">Energy & Environment</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="4 صناعات · 12,400+ فورمولا">4 industries · 12,400+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🔋</span><div class="ind-name" data-i18n-ar="البطاريات والخلايا">Batteries</div><div class="ind-formulas" data-i18n-ar="3,800 فورمولا">3,800 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">⛽</span><div class="ind-name" data-i18n-ar="إضافات الوقود">Fuel Additives</div><div class="ind-formulas" data-i18n-ar="4,200 فورمولا">4,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">💧</span><div class="ind-name" data-i18n-ar="معالجة المياه">Water Treatment</div><div class="ind-formulas" data-i18n-ar="2,900 فورمولا">2,900 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">♻️</span><div class="ind-name" data-i18n-ar="الكيماويات الخضراء">Green Chemistry</div><div class="ind-formulas" data-i18n-ar="1,500 فورمولا">1,500 formulas</div></a>
+        </div>
+      </div>
+
+      <!-- Specialty -->
+      <div class="ind-category reveal">
+        <div class="ind-cat-header">
+          <div class="ind-cat-icon">🔬</div>
+          <div>
+            <h3 style="font-size: 1.4rem;" data-i18n-ar="الصناعات المتخصصة">Specialty Industries</h3>
+            <div style="color: var(--text-3); font-size: 0.9rem;" data-i18n-ar="4 صناعات · 9,300+ فورمولا">4 industries · 9,300+ formulas</div>
+          </div>
+        </div>
+        <div class="ind-grid">
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧬</span><div class="ind-name" data-i18n-ar="التكنولوجيا الحيوية">Biotech</div><div class="ind-formulas" data-i18n-ar="3,400 فورمولا">3,400 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">📷</span><div class="ind-name" data-i18n-ar="الكيمياء التصويرية">Photographic</div><div class="ind-formulas" data-i18n-ar="1,200 فورمولا">1,200 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🖨️</span><div class="ind-name" data-i18n-ar="أحبار الطباعة">Printing Inks</div><div class="ind-formulas" data-i18n-ar="2,800 فورمولا">2,800 formulas</div></a>
+          <a href="./formulas.html" class="ind-card"><span class="ind-emoji">🧲</span><div class="ind-name" data-i18n-ar="الصناعات الإلكترونية">Electronics</div><div class="ind-formulas" data-i18n-ar="1,900 فورمولا">1,900 formulas</div></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container" style="padding-bottom: 60px;">
+    <div class="cta-banner reveal">
+      <h2 data-i18n-ar="لا تجد صناعتك؟ اطلب التغطية!">Don't see your industry? Request coverage!</h2>
+      <p data-i18n-ar="نضيف صناعات جديدة كل شهر بناءً على طلبات عملائنا">We add new industries every month based on customer requests.</p>
+      <a href="./contact.html" class="btn btn-primary btn-lg" style="position: relative;" data-i18n-ar='تواصل معنا <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
+        Contact us
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script>
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      });
+    });
+  </script>
+</body>
+</html>

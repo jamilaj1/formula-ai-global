@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Open Encyclopedia — 50,000 free formulas | Formula AI Global</title>
+  <meta name="description" content="The world's largest free chemistry encyclopedia — 50,000 verified formulas under CC-BY-SA-4.0 license. Free for everyone, forever." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .enc-search-bar {
+      max-width: 720px;
+      margin: 0 auto 30px;
+      display: flex;
+      gap: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 8px;
+      backdrop-filter: blur(12px);
+    }
+    .enc-search-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      padding: 12px 18px;
+      color: var(--text-1);
+      font-size: 1rem;
+    }
+
+    .formula-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 18px;
+    }
+    .formula-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 22px;
+      transition: all 0.25s ease;
+      cursor: pointer;
+      position: relative;
+    }
+    .formula-card:hover {
+      border-color: var(--border-primary);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-card);
+    }
+    .formula-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .formula-card-emoji {
+      width: 44px; height: 44px;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      flex-shrink: 0;
+    }
+    .formula-card-title {
+      font-weight: 800;
+      font-size: 1rem;
+      margin-bottom: 2px;
+    }
+    .formula-card-cat {
+      color: var(--text-3);
+      font-size: 0.78rem;
+    }
+    .formula-card-stats {
+      display: flex;
+      gap: 14px;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+      color: var(--text-3);
+      font-size: 0.82rem;
+    }
+    .formula-card-stats span {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .formula-card-trust {
+      position: absolute;
+      top: 14px;
+      inset-inline-end: 14px;
+      background: rgba(0, 255, 136, 0.15);
+      color: var(--primary);
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 800;
+    }
+    .formula-card-license {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--bg-glass);
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 0.72rem;
+      color: var(--text-3);
+      margin-top: 10px;
+    }
+
+    .cat-pills {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 30px;
+    }
+    .cat-pill {
+      padding: 8px 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.88rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      color: var(--text-2);
+    }
+    .cat-pill:hover { background: var(--bg-card-hover); }
+    .cat-pill.active {
+      background: var(--grad-primary);
+      color: var(--bg-1);
+      border-color: transparent;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
+        <li><a href="./encyclopedia.html" class="active" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
+        <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.3;"></div>
+      <div class="hero-orb purple" style="opacity: 0.3;"></div>
+    </div>
+
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 880px; margin: 0 auto 40px;">
+        <span class="eyebrow reveal">Free for the world · CC-BY-SA-4.0</span>
+        <h1 class="reveal">The Open <span class="gradient-text">Chemistry Encyclopedia</span></h1>
+        <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; margin-top: 22px; line-height: 1.85;">
+          50,000 verified chemical formulas — released free to humanity under Creative Commons. From small artisans in Ghana to research labs in Tokyo, anyone can use, modify, and share.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats reveal delay-2" style="max-width: 1100px; margin-bottom: 40px;">
+        <div class="stat"><div class="stat-value">50K</div><div class="stat-label">Free formulas</div></div>
+        <div class="stat"><div class="stat-value">40</div><div class="stat-label">Industries</div></div>
+        <div class="stat"><div class="stat-value">95%+</div><div class="stat-label">Trust score</div></div>
+        <div class="stat"><div class="stat-value">∞</div><div class="stat-label">Downloads</div></div>
+      </div>
+
+      <!-- Search -->
+      <div class="enc-search-bar reveal">
+        <input type="text" id="enc-search" placeholder="Search shampoos, detergents, disinfectants, paints..." />
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          Search
+        </button>
+      </div>
+
+      <!-- Categories -->
+      <div class="cat-pills reveal">
+        <button class="cat-pill active" data-cat="all">All formulas</button>
+        <button class="cat-pill" data-cat="haircare">🧴 Hair Care</button>
+        <button class="cat-pill" data-cat="skincare">🧖 Skin Care</button>
+        <button class="cat-pill" data-cat="detergent">🧼 Detergents</button>
+        <button class="cat-pill" data-cat="disinfectant">🦠 Disinfectants</button>
+        <button class="cat-pill" data-cat="industrial">🏭 Industrial</button>
+        <button class="cat-pill" data-cat="auto">🚗 Auto</button>
+        <button class="cat-pill" data-cat="food">🍔 Food additives</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Formula Grid -->
+  <section class="section" style="padding-top: 0;">
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+        <div>
+          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">2,847</span> formulas in this category</h2>
+          <p style="color: var(--text-3); font-size: 0.92rem;">Sorted by trust score — highest verified first</p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+            Filters
+          </button>
+          <button class="btn btn-ghost">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Bulk download
+          </button>
+        </div>
+      </div>
+
+      <div class="formula-grid reveal" id="encyclopedia-grid">
+        <!-- Filled by JS -->
+      </div>
+
+      <div style="text-align: center; margin-top: 40px;">
+        <button class="btn btn-outline btn-lg">
+          Load 12 more formulas
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- License explanation -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">Why we made it free</span>
+        <h2>A <span class="gradient-text">gift to humanity</span></h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;">
+        <div class="card reveal">
+          <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <h3>For the small chemist in Africa</h3>
+          <p>A factory owner in Ghana shouldn't pay $5,000 for a formula that costs us $0.02 to verify. Free baseline, paid premium tier.</p>
+        </div>
+
+        <div class="card reveal delay-1">
+          <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></div>
+          <h3>For the research student</h3>
+          <p>University students get the entire 50K library free for life — no paywall behind learning chemistry.</p>
+        </div>
+
+        <div class="card reveal delay-2">
+          <div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+          <h3>CC-BY-SA-4.0 licensed</h3>
+          <p>Use commercially. Modify freely. Redistribute. The only condition: share back improvements with the same license.</p>
+        </div>
+
+        <div class="card reveal delay-3">
+          <div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+          <h3>Trust score 90%+</h3>
+          <p>Only formulas that pass our 7-stage validation enter the encyclopedia. Quality bar is uncompromising.</p>
+        </div>
+      </div>
+
+      <!-- License box -->
+      <div class="card reveal" style="margin-top: 30px; max-width: 780px; margin-inline: auto; padding: 28px;">
+        <div style="display: flex; gap: 16px; align-items: flex-start;">
+          <div style="font-size: 2.4rem;">📜</div>
+          <div>
+            <h3 style="margin-bottom: 8px;">Creative Commons Attribution-ShareAlike 4.0</h3>
+            <p style="color: var(--text-2); margin-bottom: 14px; line-height: 1.8;">
+              You are free to use, share, and adapt every formula in the encyclopedia — including for commercial purposes — as long as you credit Formula AI Global and share derivative works under the same license.
+            </p>
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" class="btn btn-outline">
+              Read the full license
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="container" style="padding-bottom: 80px;">
+    <div class="cta-banner reveal">
+      <h2>Help us reach 100,000 free formulas by 2027</h2>
+      <p>Submit your verified formula. Earn citation credit. Make chemistry accessible.</p>
+      <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;">
+        Contribute a formula
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div>© <span data-year>2026</span> Formula AI Global · Encyclopedia content licensed CC-BY-SA-4.0</div>
+        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js"></script>
+  <script>
+    const ENCYCLOPEDIA = [
+      { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
+      { emoji: '🧴', title: 'Anti-Dandruff Shampoo', cat: 'Hair Care · Treatment', cmp: 11, dl: '8.7K', trust: 94, category: 'haircare' },
+      { emoji: '💆', title: 'Argan Oil Hair Treatment', cat: 'Hair Care · Premium', cmp: 6, dl: '6.2K', trust: 95, category: 'haircare' },
+      { emoji: '🧖', title: 'Niacinamide Brightening Serum', cat: 'Skin Care · Active', cmp: 8, dl: '15.1K', trust: 97, category: 'skincare' },
+      { emoji: '💧', title: 'Hyaluronic Acid Moisturizer', cat: 'Skin Care · Hydration', cmp: 9, dl: '11.3K', trust: 96, category: 'skincare' },
+      { emoji: '☀️', title: 'Mineral Sunscreen SPF 50', cat: 'Skin Care · Protection', cmp: 12, dl: '9.8K', trust: 98, category: 'skincare' },
+      { emoji: '🧼', title: 'Industrial Floor Cleaner', cat: 'Detergent · Heavy duty', cmp: 8, dl: '7.4K', trust: 94, category: 'detergent' },
+      { emoji: '🍽️', title: 'Concentrated Dishwashing Liquid', cat: 'Detergent · Kitchen', cmp: 7, dl: '13.6K', trust: 95, category: 'detergent' },
+      { emoji: '🧺', title: 'Eco Laundry Detergent Powder', cat: 'Detergent · Biodegradable', cmp: 10, dl: '10.2K', trust: 93, category: 'detergent' },
+      { emoji: '🦠', title: 'Hospital-Grade Disinfectant', cat: 'Disinfectant · Medical', cmp: 7, dl: '5.9K', trust: 98, category: 'disinfectant' },
+      { emoji: '✋', title: 'Alcohol-Based Hand Sanitizer', cat: 'Disinfectant · Personal', cmp: 5, dl: '24.8K', trust: 99, category: 'disinfectant' },
+      { emoji: '🚿', title: 'Bathroom Mold Remover', cat: 'Disinfectant · Surface', cmp: 6, dl: '8.1K', trust: 92, category: 'disinfectant' },
+      { emoji: '🛢️', title: 'Industrial Lubricant ISO 68', cat: 'Industrial · Machinery', cmp: 9, dl: '4.3K', trust: 95, category: 'industrial' },
+      { emoji: '🧱', title: 'Concrete Plasticizer', cat: 'Industrial · Construction', cmp: 7, dl: '3.2K', trust: 94, category: 'industrial' },
+      { emoji: '🎨', title: 'Acrylic Wall Paint', cat: 'Industrial · Coating', cmp: 14, dl: '6.7K', trust: 96, category: 'industrial' },
+      { emoji: '🚗', title: 'Premium Car Shampoo', cat: 'Auto · Cleaning', cmp: 6, dl: '8.9K', trust: 93, category: 'auto' },
+      { emoji: '✨', title: 'Carnauba Wax Polish', cat: 'Auto · Detailing', cmp: 8, dl: '5.4K', trust: 95, category: 'auto' },
+      { emoji: '⚙️', title: 'Engine Coolant -40°C', cat: 'Auto · Mechanical', cmp: 5, dl: '4.1K', trust: 96, category: 'auto' },
+      { emoji: '🥤', title: 'Sports Drink Electrolyte Mix', cat: 'Food · Beverage', cmp: 11, dl: '7.8K', trust: 94, category: 'food' },
+      { emoji: '🍫', title: 'Cocoa Emulsifier Blend', cat: 'Food · Confectionery', cmp: 6, dl: '3.9K', trust: 93, category: 'food' },
+      { emoji: '🥖', title: 'Bread Improver Mix', cat: 'Food · Baking', cmp: 9, dl: '5.2K', trust: 95, category: 'food' },
+      { emoji: '🦷', title: 'Whitening Toothpaste', cat: 'Skin Care · Oral', cmp: 12, dl: '14.3K', trust: 96, category: 'skincare' },
+      { emoji: '🧴', title: 'Volumizing Conditioner', cat: 'Hair Care · Daily', cmp: 8, dl: '9.1K', trust: 94, category: 'haircare' },
+      { emoji: '🧼', title: 'Castile Liquid Soap', cat: 'Detergent · Personal', cmp: 5, dl: '11.7K', trust: 97, category: 'detergent' }
+    ];
+
+    function renderEncyclopedia(category = 'all') {
+      const list = category === 'all' ? ENCYCLOPEDIA : ENCYCLOPEDIA.filter(f => f.category === category);
+      const grid = document.getElementById('encyclopedia-grid');
+      grid.innerHTML = list.map(f => `
+        <a href="./formulas.html" class="formula-card">
+          <span class="formula-card-trust">${f.trust}%</span>
+          <div class="formula-card-header">
+            <div class="formula-card-emoji">${f.emoji}</div>
+            <div style="flex: 1; min-width: 0;">
+              <div class="formula-card-title">${f.title}</div>
+              <div class="formula-card-cat">${f.cat}</div>
+            </div>
+          </div>
+          <div class="formula-card-stats">
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+              ${f.cmp} components
+            </span>
+            <span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              ${f.dl}
+            </span>
+          </div>
+          <div class="formula-card-license">CC-BY-SA-4.0</div>
+        </a>
+      `).join('');
+    }
+
+    document.querySelectorAll('.cat-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        renderEncyclopedia(pill.dataset.cat);
+      });
+    });
+
+    renderEncyclopedia();
+  </script>
+</body>
+</html>

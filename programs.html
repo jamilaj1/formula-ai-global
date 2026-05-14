@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Programs — University · Gold Certifications · Innovation Award | Formula AI Global</title>
+  <meta name="description" content="Free Enterprise access for 500 universities. Gold Standard digital certifications. $10,000 yearly Innovation Award for green chemistry." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .program-hero {
+      background: linear-gradient(135deg, var(--bg-card), transparent);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 50px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 50px;
+    }
+    .program-hero.gold { border-color: rgba(255, 215, 0, 0.4); background: linear-gradient(135deg, rgba(255, 215, 0, 0.05), transparent); }
+    .program-hero.uni { border-color: rgba(0, 212, 255, 0.4); background: linear-gradient(135deg, rgba(0, 212, 255, 0.05), transparent); }
+    .program-hero.award { border-color: rgba(192, 132, 252, 0.4); background: linear-gradient(135deg, rgba(192, 132, 252, 0.05), transparent); }
+
+    .gold-seal {
+      width: 280px;
+      height: 280px;
+      margin: 0 auto;
+      position: relative;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes seal-spin { to { transform: rotate(360deg); } }
+    .gold-seal-ring {
+      position: absolute;
+      inset: 0;
+      border: 4px solid var(--gold);
+      border-radius: 50%;
+      box-shadow: 0 0 60px rgba(255, 215, 0, 0.4), inset 0 0 40px rgba(255, 215, 0, 0.2);
+    }
+    .gold-seal-inner {
+      position: absolute;
+      inset: 30px;
+      background: radial-gradient(circle at 30% 30%, #ffd700, #b8860b);
+      border-radius: 50%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+      color: #1a1500;
+      text-align: center;
+      padding: 20px;
+    }
+    .gold-seal-inner svg { width: 60px; height: 60px; margin-bottom: 8px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+
+    .award-medal {
+      width: 240px;
+      height: 240px;
+      margin: 0 auto;
+      position: relative;
+      filter: drop-shadow(0 12px 30px rgba(192, 132, 252, 0.4));
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
+        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+        <li><a href="./programs.html" class="active" data-i18n-ar="البرامج">Programs</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.25;"></div>
+      <div class="hero-orb blue" style="opacity: 0.25;"></div>
+    </div>
+
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 880px; margin: 0 auto 50px;">
+        <span class="eyebrow reveal">Three flagship programs</span>
+        <h1 class="reveal">Beyond software — <span class="gradient-text">an ecosystem</span></h1>
+        <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; margin-top: 22px; line-height: 1.85;">
+          Formula AI is more than a product. We're building three programs that change the chemistry industry: a global certification standard, free academic access, and an annual prize for green innovation.
+        </p>
+      </div>
+
+      <!-- Quick nav -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto;" class="reveal delay-2">
+        <a href="#gold" class="card" style="display: block; text-align: center; border-color: rgba(255, 215, 0, 0.3); background: linear-gradient(180deg, rgba(255, 215, 0, 0.05), transparent);">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🏆</div>
+          <h3 style="color: var(--gold);">Gold Certifications</h3>
+          <p style="font-size: 0.92rem;">SOC 2 of chemistry. Verifiable digital seals.</p>
+        </a>
+        <a href="#university" class="card" style="display: block; text-align: center; border-color: rgba(0, 212, 255, 0.3); background: linear-gradient(180deg, rgba(0, 212, 255, 0.05), transparent);">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🎓</div>
+          <h3 style="color: var(--secondary);">University Program</h3>
+          <p style="font-size: 0.92rem;">Free Enterprise tier for 500 universities.</p>
+        </a>
+        <a href="#award" class="card" style="display: block; text-align: center; border-color: rgba(192, 132, 252, 0.3); background: linear-gradient(180deg, rgba(192, 132, 252, 0.05), transparent);">
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🌿</div>
+          <h3 style="color: #c084fc;">Innovation Award</h3>
+          <p style="font-size: 0.92rem;">$10,000 yearly for green chemistry.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- GOLD CERTIFICATIONS -->
+  <section class="section" id="gold">
+    <div class="container">
+      <div class="program-hero gold reveal">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center;">
+          <div>
+            <span class="eyebrow" style="background: rgba(255, 215, 0, 0.1); border-color: rgba(255, 215, 0, 0.4); color: var(--gold);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+              GOLD STANDARD
+            </span>
+            <h2 style="margin: 14px 0 18px;">The <span class="gradient-text">SOC 2 of chemistry</span></h2>
+            <p style="color: var(--text-2); line-height: 1.85; margin-bottom: 22px; font-size: 1.05rem;">
+              Every Formula AI Gold Certificate is a cryptographically signed digital seal that proves a formula passed our 7-stage validation: percentage balance, CAS verification, conflict-free, source-verified, safety-tested, regulatory-compliant, and environmentally scored.
+            </p>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px;">
+              <li style="display: flex; gap: 10px;"><span style="color: var(--gold); font-weight: 900;">✓</span><span>SHA-256 certificate hash on blockchain</span></li>
+              <li style="display: flex; gap: 10px;"><span style="color: var(--gold); font-weight: 900;">✓</span><span>Trust score ≥ 95% required</span></li>
+              <li style="display: flex; gap: 10px;"><span style="color: var(--gold); font-weight: 900;">✓</span><span>Verifiable by regulators in any country</span></li>
+              <li style="display: flex; gap: 10px;"><span style="color: var(--gold); font-weight: 900;">✓</span><span>Annual recertification with audit trail</span></li>
+            </ul>
+            <button class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #ffd700, #b8860b); color: #1a1500;">
+              Request Gold Certification
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: center;">
+            <div class="gold-seal">
+              <div class="gold-seal-ring"></div>
+              <div class="gold-seal-inner">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+                <div style="font-size: 0.78rem; font-weight: 800; letter-spacing: 1px;">FORMULA AI</div>
+                <div style="font-size: 1.4rem; font-weight: 900; letter-spacing: 2px;">GOLD</div>
+                <div style="font-size: 0.7rem; font-weight: 700; letter-spacing: 0.5px;">CERTIFIED 2026</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Validation stages -->
+      <h3 style="text-align: center; margin-bottom: 30px;" class="reveal">7 validation stages</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div class="card reveal"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg></div><strong>1. Percentage balance</strong><p style="font-size: 0.88rem;">Sums to exactly 100.0% ± 0.5%</p></div>
+        <div class="card reveal delay-1"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg></div><strong>2. CAS verification</strong><p style="font-size: 0.88rem;">Every component has valid CAS</p></div>
+        <div class="card reveal delay-2"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg></div><strong>3. Conflict-free</strong><p style="font-size: 0.88rem;">Safety Engine 6-check pass</p></div>
+        <div class="card reveal"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><strong>4. Source verified</strong><p style="font-size: 0.88rem;">Linked to peer-reviewed source</p></div>
+        <div class="card reveal delay-1"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><strong>5. Regulatory pass</strong><p style="font-size: 0.88rem;">Compliant in target country</p></div>
+        <div class="card reveal delay-2"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/><path d="M9 12l2 2 4-4"/></svg></div><strong>6. Lab-tested ready</strong><p style="font-size: 0.88rem;">Manufacturable as written</p></div>
+        <div class="card reveal delay-3"><div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div><strong>7. Eco-scored</strong><p style="font-size: 0.88rem;">Biodegradability + impact rated</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- UNIVERSITY PROGRAM -->
+  <section class="section" id="university" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
+    <div class="container">
+      <div class="program-hero uni reveal">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center;">
+          <div style="text-align: center; font-size: 9rem; line-height: 1;">🎓</div>
+          <div>
+            <span class="eyebrow" style="background: rgba(0, 212, 255, 0.1); border-color: rgba(0, 212, 255, 0.4); color: var(--secondary);">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              FOR ACADEMIA
+            </span>
+            <h2 style="margin: 14px 0 18px;">Free Enterprise for <span class="gradient-text">500 universities</span></h2>
+            <p style="color: var(--text-2); line-height: 1.85; margin-bottom: 22px; font-size: 1.05rem;">
+              Education shouldn't be paywalled. Every accredited university gets <strong style="color: var(--text-1);">unlimited access</strong> to Formula AI Enterprise — for the entire faculty, every student, free forever. No catches, no expiration.
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 26px;">
+              <div style="padding: 14px; background: var(--bg-glass); border: 1px solid var(--border); border-radius: 12px;">
+                <div style="font-size: 1.8rem; font-weight: 900; color: var(--secondary);">500</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;">Universities target</div>
+              </div>
+              <div style="padding: 14px; background: var(--bg-glass); border: 1px solid var(--border); border-radius: 12px;">
+                <div style="font-size: 1.8rem; font-weight: 900; color: var(--secondary);">∞</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;">Students per uni</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-lg">
+              Apply with .edu domain
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Eligibility -->
+      <h3 style="text-align: center; margin-bottom: 30px;" class="reveal">Who's eligible</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; max-width: 1100px; margin: 0 auto;">
+        <div class="card reveal">
+          <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5-10-5z"/></svg></div>
+          <h3>Accredited universities</h3>
+          <p>Recognized chemistry, pharmacy, materials science, or chemical engineering departments worldwide.</p>
+        </div>
+        <div class="card reveal delay-1">
+          <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20"/></svg></div>
+          <h3>Research labs</h3>
+          <p>Government and non-profit research institutions in chemistry-related fields.</p>
+        </div>
+        <div class="card reveal delay-2">
+          <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422A12.083 12.083 0 0114 18a12.083 12.083 0 01-4-7.422L12 14z"/></svg></div>
+          <h3>Vocational programs</h3>
+          <p>Chemistry-focused trade schools and certificate programs in developing countries.</p>
+        </div>
+      </div>
+
+      <!-- Application form preview -->
+      <div class="card reveal" style="max-width: 720px; margin: 30px auto 0; padding: 32px;">
+        <h3 style="margin-bottom: 20px;">Quick application</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">University name</label>
+            <input type="text" class="form-input" placeholder="University of Ghana" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Country</label>
+            <input type="text" class="form-input" placeholder="🇬🇭 Ghana" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Official .edu email</label>
+            <input type="email" class="form-input" placeholder="prof.smith@ug.edu.gh" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Department</label>
+            <input type="text" class="form-input" placeholder="Chemistry / Chemical Eng." />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estimated number of students</label>
+          <input type="number" class="form-input" placeholder="500" />
+        </div>
+        <button class="btn btn-primary btn-block btn-lg">
+          Submit application
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        </button>
+        <div style="text-align: center; color: var(--text-3); font-size: 0.85rem; margin-top: 16px;">
+          Approval typically within 48 hours · No payment information required
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INNOVATION AWARD -->
+  <section class="section" id="award">
+    <div class="container">
+      <div class="program-hero award reveal">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 50px; align-items: center;">
+          <div>
+            <span class="eyebrow" style="background: rgba(192, 132, 252, 0.1); border-color: rgba(192, 132, 252, 0.4); color: #c084fc;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M2 22h20M6 18l3-5 3 5 3-7 3 7"/></svg>
+              ANNUAL PRIZE
+            </span>
+            <h2 style="margin: 14px 0 18px;"><span class="gradient-text">$10,000</span> for green chemistry</h2>
+            <p style="color: var(--text-2); line-height: 1.85; margin-bottom: 22px; font-size: 1.05rem;">
+              Every year, Formula AI awards <strong style="color: var(--text-1);">$10,000 USD</strong> to the chemist who submits the most environmentally-friendly formula that solves a real industrial problem. The winner also gets featured globally and free Enterprise access for 5 years.
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 26px;">
+              <div style="padding: 18px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), transparent); border: 1px solid rgba(255, 215, 0, 0.3); border-radius: 12px; text-align: center;">
+                <div style="font-size: 2rem;">🥇</div>
+                <div style="font-weight: 800;">$10,000</div>
+                <div style="color: var(--text-3); font-size: 0.78rem;">Grand Prize</div>
+              </div>
+              <div style="padding: 18px; background: linear-gradient(135deg, rgba(192, 192, 192, 0.1), transparent); border: 1px solid rgba(192, 192, 192, 0.3); border-radius: 12px; text-align: center;">
+                <div style="font-size: 2rem;">🥈</div>
+                <div style="font-weight: 800;">$3,000 × 2</div>
+                <div style="color: var(--text-3); font-size: 0.78rem;">Runners-up</div>
+              </div>
+            </div>
+
+            <button class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #c084fc, #8b5cf6); color: white;">
+              Submit your green formula
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+
+          <div style="display: flex; justify-content: center;">
+            <div style="font-size: 12rem; line-height: 1; filter: drop-shadow(0 12px 30px rgba(192, 132, 252, 0.4));">🏆</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Criteria -->
+      <h3 style="text-align: center; margin-bottom: 30px;" class="reveal">Judging criteria</h3>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+        <div class="card reveal"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><strong>30% — Eco impact</strong><p style="font-size: 0.88rem;">Biodegradability, carbon footprint, water usage</p></div>
+        <div class="card reveal delay-1"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M9 12l2 2 4-4"/></svg></div><strong>25% — Real-world solution</strong><p style="font-size: 0.88rem;">Solves a documented industrial problem</p></div>
+        <div class="card reveal delay-2"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div><strong>20% — Cost feasibility</strong><p style="font-size: 0.88rem;">Affordable for small manufacturers</p></div>
+        <div class="card reveal delay-3"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9a9 9 0 119 9M3 9V3m0 6h6"/></svg></div><strong>15% — Innovation</strong><p style="font-size: 0.88rem;">Novel approach or ingredient</p></div>
+        <div class="card reveal"><div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg></div><strong>10% — Documentation</strong><p style="font-size: 0.88rem;">Reproducibility and clarity</p></div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="card reveal" style="margin-top: 30px; padding: 28px;">
+        <h3 style="margin-bottom: 20px;">2026–2027 timeline</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div><div style="color: #c084fc; font-weight: 800; font-size: 0.85rem; margin-bottom: 4px;">JUN 2026</div><strong>Submissions open</strong><p style="color: var(--text-3); font-size: 0.85rem;">Submit via portal, free for everyone</p></div>
+          <div><div style="color: #c084fc; font-weight: 800; font-size: 0.85rem; margin-bottom: 4px;">SEP 2026</div><strong>Submissions close</strong><p style="color: var(--text-3); font-size: 0.85rem;">All formulas validated by Safety Engine</p></div>
+          <div><div style="color: #c084fc; font-weight: 800; font-size: 0.85rem; margin-bottom: 4px;">OCT 2026</div><strong>Public voting</strong><p style="color: var(--text-3); font-size: 0.85rem;">Top 50 shortlisted by judges + community</p></div>
+          <div><div style="color: var(--gold); font-weight: 800; font-size: 0.85rem; margin-bottom: 4px;">DEC 2026</div><strong>🏆 Winners announced</strong><p style="color: var(--text-3); font-size: 0.85rem;">Live ceremony at Formula AI Conference</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API for Factories teaser -->
+  <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 255, 136, 0.03), transparent);">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow">For manufacturers</span>
+        <h2>Plug Formula AI into your <span class="gradient-text">ERP system</span></h2>
+        <p>Direct API integration with SAP, Oracle, Microsoft Dynamics, and custom factory software</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; max-width: 1100px; margin: 0 auto;">
+        <div class="card reveal" style="text-align: center;"><div class="card-icon" style="margin: 0 auto 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h6m6 0h6M12 3v6m0 6v6"/></svg></div><strong>Real-time formula sync</strong><p style="font-size: 0.88rem;">Formulas update across all your facilities</p></div>
+        <div class="card reveal delay-1" style="text-align: center;"><div class="card-icon blue" style="margin: 0 auto 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg></div><strong>Inventory linkage</strong><p style="font-size: 0.88rem;">Auto-suggest based on what's in stock</p></div>
+        <div class="card reveal delay-2" style="text-align: center;"><div class="card-icon purple" style="margin: 0 auto 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4M21 12c0 5-4 9-9 9s-9-4-9-9 4-9 9-9 9 4 9 9z"/></svg></div><strong>QC integration</strong><p style="font-size: 0.88rem;">Push test results directly to AI feedback</p></div>
+        <div class="card reveal delay-3" style="text-align: center;"><div class="card-icon gold" style="margin: 0 auto 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><strong>Audit-ready logs</strong><p style="font-size: 0.88rem;">SOC 2 compliant trail for inspections</p></div>
+      </div>
+      <div style="text-align: center; margin-top: 30px;">
+        <a href="./docs.html" class="btn btn-outline btn-lg">
+          Read the API docs
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div>© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js"></script>
+</body>
+</html>

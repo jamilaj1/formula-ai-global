@@ -1,0 +1,25 @@
+_archive/
+node_modules/
+backend/
+database/migrations/
+*.min.js
+*.min.css
+coverage/
+dist/
+
+# Worker.js is the deployed file. Reformatting it would create a giant
+# unreviewable diff. ESLint enforces correctness; cosmetic style is left
+# alone until a build pipeline / Wrangler split lands.
+worker.js
+
+# Legacy HTML/CSS/JS pages — each is the deployed source. Treat like worker.js.
+*.html
+assets/
+sw.js
+
+# Legacy docs that pre-date Prettier adoption. Format as they're touched.
+PROJECT_HISTORY.md
+docs/deploys/
+CLAUDE.md
+
+

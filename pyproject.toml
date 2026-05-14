@@ -1,0 +1,40 @@
+# Formula AI Global — Python tooling config
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+extend-exclude = ["_archive", "venv", ".venv", "backend/venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+    "SIM", # flake8-simplify
+]
+ignore = [
+    "E501",  # line-too-long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults (FastAPI uses this pattern)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"backend/tests/**" = ["E402"]
+"scripts/**" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["backend/tests", "tests"]
+python_files = ["test_*.py", "*_test.py"]
+asyncio_mode = "auto"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: requires external services (Supabase, Claude API)",
+]

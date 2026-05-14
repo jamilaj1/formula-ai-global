@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Chat with Formula AI — your chemistry expert</title>
+  <meta name="description" content="Talk to Formula AI — a chemistry expert that knows 3,381 verified formulas. Ask, refine, modify, and get cited answers." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .chat-page-shell {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: 18px;
+      max-width: 1200px;
+      margin: 0 auto;
+      height: calc(100vh - 130px);
+      min-height: 560px;
+    }
+    @media (max-width: 880px) {
+      .chat-page-shell { grid-template-columns: 1fr; height: auto; min-height: 0; }
+      .chat-side { display: none; }
+    }
+    .chat-side {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .chat-side-new {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--grad-primary);
+      color: var(--bg-1);
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      border: none;
+      font-size: 0.95rem;
+    }
+    .chat-side-new:hover { transform: translateY(-1px); }
+    .chat-side-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .chat-side-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--text-2);
+      font-size: 0.9rem;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-side-item:hover { background: var(--bg-glass); border-color: var(--border); }
+    .chat-side-item.active { background: var(--bg-glass); border-color: var(--border-primary); color: var(--text-1); }
+    .chat-side-item .when {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text-3);
+      margin-top: 2px;
+    }
+    .chat-main-pane {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-height: 540px;
+    }
+    .chat-main-header {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .chat-main-header .title { font-weight: 800; font-size: 1.1rem; }
+    .chat-main-header .sub { color: var(--text-3); font-size: 0.85rem; margin-top: 2px; }
+    .chat-feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .chat-msg {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .chat-msg.user { flex-direction: row-reverse; }
+    .chat-msg .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--grad-primary);
+      color: var(--bg-1);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900; font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .chat-msg.user .avatar { background: rgba(0,212,255,0.15); color: var(--secondary); }
+    .chat-msg .bubble {
+      background: var(--bg-glass);
+      padding: 14px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      max-width: 78%;
+      line-height: 1.65;
+      font-size: 0.96rem;
+      color: var(--text-1);
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .chat-msg.user .bubble {
+      background: rgba(0,212,255,0.08);
+      border-color: rgba(0,212,255,0.2);
+    }
+    .chat-msg .bubble strong { color: var(--primary); }
+    .chat-feed .typing {
+      display: inline-flex; gap: 4px;
+      padding: 6px 0;
+    }
+    .chat-feed .typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--text-3);
+      animation: bounce 1.2s infinite ease-in-out;
+    }
+    .chat-feed .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .chat-feed .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+      40% { transform: translateY(-6px); opacity: 1; }
+    }
+    .formula-card-inline {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(0,255,136,0.06);
+      border: 1px solid rgba(0,255,136,0.2);
+      border-radius: 10px;
+      font-size: 0.88rem;
+    }
+    .formula-card-inline a {
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .chat-input-bar {
+      display: flex;
+      gap: 10px;
+      padding: 16px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-2);
+    }
+    .chat-input-bar textarea {
+      flex: 1;
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: 0.96rem;
+      resize: none;
+      max-height: 160px;
+      min-height: 48px;
+      line-height: 1.5;
+      outline: none;
+    }
+    .chat-input-bar textarea:focus { border-color: var(--border-primary); }
+    .chat-input-bar button {
+      align-self: flex-end;
+      flex-shrink: 0;
+    }
+    .chat-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      text-align: center;
+      gap: 14px;
+    }
+    .chat-empty h3 { font-size: 1.5rem; }
+    .chat-empty p { color: var(--text-2); max-width: 480px; line-height: 1.7; }
+    .chat-empty .suggestion-chips { margin-top: 14px; max-width: 600px; }
+    .chat-usage-pill {
+      font-size: 0.75rem;
+      color: var(--text-3);
+      padding: 4px 10px;
+      background: var(--bg-glass);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" class="active" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./discover.html" data-i18n-ar="اكتشاف">Discover</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 100px 16px 24px;">
+    <div class="chat-page-shell">
+
+      <!-- Sidebar: previous chats -->
+      <aside class="chat-side">
+        <button id="chat-new" class="chat-side-new">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="18" height="18"><path d="M12 5v14M5 12h14"/></svg>
+          <span data-i18n-ar="محادثة جديدة">New chat</span>
+        </button>
+
+        <div style="font-size:0.8rem; color:var(--text-3); padding:0 4px;" data-i18n-ar="محادثاتك السابقة">Your previous chats</div>
+
+        <div id="chat-list" class="chat-side-list">
+          <div style="color:var(--text-3); font-size:0.85rem; padding:8px 4px;" data-i18n-ar="ستظهر محادثاتك هنا بعد التسجيل.">Your chats will appear here after sign-in.</div>
+        </div>
+      </aside>
+
+      <!-- Main chat pane -->
+      <div class="chat-main-pane">
+        <div class="chat-main-header">
+          <div>
+            <div class="title" id="chat-title" data-i18n-ar="مساعدك الكيميائي">Your chemistry assistant</div>
+            <div class="sub" data-i18n-ar="آلاف الفورمولات · صناعات متعددة · يجيب بلغتك">Thousands of formulas · many industries · answers in your language</div>
+          </div>
+          <span id="chat-usage" class="chat-usage-pill"></span>
+        </div>
+
+        <div id="chat-feed" class="chat-feed">
+          <div class="chat-empty" id="chat-empty">
+            <div style="font-size:3rem;">🧪</div>
+            <h3 data-i18n-ar="اسأل عن أي فورمولا أو مكوّن">Ask about any formula or ingredient</h3>
+            <p data-i18n-ar="مثال: «أحتاج جل تطهير لليدين بدون كحول للأطفال» — سأسألك أسئلة توضيحية ثم أعرض أفضل الخيارات من قاعدة بياناتنا.">Example: "I need a hand sanitizer gel without alcohol for kids" — I'll ask clarifying questions and present the best matches from our database.</p>
+            <div class="suggestion-chips" style="justify-content:center;">
+              <button class="chip" data-prompt="I need a natural shampoo for dry hair" data-i18n-ar="شامبو طبيعي للشعر الجاف">Natural shampoo for dry hair</button>
+              <button class="chip" data-prompt="What is a surfactant and why is it used?" data-i18n-ar="ما هو السرفاكتانت ولماذا يُستخدم؟">What is a surfactant?</button>
+              <button class="chip" data-prompt="Hospital disinfectant compliant with FDA" data-i18n-ar="مطهر مستشفيات متوافق مع FDA">Hospital disinfectant FDA-compliant</button>
+              <button class="chip" data-prompt="Replace Triclosan with a natural antimicrobial" data-i18n-ar="استبدل Triclosan بمضاد ميكروبي طبيعي">Replace Triclosan with a natural antimicrobial</button>
+            </div>
+          </div>
+        </div>
+
+        <form class="chat-input-bar" id="chat-form">
+          <textarea id="chat-input" rows="1"
+            placeholder="Ask anything about chemical formulas…"
+            data-i18n-attr="placeholder"
+            data-i18n-placeholder-ar="اسأل عن أي فورمولا كيميائية…"></textarea>
+          <button type="submit" class="btn btn-primary" id="chat-send">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+            <span data-i18n-ar="إرسال">Send</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer" style="margin-top: 24px;">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chat-live.js"></script>
+</body>
+</html>

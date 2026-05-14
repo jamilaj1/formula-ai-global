@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Sign in — Formula AI Global</title>
+  <meta name="description" content="Sign in to your Formula AI Global account" />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="حساب جديد">Sign up</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 60px; min-height: 80vh; display: flex; align-items: center;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 10%; opacity: 0.4;"></div>
+      <div class="hero-orb blue" style="bottom: 10%; opacity: 0.4;"></div>
+    </div>
+
+    <div class="container" style="position: relative; z-index: 2; max-width: 460px;">
+      <div class="card" style="padding: 40px 32px;">
+        <div style="text-align: center; margin-bottom: 28px;">
+          <h1 style="font-size: 1.6rem; margin-bottom: 8px;" data-i18n-ar="مرحبًا بعودتك">Welcome back</h1>
+          <p style="color: var(--text-3); font-size: 0.92rem;" data-i18n-ar="سجّل دخول إلى حسابك">Sign in to your account</p>
+        </div>
+
+        <!-- Google Sign-In -->
+        <button id="google-signin" type="button" class="btn btn-ghost" style="width: 100%; padding: 12px; margin-bottom: 18px; display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          <span data-i18n-ar="الدخول بحساب Google">Continue with Google</span>
+        </button>
+
+        <div style="display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--text-3); font-size: 0.82rem;">
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+          <span data-i18n-ar="أو">or</span>
+          <div style="flex: 1; height: 1px; background: var(--border);"></div>
+        </div>
+
+        <!-- Email + Password -->
+        <form id="login-form">
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label class="form-label" data-i18n-ar="البريد الإلكتروني">Email</label>
+            <input id="email" type="email" class="form-input" required placeholder="you@example.com" />
+          </div>
+          <div class="form-group" style="margin-bottom: 8px;">
+            <label class="form-label" data-i18n-ar="كلمة المرور">Password</label>
+            <input id="password" type="password" class="form-input" required minlength="6" />
+          </div>
+          <div style="text-align: right; margin-bottom: 18px;">
+            <a href="#" id="forgot-link" style="color: var(--secondary); font-size: 0.85rem;" data-i18n-ar="نسيت كلمة المرور؟">Forgot password?</a>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;" data-i18n-ar="تسجيل الدخول">Sign in</button>
+        </form>
+
+        <div id="login-msg" style="margin-top: 14px; font-size: 0.88rem; text-align: center;"></div>
+
+        <p style="text-align: center; color: var(--text-3); font-size: 0.88rem; margin-top: 24px;">
+          <span data-i18n-ar="ما عندك حساب؟">Don't have an account?</span>
+          <a href="./register.html" style="color: var(--primary); margin-right: 4px;" data-i18n-ar="أنشئ واحدًا">Create one</a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module">
+    import "./assets/auth.js";
+
+    function whenReady(fn) {
+      if (window.FAI_AUTH) return fn();
+      const id = setInterval(() => { if (window.FAI_AUTH) { clearInterval(id); fn(); } }, 50);
+    }
+
+    whenReady(() => {
+      // Already signed in? Go to dashboard
+      window.FAI_AUTH.onChange(user => {
+        if (user) window.location.href = "./dashboard.html";
+      });
+
+      const form = document.getElementById("login-form");
+      const msg  = document.getElementById("login-msg");
+
+      document.getElementById("google-signin").addEventListener("click", async () => {
+        await window.FAI_AUTH.signInWithGoogle();
+      });
+
+      form.addEventListener("submit", async e => {
+        e.preventDefault();
+        msg.textContent = "";
+        msg.style.color = "";
+        const email    = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const { error } = await window.FAI_AUTH.signInWithPassword(email, password);
+        if (error) {
+          msg.style.color = "#f87171";
+          msg.textContent = error.message || "Sign-in failed";
+        } else {
+          msg.style.color = "#00ff88";
+          msg.textContent = "Welcome! Redirecting...";
+          setTimeout(() => window.location.href = "./dashboard.html", 600);
+        }
+      });
+
+      document.getElementById("forgot-link").addEventListener("click", async e => {
+        e.preventDefault();
+        const email = prompt("Enter your email to receive a reset link:");
+        if (!email) return;
+        const { error } = await window.FAI_AUTH.resetPassword(email);
+        msg.style.color = error ? "#f87171" : "#00ff88";
+        msg.textContent = error ? error.message : "Reset link sent — check your email";
+      });
+    });
+  </script>
+</body>
+</html>
