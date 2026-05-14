@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy installed Python packages
 COPY --from=builder /usr/local /usr/local
 
-# Copy app source
+# Copy app source — every Python directory the code imports from
 COPY main.py .
 COPY auth.py .
 COPY billing.py .
@@ -49,6 +49,8 @@ COPY services ./services
 COPY app ./app
 COPY bots ./bots
 COPY ml ./ml
+COPY agents ./agents
+COPY cron ./cron
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash --uid 1000 formula && \
@@ -56,10 +58,16 @@ RUN useradd --create-home --shell /bin/bash --uid 1000 formula && \
 
 USER formula
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -fsS http://localhost:8000/health || exit 1
+# Render dynamically sets PORT; default to 8000 for local docker run.
+ENV PORT=8000
+
+# Health check — uses runtime PORT so it works on Render and locally.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=20s --retries=3 \
+    CMD curl -fsS "http://localhost:${PORT}/health" || exit 1
 
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+# Shell form so ${PORT} is expanded by the shell at container start.
+# Workers=2 (not 4) — RDKit holds ~150 MB per worker; 4 workers OOMs on
+# the 512 MB Render Starter plan. Bump to 4 only on Standard or higher.
+CMD uvicorn main:app --host 0.0.0.0 --port ${PORT} --workers 2
