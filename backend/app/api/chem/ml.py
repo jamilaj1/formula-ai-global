@@ -8,6 +8,7 @@ Routes (under /api/chem):
   POST /toxicity_scan         single SMILES → flag matched concerning motifs
   POST /toxicity_scan_formula formula → per-ingredient toxicity scan
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -15,7 +16,9 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from ml import SolubilityPredictor, StabilityPredictor, ToxicityFlagger
+from ml.solubility import SolubilityPredictor
+from ml.stability import StabilityPredictor
+from ml.toxicity import ToxicityFlagger
 
 router = APIRouter(prefix="/chem", tags=["chemistry"])
 
@@ -58,7 +61,12 @@ async def predict_solubility(body: SmilesIn) -> dict[str, Any]:
 async def predict_solubility_batch(body: SmilesBatchIn) -> dict[str, Any]:
     results = _solubility.predict_batch(body.smiles)
     valid = sum(1 for r in results if r.get("valid"))
-    return {"count": len(results), "valid": valid, "results": results}
+
+    return {
+        "count": len(results),
+        "valid": valid,
+        "results": results,
+    }
 
 
 @router.post("/stability_predict")
@@ -79,4 +87,7 @@ async def toxicity_scan(body: SmilesIn) -> dict[str, Any]:
 @router.post("/toxicity_scan_formula")
 async def toxicity_scan_formula(body: FormulaIn) -> dict[str, Any]:
     """Scan every component in a formula for toxicity motifs."""
-    return _toxicity.scan_formula([c.model_dump() for c in body.components])
+
+    return _toxicity.scan_formula(
+        [c.model_dump() for c in body.components]
+    )
