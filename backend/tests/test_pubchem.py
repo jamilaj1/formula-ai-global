@@ -70,7 +70,7 @@ async def test_cid_to_properties_extracts_canonical_smiles():
                     "Properties": [
                         {
                             "CID": 702,
-                            "CanonicalSMILES": "CCO",
+                            "SMILES": "CCO",
                             "InChI": "InChI=1S/C2H6O/c1-2-3/h3H,2H2,1H3",
                             "InChIKey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
                             "MolecularFormula": "C2H6O",
@@ -83,7 +83,7 @@ async def test_cid_to_properties_extracts_canonical_smiles():
         )
     )
     props = await cid_to_properties(client, 702)
-    assert props["CanonicalSMILES"] == "CCO"
+    assert props["SMILES"] == "CCO"
     assert props["InChIKey"] == "LFQSCWFLJHTTHZ-UHFFFAOYSA-N"
     assert props["MolecularFormula"] == "C2H6O"
 
@@ -100,7 +100,7 @@ async def test_lookup_by_name_success():
                     "PropertyTable": {
                         "Properties": [
                             {
-                                "CanonicalSMILES": "CCO",
+                                "SMILES": "CCO",
                                 "InChIKey": "LFQSCWFLJHTTHZ-UHFFFAOYSA-N",
                                 "MolecularFormula": "C2H6O",
                                 "MolecularWeight": "46.07",
@@ -157,7 +157,7 @@ async def test_lookup_by_cas_success():
                     "PropertyTable": {
                         "Properties": [
                             {
-                                "CanonicalSMILES": "CCO",
+                                "SMILES": "CCO",
                                 "MolecularFormula": "C2H6O",
                             }
                         ]

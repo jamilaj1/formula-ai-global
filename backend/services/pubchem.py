@@ -70,9 +70,13 @@ async def cid_to_properties(client: httpx.AsyncClient, cid: int) -> dict[str, An
     Fetch the canonical chemistry identifiers for a CID:
     canonical SMILES, isomeric SMILES, InChI, InChIKey, molecular formula,
     molecular weight, IUPAC name.
+
+    Note (2024): PubChem deprecated `CanonicalSMILES` in favour of plain
+    `SMILES` and now returns an empty string for the old name. We request
+    BOTH and the caller (`lookup_by_*`) picks whichever has a value.
     """
     props = (
-        "CanonicalSMILES,IsomericSMILES,InChI,InChIKey,"
+        "SMILES,CanonicalSMILES,IsomericSMILES,InChI,InChIKey,"
         "MolecularFormula,MolecularWeight,IUPACName"
     )
     data = await _get(client, f"/compound/cid/{cid}/property/{props}/JSON")
@@ -82,6 +86,21 @@ async def cid_to_properties(client: httpx.AsyncClient, cid: int) -> dict[str, An
     if not rows:
         return None
     return rows[0]
+
+
+def _best_smiles(props: dict[str, Any]) -> str | None:
+    """Pick the most useful SMILES from a PubChem property row.
+
+    Order of preference:
+      1. IsomericSMILES (preserves stereo, what most chem tools want)
+      2. SMILES         (new canonical name as of 2024)
+      3. CanonicalSMILES (legacy — often empty now)
+    """
+    for k in ("IsomericSMILES", "SMILES", "CanonicalSMILES"):
+        v = props.get(k)
+        if v:
+            return v
+    return None
 
 
 async def lookup_by_name(client: httpx.AsyncClient, name: str) -> dict[str, Any]:
@@ -107,7 +126,7 @@ async def lookup_by_name(client: httpx.AsyncClient, name: str) -> dict[str, Any]
         "found": True,
         "name_input": name,
         "cid": cid,
-        "smiles": props.get("CanonicalSMILES"),
+        "smiles": _best_smiles(props),
         "smiles_isomeric": props.get("IsomericSMILES"),
         "inchi": props.get("InChI"),
         "inchi_key": props.get("InChIKey"),
@@ -137,7 +156,7 @@ async def lookup_by_cas(client: httpx.AsyncClient, cas_number: str) -> dict[str,
         "found": True,
         "cas_input": cas_number,
         "cid": cids[0],
-        "smiles": props.get("CanonicalSMILES"),
+        "smiles": _best_smiles(props),
         "smiles_isomeric": props.get("IsomericSMILES"),
         "inchi": props.get("InChI"),
         "inchi_key": props.get("InChIKey"),
