@@ -173,7 +173,7 @@ async def enrich_component(
 
 
 async def write_formula(client: httpx.AsyncClient, formula_id: str, components: list[dict]) -> bool:
-    """PATCH the components column back to Supabase."""
+    """PATCH the components column + chemistry_enriched_at timestamp."""
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -183,7 +183,10 @@ async def write_formula(client: httpx.AsyncClient, formula_id: str, components: 
     r = await client.patch(
         f"{SUPABASE_URL}/rest/v1/formulas?id=eq.{formula_id}",
         headers=headers,
-        json={"components": components},
+        json={
+            "components": components,
+            "chemistry_enriched_at": now_iso(),
+        },
     )
     return r.status_code in (200, 204)
 

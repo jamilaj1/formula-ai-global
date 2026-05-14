@@ -100,6 +100,7 @@ from app.api.chem import similarity as chem_similarity
 from app.api.chem import ml as chem_ml
 from app.api.agents import routes as agents_routes
 from app.api.vision import routes as vision_routes
+from app.api.admin import backfill as admin_backfill
 
 app.include_router(search.router, prefix="/api/v1")
 app.include_router(formulas.router, prefix="/api/v1")
@@ -122,6 +123,9 @@ app.include_router(agents_routes.router, prefix="/api")
 
 # Claude Vision (Phase 6). Routes become /api/vision/*.
 app.include_router(vision_routes.router, prefix="/api")
+
+# Admin (PubChem backfill). Routes become /api/admin/*. Requires ADMIN_API_KEY.
+app.include_router(admin_backfill.router, prefix="/api")
 
 
 # Make `brain` and `supabase` reachable from routers via app.state
