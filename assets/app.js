@@ -529,6 +529,80 @@ function faiLookupDict(arabic, code) {
   return entry ? (entry[code] || null) : null;
 }
 
+// ── Security: allowlist sanitizer for translated HTML ────────────────
+// The i18n system assigns translation strings to el.innerHTML so that
+// inline markup (SVG icons, <strong>, <span>) survives a language swap.
+// That makes data-i18n-* an HTML sink: any dynamically-built element
+// whose data-i18n-ar carries attacker data would become stored XSS the
+// moment the user switches language. We defuse that here by parsing the
+// candidate string and stripping every tag/attribute not on the
+// allowlist (no <script>, <iframe>, on* handlers, javascript: URLs…).
+// Static developer-authored markup passes through untouched.
+const FAI_ALLOWED_TAGS = new Set([
+  'A', 'ABBR', 'B', 'BR', 'CODE', 'DIV', 'EM', 'H1', 'H2', 'H3', 'H4',
+  'I', 'LI', 'OL', 'P', 'SMALL', 'SPAN', 'STRONG', 'SUB', 'SUP', 'U', 'UL',
+  // Inline SVG icons used throughout the translations
+  'SVG', 'PATH', 'CIRCLE', 'ELLIPSE', 'RECT', 'G', 'LINE', 'POLYLINE',
+  'POLYGON', 'DEFS', 'LINEARGRADIENT', 'STOP', 'TITLE',
+]);
+const FAI_ALLOWED_ATTRS = new Set([
+  'class', 'style', 'dir', 'lang', 'title', 'role',
+  // SVG geometry / presentation
+  'viewbox', 'fill', 'stroke', 'stroke-width', 'stroke-linecap',
+  'stroke-linejoin', 'd', 'cx', 'cy', 'r', 'rx', 'ry', 'x', 'y', 'x1',
+  'x2', 'y1', 'y2', 'points', 'transform', 'width', 'height', 'offset',
+  'stop-color', 'gradientunits', 'opacity', 'fill-rule', 'clip-rule',
+]);
+
+function faiSanitizeHtml(html) {
+  if (!html) return '';
+  if (html.indexOf('<') === -1) return html; // plain text — nothing to do
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(`<div>${html}</div>`, 'text/html');
+  } catch {
+    return ''; // unparseable → drop rather than risk it
+  }
+  const root = doc.body.firstChild;
+  if (!root) return '';
+
+  const walk = (node) => {
+    // Iterate over a static copy: we mutate children as we go.
+    [...node.childNodes].forEach((child) => {
+      if (child.nodeType === 1) { // ELEMENT
+        if (!FAI_ALLOWED_TAGS.has(child.tagName)) {
+          child.remove();
+          return;
+        }
+        [...child.attributes].forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          const ok =
+            FAI_ALLOWED_ATTRS.has(name) ||
+            name.startsWith('aria-') ||
+            name.startsWith('data-');
+          if (!ok || name.startsWith('on')) {
+            child.removeAttribute(attr.name);
+            return;
+          }
+          // Block javascript:/data: URLs on any href/src-like attribute
+          if ((name === 'href' || name === 'src' || name === 'xlink:href')) {
+            const v = (attr.value || '').trim().toLowerCase();
+            if (v.startsWith('javascript:') || v.startsWith('data:')) {
+              child.removeAttribute(attr.name);
+            }
+          }
+        });
+        walk(child);
+      } else if (child.nodeType !== 3 && child.nodeType !== 8) {
+        // Drop anything that isn't an element, text, or comment node
+        child.remove();
+      }
+    });
+  };
+  walk(root);
+  return root.innerHTML;
+}
+
 // Apply translation to all elements with a data-i18n-XX attribute (other than en).
 // English is the canonical source: text in HTML innerHTML is the English version,
 // which we cache on first run. Inline data-i18n-<code> wins; if missing for a given
@@ -558,7 +632,11 @@ function faiApplyLang(code) {
     const inline = el.getAttribute(`data-i18n-${code}`);
     const arabic = el.getAttribute('data-i18n-ar');
     const fromDict = faiLookupDict(arabic, code);
-    el.innerHTML = inline || fromDict || el.getAttribute('data-i18n-en-cache');
+    // Sanitize the dynamic sources (attribute- or dictionary-sourced).
+    // The en-cache is the original developer-authored DOM (trusted), so
+    // it's the safe fallback when the translated value is empty.
+    const translated = faiSanitizeHtml(inline || fromDict || '');
+    el.innerHTML = translated || el.getAttribute('data-i18n-en-cache');
   });
 
   // Translate attribute values (placeholder / title / aria-label)
