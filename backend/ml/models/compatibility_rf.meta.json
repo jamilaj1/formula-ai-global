@@ -1,0 +1,49 @@
+{
+  "task": "binary_classification",
+  "target": "ingredient_pair_compatibility (1=compatible, 0=incompatible)",
+  "algorithm": "RandomForestClassifier",
+  "hyperparameters": {
+    "n_estimators": 200,
+    "max_depth": 15,
+    "class_weight": "balanced"
+  },
+  "features": {
+    "descriptor_count": 12,
+    "descriptor_names": [
+      "mw",
+      "logp",
+      "tpsa",
+      "hbd",
+      "hba",
+      "rotatable_bonds",
+      "rings",
+      "aromatic_atoms",
+      "heteroatoms",
+      "fraction_sp3",
+      "halogens",
+      "formal_charge"
+    ],
+    "fingerprint_bits": 512,
+    "fingerprint_radius": 2,
+    "total_features": 524,
+    "pairwise": true,
+    "feature_length_per_molecule": 12,
+    "feature_length_total": 24,
+    "note": "Descriptors only (no fingerprint) to keep pair vector small"
+  },
+  "n_positive": 2579,
+  "n_negative": 2579,
+  "n_train": 4126,
+  "n_test": 1032,
+  "metrics": {
+    "accuracy_test": 0.8023,
+    "f1_test": 0.7976,
+    "auc_test": 0.8906
+  },
+  "train_seconds": 0.99,
+  "rule_sources": [
+    "Pairs co-occurring in our 3,381-formula DB \u2192 label 1",
+    "Synthesised from INCOMPATIBLE_FUNCTION_PAIRS heuristic \u2192 label 0"
+  ],
+  "trained_at": "2026-05-14T16:18:53+00:00"
+}

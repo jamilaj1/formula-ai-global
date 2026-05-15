@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Substitute Finder — Formula AI Global</title>
+  <meta name="description" content="Find functional substitutes for any ingredient — banned, expensive, or unavailable. AI-powered, structurally-similar alternatives ranked by reasoning." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .sub-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 880px) { .sub-grid { grid-template-columns: 1fr; } }
+    .sub-form .field { margin-bottom: 18px; }
+    .sub-form label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
+    .sub-form input, .sub-form select, .sub-form textarea {
+      width: 100%; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.98rem;
+    }
+    .sub-form input:focus, .sub-form select:focus { outline: none; border-color: var(--primary); }
+    .sub-grid .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+    .candidate-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; transition: border-color .15s ease, transform .15s ease; }
+    .candidate-card:hover { border-color: var(--primary); transform: translateY(-1px); }
+    .candidate-card.top1 { border-color: var(--primary); background: linear-gradient(135deg, var(--bg-card), rgba(0, 255, 136, 0.06)); }
+    .score-bar { height: 6px; background: var(--bg-2); border-radius: 999px; overflow: hidden; margin: 8px 0 10px; }
+    .score-bar > div { height: 100%; background: var(--grad-primary); transition: width .4s ease; }
+    .badge-tier { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .tier-essentially_identical { background: rgba(0,255,136,.2); color: #00ff88; }
+    .tier-close_analog          { background: rgba(0,212,255,.18); color: #00d4ff; }
+    .tier-related_family        { background: rgba(168,107,255,.18); color: #a86bff; }
+    .tier-different_scaffolds   { background: rgba(255,90,90,.18); color: #ff7a7a; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./substitute.html" class="active" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.35;"></div>
+      <div class="hero-orb purple" style="opacity: 0.35;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 36px;">
+        <span class="eyebrow" data-i18n-ar="بحث جزيئي حقيقي">Real Cheminformatics</span>
+        <h1 style="margin-bottom: 16px;" data-i18n-ar='ابحث عن <span class="gradient-text">بديل وظيفي</span> لأي مكوّن'>
+          Find a <span class="gradient-text">functional substitute</span> for any ingredient
+        </h1>
+        <p style="color: var(--text-2); font-size: 1.1rem;" data-i18n-ar="مكوّن مَحظور؟ غالٍ؟ غير متوفّر؟ النظام يحلّل البنية الجزيئية ويُرتّب البدائل بأسبابها العلمية — مبني على RDKit Tanimoto + Lipinski + موازنة الكتلة الجزيئية.">
+          Banned ingredient? Expensive? Unavailable? The system analyses molecular structure and ranks substitutes with scientific reasoning — built on RDKit Tanimoto + Lipinski + molecular-weight balancing.
+        </p>
+      </div>
+
+      <div class="sub-grid">
+        <!-- LEFT: form -->
+        <div class="panel sub-form">
+          <h3 style="margin-bottom: 18px;" data-i18n-ar="المكوّن المُراد استبداله">Ingredient to replace</h3>
+
+          <div class="field">
+            <label data-i18n-ar="اسم المكوّن (إنجليزي)">Ingredient name (English)</label>
+            <input id="target-name" type="text" placeholder="e.g. Triclosan, Sodium Laureth Sulfate, BHT"
+                   data-i18n-attr="placeholder"
+                   data-i18n-placeholder-ar="مثال: Triclosan، Sodium Laureth Sulfate، BHT" />
+          </div>
+
+          <div class="field">
+            <label data-i18n-ar="أو SMILES مباشرة (اختياري)">Or SMILES directly (optional)</label>
+            <input id="target-smiles" type="text" placeholder="e.g. CCO or c1ccccc1" />
+          </div>
+
+          <div class="field">
+            <label data-i18n-ar="الوظيفة (للتصفية)">Function (for filtering)</label>
+            <select id="target-function">
+              <option value="" data-i18n-ar="أي وظيفة">Any function</option>
+              <option value="surfactant" data-i18n-ar="سيرفاكتنت (مادة فاعلة بالسطح)">Surfactant</option>
+              <option value="preservative" data-i18n-ar="مادة حافظة">Preservative</option>
+              <option value="antimicrobial" data-i18n-ar="مضاد ميكروبات">Antimicrobial</option>
+              <option value="emulsifier" data-i18n-ar="مُستحلِب">Emulsifier</option>
+              <option value="thickener" data-i18n-ar="مُكثِّف">Thickener</option>
+              <option value="chelator" data-i18n-ar="مُخلِّب">Chelator</option>
+              <option value="antioxidant" data-i18n-ar="مضاد أكسدة">Antioxidant</option>
+              <option value="solvent" data-i18n-ar="مذيب">Solvent</option>
+              <option value="fragrance" data-i18n-ar="عطر">Fragrance</option>
+              <option value="colorant" data-i18n-ar="مُلوِّن">Colorant</option>
+            </select>
+          </div>
+
+          <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div>
+              <label data-i18n-ar="حد التشابه الأدنى">Min similarity</label>
+              <input id="min-sim" type="number" min="0" max="1" step="0.05" value="0.4" />
+            </div>
+            <div>
+              <label data-i18n-ar="عدد البدائل">How many results</label>
+              <input id="result-limit" type="number" min="1" max="20" value="5" />
+            </div>
+          </div>
+
+          <button id="run-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 6px;"
+                  data-i18n-ar="ابحث عن البدائل">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg>
+            Find substitutes
+          </button>
+
+          <div id="loading" style="display:none; margin-top: 18px; text-align: center; color: var(--text-3); font-size: 0.92rem;">
+            <span data-i18n-ar="جاري التحليل الجزيئي…">Analysing molecular structures…</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: results -->
+        <div class="panel" id="results-panel">
+          <h3 style="margin-bottom: 14px;" data-i18n-ar="البدائل المُرتّبة">Ranked substitutes</h3>
+          <div id="empty-state" style="color: var(--text-3); padding: 30px 10px; text-align: center; font-size: 0.95rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin: 0 auto 12px; opacity: .35;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <div data-i18n-ar="أدخل مكوّناً في اليسار لرؤية البدائل هنا.">Enter an ingredient on the left to see substitutes here.</div>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+
+      <!-- Educational footer -->
+      <div style="max-width: 1100px; margin: 36px auto 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); color: var(--text-3); font-size: 0.88rem; line-height: 1.7;" data-i18n-ar="<strong>كيف يعمل:</strong> النظام يحوّل المكوّن المُدخَل إلى بصمة جزيئية Morgan (ECFP4)، يحسب معامل Tanimoto مع كل مكوّن في قاعدة بياناتنا، ثم يُرتّب البدائل حسب: التشابه الجزيئي (60%) + قُرب الكتلة الجزيئية (25%) + مطابقة Lipinski (15%). كل بديل يأتي مع شرح علمي تلقائي.">
+        <strong>How it works:</strong> The system converts your input to a Morgan ECFP4 molecular fingerprint, computes Tanimoto similarity against every ingredient in our database, then ranks substitutes by: structural similarity (60%) + molecular weight closeness (25%) + Lipinski match (15%). Each result comes with auto-generated scientific reasoning.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chem-client.js"></script>
+  <script>
+  /* substitute.html — page logic */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      name: $('target-name'),
+      smiles: $('target-smiles'),
+      func: $('target-function'),
+      minSim: $('min-sim'),
+      limit: $('result-limit'),
+      run: $('run-btn'),
+      loading: $('loading'),
+      empty: $('empty-state'),
+      results: $('results'),
+    };
+
+    async function fetchCandidates() {
+      // Pull a generous batch of enriched formulas and flatten their components.
+      // The Worker proxies straight to Supabase via the existing FAI_DB.browse().
+      try {
+        const r = await fetch('https://ivabcssceeaqgqjzgmdx.supabase.co/rest/v1/formulas?select=name_en,components&limit=200&order=trust_score.desc', {
+          headers: {
+            apikey: window.SUPABASE_ANON_KEY || (window.FAI_DB && window.FAI_DB._anon) || '',
+          },
+        });
+        // Best-effort: if anon key not exposed here, fall back to in-memory minimal set
+        if (!r.ok) return _fallbackCandidates();
+        const rows = await r.json();
+        const seen = new Set();
+        const out = [];
+        for (const row of rows) {
+          for (const c of (row.components || [])) {
+            const chem = c.chem || {};
+            const smi = chem.smiles;
+            if (!smi || seen.has(smi)) continue;
+            seen.add(smi);
+            out.push({
+              name: c.name_en,
+              smiles: smi,
+              function: c.function || null,
+              molecular_weight: chem.molecular_weight || null,
+              lipinski_violations: chem.lipinski_violations ?? null,
+            });
+            if (out.length >= 800) break;
+          }
+          if (out.length >= 800) break;
+        }
+        return out.length ? out : _fallbackCandidates();
+      } catch (_) {
+        return _fallbackCandidates();
+      }
+    }
+
+    function _fallbackCandidates() {
+      // Curated common-substitute pool; used when DB read is unavailable.
+      return [
+        { name: 'Tea Tree Oil',           smiles: 'CC1=CCC(CC1)C(C)C',         function: 'antimicrobial',  molecular_weight: 154.25 },
+        { name: 'Chlorhexidine',          smiles: 'NC(=N)NC(=N)NCCCCCCNC(=N)NC(=N)Nc1ccc(Cl)cc1', function: 'antimicrobial', molecular_weight: 505.45 },
+        { name: 'Phenoxyethanol',         smiles: 'OCCOc1ccccc1',              function: 'preservative',   molecular_weight: 138.16 },
+        { name: 'Benzyl Alcohol',         smiles: 'OCc1ccccc1',                function: 'preservative',   molecular_weight: 108.14 },
+        { name: 'Cocamidopropyl Betaine', smiles: 'CCCCCCCCCCCCC(=O)NCCC[N+](C)(C)CC(=O)[O-]', function: 'surfactant', molecular_weight: 342.52 },
+        { name: 'Decyl Glucoside',        smiles: 'CCCCCCCCCCOC1OC(CO)C(O)C(O)C1O', function: 'surfactant', molecular_weight: 320.42 },
+        { name: 'Tocopherol (Vit E)',     smiles: 'CC(C)CCCC(C)CCCC(C)CCCC1(C)CCC2=C(C)C(O)=C(C)C(C)=C2O1', function: 'antioxidant', molecular_weight: 430.71 },
+        { name: 'Ascorbic Acid (Vit C)',  smiles: 'OCC(O)C1OC(=O)C(O)=C1O', function: 'antioxidant', molecular_weight: 176.12 },
+        { name: 'Citric Acid',            smiles: 'OC(=O)CC(O)(CC(=O)O)C(=O)O', function: 'chelator', molecular_weight: 192.12 },
+        { name: 'EDTA Disodium',          smiles: 'OC(=O)CN(CCN(CC(=O)O)CC(=O)[O-])CC(=O)[O-].[Na+].[Na+]', function: 'chelator', molecular_weight: 336.21 },
+        { name: 'Glycerin',               smiles: 'OCC(O)CO', function: 'humectant', molecular_weight: 92.09 },
+        { name: 'Propylene Glycol',       smiles: 'CC(O)CO', function: 'humectant', molecular_weight: 76.10 },
+        { name: 'Xanthan Gum',            smiles: 'OC1OC(CO)C(O)C(O)C1O', function: 'thickener', molecular_weight: 933.74 },
+      ];
+    }
+
+    async function resolveTarget() {
+      const smi = els.smiles.value.trim();
+      const name = els.name.value.trim();
+      if (smi) {
+        const props = await FAI_CHEM.properties(smi);
+        return {
+          name: name || smi,
+          smiles: smi,
+          function: els.func.value || null,
+          molecular_weight: props.molecular_weight || null,
+        };
+      }
+      if (!name) return null;
+      // Resolve via PubChem first
+      const pc = await FAI_CHEM.lookupByName(name);
+      if (pc.found && pc.smiles) {
+        return {
+          name,
+          smiles: pc.smiles,
+          function: els.func.value || null,
+          molecular_weight: parseFloat(pc.molecular_weight) || null,
+        };
+      }
+      return null;
+    }
+
+    function render(result) {
+      els.results.innerHTML = '';
+      if (!result || result.error) {
+        els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(result?.error || 'unknown')}</div>`;
+        return;
+      }
+      const subs = result.substitutes || [];
+      if (!subs.length) {
+        els.results.innerHTML = `<div class="card" style="text-align:center; color: var(--text-3);">
+          <div data-i18n-ar="لم نجد بدائل مطابقة بهذه المعايير. جرّب تخفيض حد التشابه أو تغيير الوظيفة.">
+            No matches with these filters. Try lowering the similarity threshold or changing the function.
+          </div>
+        </div>`;
+        return;
+      }
+      const target = result.target || {};
+      const header = `
+        <div style="background: var(--bg-card); padding: 14px 16px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 16px; font-size: 0.88rem;">
+          <div style="color: var(--text-3); margin-bottom: 4px;" data-i18n-ar="هدف الاستبدال">Target</div>
+          <div style="font-weight: 700;">${escapeHtml(target.name || '?')}</div>
+          <div style="color: var(--text-3); font-size: 0.8rem; margin-top: 2px;">
+            SMILES: <code>${escapeHtml(target.smiles || '?')}</code>
+            ${target.molecular_weight ? ` · MW ${Number(target.molecular_weight).toFixed(2)}` : ''}
+            ${target.function ? ` · ${escapeHtml(target.function)}` : ''}
+          </div>
+          <div style="color: var(--text-3); font-size: 0.78rem; margin-top: 6px;" data-i18n-ar="فُحصت من أصل">Scanned out of</div>
+          <div style="font-size: 0.85rem;">${result.candidate_count} candidates → ${result.after_filters} after filters</div>
+        </div>
+      `;
+      els.results.innerHTML = header + subs.map((s, i) => renderCard(s, i)).join('');
+      applyLang();
+    }
+
+    function renderCard(s, i) {
+      const pct = Math.round((s.score || s.similarity || 0) * 100);
+      const tier = s.interpretation || 'related_family';
+      return `
+        <div class="candidate-card ${i === 0 ? 'top1' : ''}">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;">
+            <div style="flex: 1;">
+              <div style="font-weight: 800; font-size: 1.05rem;">${escapeHtml(s.name || '?')}</div>
+              <div style="color: var(--text-3); font-size: 0.82rem; margin-top: 2px;">
+                ${s.function ? `${escapeHtml(s.function)} · ` : ''}
+                ${s.molecular_weight ? `MW ${Number(s.molecular_weight).toFixed(2)} · ` : ''}
+                <span class="badge-tier tier-${tier}">${tier.replace(/_/g, ' ')}</span>
+              </div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-size: 1.6rem; font-weight: 900; color: var(--primary); line-height: 1;">${pct}<span style="font-size: 0.9rem;">%</span></div>
+              <div style="font-size: 0.7rem; color: var(--text-3);" data-i18n-ar="درجة الملاءمة">match</div>
+            </div>
+          </div>
+          <div class="score-bar"><div style="width: ${pct}%;"></div></div>
+          <div style="font-size: 0.86rem; color: var(--text-2); line-height: 1.55; margin-top: 6px;">${escapeHtml(s.reasoning || '')}</div>
+          <div style="font-size: 0.74rem; color: var(--text-3); margin-top: 6px; font-family: monospace; word-break: break-all;">${escapeHtml(s.smiles || '')}</div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function applyLang() {
+      if (window.applyI18n) window.applyI18n();
+    }
+
+    els.run.addEventListener('click', async () => {
+      els.loading.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = '';
+
+      try {
+        const target = await resolveTarget();
+        if (!target) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><div data-i18n-ar="لم نتمكن من تحديد المكوّن. أدخل اسماً معروفاً (e.g. Triclosan) أو SMILES صالحاً.">Could not resolve the target. Enter a known name (e.g. Triclosan) or a valid SMILES.</div></div>`;
+          applyLang();
+          return;
+        }
+        const candidates = await fetchCandidates();
+        const result = await FAI_CHEM.findSubstitute(target, candidates, {
+          minSimilarity: parseFloat(els.minSim.value) || 0.4,
+          limit: parseInt(els.limit.value) || 5,
+          requireSameFunction: !!els.func.value,
+        });
+        render(result);
+      } finally {
+        els.loading.style.display = 'none';
+      }
+    });
+
+    // Allow Enter to submit from either text input
+    [els.name, els.smiles].forEach((el) => el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') els.run.click();
+    }));
+  })();
+  </script>
+</body>
+</html>

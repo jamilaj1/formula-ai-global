@@ -53,6 +53,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# Observability (Better Stack) — installs middleware, exception handler,
+# and exposes /health/detailed + /metrics/summary. Falls back to a no-op
+# when BETTER_STACK_TOKEN is unset, so local dev keeps working.
+from services.observability import install_observability  # noqa: E402
+
+install_observability(app)
+
 # CORS — default to the production origin only. Override via CORS_ORIGINS env
 # (comma-separated). Never use "*" together with allow_credentials=True — most
 # browsers reject that combination, and it would expose every other origin.

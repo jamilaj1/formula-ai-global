@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Predict Properties — Formula AI Global</title>
+  <meta name="description" content="Enter a SMILES or ingredient name and get every key chemistry property: MW, logP, TPSA, Lipinski, ESOL solubility, stability score, toxicity flags." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .pred-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 880px) { .pred-grid { grid-template-columns: 1fr; } }
+    .pred-grid .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
+    .field input, .field textarea {
+      width: 100%; padding: 11px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.95rem;
+    }
+    .field textarea { resize: vertical; min-height: 60px; font-family: monospace; }
+
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin: 14px 0; }
+    .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .stat-card .label { font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
+    .stat-card .value { font-size: 1.55rem; font-weight: 900; color: var(--text-1); line-height: 1.1; margin-top: 4px; }
+    .stat-card .unit  { font-size: 0.8rem; color: var(--text-3); font-weight: 600; }
+
+    .result-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+    .result-block h4 { margin: 0 0 8px; font-size: 0.85rem; color: var(--text-3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge-good { background: rgba(0,255,136,.18); color: #00ff88; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .badge-warn { background: rgba(255,170,0,.18); color: #ffb74a; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+    .badge-bad  { background: rgba(255,90,90,.18); color: #ff7a7a; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+
+    .smile-code { font-family: monospace; font-size: 0.86rem; word-break: break-all; background: var(--bg-2); padding: 8px 10px; border-radius: 6px; display: block; }
+
+    .progress-row { display: flex; align-items: center; gap: 10px; margin: 6px 0; font-size: 0.86rem; }
+    .progress-row .pl { width: 130px; color: var(--text-3); }
+    .progress-row .bar { flex: 1; height: 6px; background: var(--bg-2); border-radius: 999px; overflow: hidden; }
+    .progress-row .bar > div { height: 100%; background: var(--grad-primary); transition: width .4s ease; }
+    .progress-row .pv { width: 70px; text-align: right; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./predict.html" class="active" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.35;"></div>
+      <div class="hero-orb purple" style="opacity: 0.35;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 36px;">
+        <span class="eyebrow" data-i18n-ar="حاسبة كيميائية واحدة">One unified calculator</span>
+        <h1 style="margin-bottom: 16px;" data-i18n-ar='كل خاصية كيميائية تحتاجها — <span class="gradient-text">في زرّ واحد</span>'>
+          Every chemistry property you need — <span class="gradient-text">in one click</span>
+        </h1>
+        <p style="color: var(--text-2); font-size: 1.1rem;" data-i18n-ar="MW، logP، TPSA، قواعد Lipinski، ذوبانية ESOL، درجة الثبات، فحص السمّيّة بـ SMARTS. RDKit حقيقي يعمل على الخادم — وليس مجرد تخمين.">
+          MW, logP, TPSA, Lipinski's Rule of Five, ESOL solubility, stability score, and SMARTS-based toxicity screen. Real RDKit running server-side — not guesswork.
+        </p>
+      </div>
+
+      <div class="pred-grid">
+        <!-- LEFT: input -->
+        <div class="panel">
+          <div class="field">
+            <label data-i18n-ar="اسم المادة (إنجليزي)">Compound name (English)</label>
+            <input id="in-name" type="text" placeholder="e.g. Glycerin, Triclosan, Caffeine" />
+          </div>
+          <div class="field">
+            <label data-i18n-ar="أو SMILES مباشرة">Or SMILES directly</label>
+            <textarea id="in-smiles" rows="2" placeholder="e.g. OCC(O)CO"></textarea>
+          </div>
+
+          <button id="run-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 6px;"
+                  data-i18n-ar="احسب الخواص">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            Compute properties
+          </button>
+
+          <!-- Examples -->
+          <div style="margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.85rem;">
+            <div style="color: var(--text-3); margin-bottom: 6px;" data-i18n-ar="جرّب أمثلة جاهزة:">Try an example:</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+              <button class="ex-btn" data-name="Glycerin"     data-smi="OCC(O)CO">Glycerin</button>
+              <button class="ex-btn" data-name="Triclosan"    data-smi="Oc1cc(Cl)ccc1Oc1cc(Cl)c(Cl)cc1">Triclosan</button>
+              <button class="ex-btn" data-name="Caffeine"     data-smi="Cn1cnc2n(C)c(=O)n(C)c(=O)c12">Caffeine</button>
+              <button class="ex-btn" data-name="Vit C"        data-smi="OCC(O)C1OC(=O)C(O)=C1O">Vit C</button>
+              <button class="ex-btn" data-name="Benzene"      data-smi="c1ccccc1">Benzene</button>
+              <button class="ex-btn" data-name="Mercury Cl₂"  data-smi="Cl[Hg]Cl">HgCl₂</button>
+            </div>
+          </div>
+
+          <div id="loading" style="display:none; margin-top: 18px; text-align: center; color: var(--text-3); font-size: 0.92rem;">
+            <span data-i18n-ar="جاري حساب الخواص…">Computing properties…</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: results -->
+        <div class="panel" id="results-panel">
+          <h3 style="margin-bottom: 14px;" data-i18n-ar="النتائج">Results</h3>
+          <div id="empty-state" style="color: var(--text-3); padding: 30px 10px; text-align: center; font-size: 0.95rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin: 0 auto 12px; opacity: .35;"><path d="M3 3v18h18M7 13l4-4 4 4 5-5"/></svg>
+            <div data-i18n-ar="أدخل مادة على اليسار لعرض الخواص هنا.">Enter a compound on the left to view properties here.</div>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+
+      <!-- Educational footer -->
+      <div style="max-width: 1100px; margin: 36px auto 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); color: var(--text-3); font-size: 0.88rem; line-height: 1.7;" data-i18n-ar="<strong>المراجع العلمية:</strong> الخصائص تأتي من RDKit (Descriptors.MolWt، Crippen.MolLogP، rdMolDescriptors.CalcTPSA). الذوبانية بـ ESOL (Delaney 2004، J. Chem. Inf. Model. 44 (3)). فحص السمّيّة عبر 10 مطابقات SMARTS لمجموعات وظيفية تنبيهية (Aldehydes، Epoxides، Mercury، Isocyanates، إلخ). جميعها قابلة للنقد والتحقّق.">
+        <strong>Scientific basis:</strong> Properties come from RDKit (Descriptors.MolWt, Crippen.MolLogP, rdMolDescriptors.CalcTPSA). Solubility uses the ESOL model (Delaney 2004, J. Chem. Inf. Model. 44 (3)). Toxicity screening uses 10 SMARTS structural alerts (aldehydes, epoxides, mercury, isocyanates, etc.). Every prediction is auditable.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chem-client.js"></script>
+  <script>
+  /* predict.html — single-compound property calculator */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      name:    $('in-name'),
+      smiles:  $('in-smiles'),
+      runBtn:  $('run-btn'),
+      loading: $('loading'),
+      empty:   $('empty-state'),
+      results: $('results'),
+    };
+
+    // Wire example buttons (use the same .btn .btn-ghost .btn-sm style)
+    document.querySelectorAll('.ex-btn').forEach((b) => {
+      b.className = 'btn btn-ghost btn-sm';
+      b.addEventListener('click', () => {
+        els.name.value   = b.dataset.name || '';
+        els.smiles.value = b.dataset.smi  || '';
+        els.runBtn.click();
+      });
+    });
+
+    async function resolveSmiles() {
+      const smi = (els.smiles.value || '').trim();
+      if (smi) return { smiles: smi, name: els.name.value.trim() || smi, fromLookup: false };
+      const name = (els.name.value || '').trim();
+      if (!name) return null;
+      const pc = await FAI_CHEM.lookupByName(name);
+      if (pc && pc.found && pc.smiles) {
+        els.smiles.value = pc.smiles;
+        return { smiles: pc.smiles, name, fromLookup: true, lookup: pc };
+      }
+      return null;
+    }
+
+    els.runBtn.addEventListener('click', async () => {
+      els.loading.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = '';
+      els.runBtn.disabled = true;
+
+      try {
+        const target = await resolveSmiles();
+        if (!target) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><div data-i18n-ar="لم نتمكن من تحديد المادة. أدخل اسماً معروفاً أو SMILES صالحاً.">Could not resolve the compound. Enter a known name or a valid SMILES.</div></div>`;
+          applyLang();
+          return;
+        }
+
+        // Fire the four backend calls in parallel
+        const [props, lipinski, solubility, toxScan] = await Promise.all([
+          FAI_CHEM.properties(target.smiles),
+          FAI_CHEM.lipinski(target.smiles),
+          FAI_CHEM.solubility(target.smiles),
+          FAI_CHEM.toxicityScan(target.smiles),
+        ]);
+
+        renderAll(target, props, lipinski, solubility, toxScan);
+      } catch (err) {
+        els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(err.message || String(err))}</div>`;
+      } finally {
+        els.loading.style.display = 'none';
+        els.runBtn.disabled = false;
+      }
+    });
+
+    function fmtNum(n, d = 2) {
+      if (n == null || isNaN(Number(n))) return '—';
+      return Number(n).toFixed(d);
+    }
+
+    function renderAll(target, props, lip, sol, tox) {
+      const errored = [props, lip, sol, tox].filter((r) => r?.error);
+      if (errored.length === 4) {
+        els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(errored[0].detail || errored[0].error || 'all calls failed')}</div>`;
+        return;
+      }
+
+      const html = [];
+
+      // ── Identity
+      html.push(`
+        <div class="result-block">
+          <h4 data-i18n-ar="الهوية">Identity</h4>
+          <div style="font-weight: 800; font-size: 1.05rem;">${escapeHtml(target.name)}</div>
+          <code class="smile-code">${escapeHtml(target.smiles)}</code>
+          ${props?.inchi_key ? `<div style="font-size: 0.78rem; color: var(--text-3); margin-top: 6px; word-break: break-all;">InChIKey: ${escapeHtml(props.inchi_key)}</div>` : ''}
+          ${props?.canonical_smiles && props.canonical_smiles !== target.smiles ? `<div style="font-size: 0.78rem; color: var(--text-3); margin-top: 4px;">Canonical: <code>${escapeHtml(props.canonical_smiles)}</code></div>` : ''}
+        </div>
+      `);
+
+      // ── Core physicochemical
+      if (props && !props.error) {
+        html.push(`
+          <div class="result-block">
+            <h4 data-i18n-ar="خواص فيزيائية كيميائية">Physicochemical</h4>
+            <div class="stat-grid">
+              <div class="stat-card"><div class="label">Molecular Wt</div><div class="value">${fmtNum(props.molecular_weight)}<span class="unit"> g/mol</span></div></div>
+              <div class="stat-card"><div class="label">logP</div><div class="value">${fmtNum(props.logp)}</div></div>
+              <div class="stat-card"><div class="label">TPSA</div><div class="value">${fmtNum(props.tpsa, 1)}<span class="unit"> Å²</span></div></div>
+              <div class="stat-card"><div class="label">HB Donors</div><div class="value">${props.h_bond_donors ?? '—'}</div></div>
+              <div class="stat-card"><div class="label">HB Acceptors</div><div class="value">${props.h_bond_acceptors ?? '—'}</div></div>
+              <div class="stat-card"><div class="label">Rotatable Bonds</div><div class="value">${props.rotatable_bonds ?? '—'}</div></div>
+              <div class="stat-card"><div class="label">Heavy Atoms</div><div class="value">${props.heavy_atoms ?? '—'}</div></div>
+              <div class="stat-card"><div class="label">Aromatic Rings</div><div class="value">${props.aromatic_rings ?? '—'}</div></div>
+            </div>
+          </div>
+        `);
+      }
+
+      // ── Lipinski
+      if (lip && !lip.error) {
+        const v = lip.violations ?? lip.lipinski_violations ?? 0;
+        const badge = v === 0 ? '<span class="badge-good" data-i18n-ar="مطابق">Compliant</span>'
+                    : v === 1 ? '<span class="badge-warn" data-i18n-ar="انتهاك واحد">1 violation</span>'
+                              : `<span class="badge-bad">${v} violations</span>`;
+        html.push(`
+          <div class="result-block">
+            <h4>Lipinski's Rule of Five ${badge}</h4>
+            <div class="progress-row"><div class="pl">MW ≤ 500</div><div class="bar"><div style="width:${pct(props?.molecular_weight, 500, true)}%"></div></div><div class="pv">${fmtNum(props?.molecular_weight)}</div></div>
+            <div class="progress-row"><div class="pl">logP ≤ 5</div><div class="bar"><div style="width:${pct(props?.logp, 5, true)}%"></div></div><div class="pv">${fmtNum(props?.logp)}</div></div>
+            <div class="progress-row"><div class="pl">HBD ≤ 5</div><div class="bar"><div style="width:${pct(props?.h_bond_donors, 5, true)}%"></div></div><div class="pv">${props?.h_bond_donors ?? '—'}</div></div>
+            <div class="progress-row"><div class="pl">HBA ≤ 10</div><div class="bar"><div style="width:${pct(props?.h_bond_acceptors, 10, true)}%"></div></div><div class="pv">${props?.h_bond_acceptors ?? '—'}</div></div>
+          </div>
+        `);
+      }
+
+      // ── Solubility (ESOL)
+      if (sol && !sol.error) {
+        const logS = sol.log_s ?? sol.logS ?? sol.solubility_log;
+        const mgmL = sol.mg_per_ml ?? sol.solubility_mg_ml;
+        const cat  = (sol.category || sol.classification || '').toLowerCase();
+        const catBadge = cat.includes('insoluble') ? 'badge-bad'
+                       : cat.includes('low') || cat.includes('poor') ? 'badge-warn' : 'badge-good';
+        html.push(`
+          <div class="result-block">
+            <h4 data-i18n-ar="الذوبانية المائيّة (ESOL)">Aqueous solubility (ESOL)</h4>
+            <div class="stat-grid">
+              <div class="stat-card"><div class="label">log S</div><div class="value">${fmtNum(logS)}</div></div>
+              <div class="stat-card"><div class="label">Solubility</div><div class="value">${fmtNum(mgmL, 3)}<span class="unit"> mg/mL</span></div></div>
+              ${cat ? `<div class="stat-card"><div class="label">Class</div><div class="value" style="font-size:1rem;"><span class="${catBadge}">${escapeHtml(cat)}</span></div></div>` : ''}
+            </div>
+            ${sol.reasoning ? `<div style="font-size: 0.85rem; color: var(--text-2); margin-top: 6px; line-height: 1.5;">${escapeHtml(sol.reasoning)}</div>` : ''}
+          </div>
+        `);
+      }
+
+      // ── Toxicity scan
+      if (tox && !tox.error) {
+        const flags = tox.alerts || tox.flags || tox.hits || [];
+        const score = tox.score ?? tox.risk_score;
+        const safe = flags.length === 0;
+        html.push(`
+          <div class="result-block">
+            <h4 data-i18n-ar="فحص السمّيّة (SMARTS)">Toxicity screen (SMARTS) ${safe ? '<span class="badge-good" data-i18n-ar="آمن نسبياً">No alerts</span>' : `<span class="badge-bad">${flags.length} alert${flags.length>1?'s':''}</span>`}</h4>
+            ${score != null ? `<div style="margin-bottom: 6px; font-size: 0.86rem; color: var(--text-3);">Risk score: <strong style="color: var(--text-1);">${fmtNum(score, 2)}</strong></div>` : ''}
+            ${flags.length === 0
+              ? `<div style="color: var(--text-3); font-size: 0.88rem;" data-i18n-ar="لم يُكتشف أي تنبيه بنيوي معروف.">No known structural alerts detected.</div>`
+              : `<ul style="margin: 0; padding-left: 18px; font-size: 0.88rem; color: var(--text-2); line-height: 1.7;">${flags.map((f) => `<li><strong>${escapeHtml(f.name || f.alert || f.type || 'alert')}</strong>${f.description ? ' — ' + escapeHtml(f.description) : ''}${f.smarts ? ` <code style="font-size: 0.76rem; color: var(--text-3);">${escapeHtml(f.smarts)}</code>` : ''}</li>`).join('')}</ul>`
+            }
+          </div>
+        `);
+      }
+
+      els.results.innerHTML = html.join('');
+      applyLang();
+    }
+
+    function pct(value, max, lowerIsBetter) {
+      if (value == null) return 0;
+      const v = Math.max(0, Math.min(1, Number(value) / Number(max)));
+      // Always show fill = % of limit. The bar is "filled headroom" indicator
+      return Math.round(v * 100);
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+
+    [els.name, els.smiles].forEach((el) => el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); els.runBtn.click(); }
+    }));
+  })();
+  </script>
+</body>
+</html>

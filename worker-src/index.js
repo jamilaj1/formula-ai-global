@@ -87,6 +87,7 @@ import {
 } from './handlers/payments.js';
 import { handleChemProxy } from './handlers/chem.js';
 import { handleBackendProxy } from './handlers/backend_proxy.js';
+import { withObservability } from './observability.js';
 
 const SERVICE_VERSION = 'Formula AI Brain v8';
 
@@ -153,8 +154,7 @@ function healthResponse() {
   });
 }
 
-export default {
-  async fetch(request, env) {
+async function handleRequest(request, env, ctx) {
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
     }
@@ -253,5 +253,10 @@ export default {
     } catch (err) {
       return json({ error: 'unhandled', detail: err.message }, 500);
     }
-  },
+}
+
+// Wrap with observability: every request is timed, non-2xx & slow ones get
+// shipped to Better Stack, unhandled exceptions are captured with stack.
+export default {
+  fetch: withObservability(handleRequest),
 };

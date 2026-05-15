@@ -1,0 +1,47 @@
+{
+  "task": "regression",
+  "target": "log10(shelf_life_months)",
+  "algorithm": "RandomForestRegressor",
+  "hyperparameters": {
+    "n_estimators": 300,
+    "max_depth": 18
+  },
+  "features": {
+    "descriptor_count": 12,
+    "descriptor_names": [
+      "mw",
+      "logp",
+      "tpsa",
+      "hbd",
+      "hba",
+      "rotatable_bonds",
+      "rings",
+      "aromatic_atoms",
+      "heteroatoms",
+      "fraction_sp3",
+      "halogens",
+      "formal_charge"
+    ],
+    "fingerprint_bits": 512,
+    "fingerprint_radius": 2,
+    "total_features": 524,
+    "extra_condition_features": [
+      "temperature_c",
+      "relative_humidity",
+      "ph"
+    ],
+    "feature_count_total": 15
+  },
+  "n_user_labeled": 0,
+  "n_seed": 100,
+  "n_train": 79,
+  "n_test": 20,
+  "metrics": {
+    "mae_log10_test": 0.1041,
+    "r2_test": 0.8583,
+    "typical_factor_error": 1.271
+  },
+  "train_seconds": 0.45,
+  "note": "Target is log10(months). Multiply 10^pred to get months.",
+  "trained_at": "2026-05-14T15:55:51+00:00"
+}

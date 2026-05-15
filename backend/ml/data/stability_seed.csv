@@ -1,0 +1,104 @@
+smiles,name,shelf_life_months,temperature_c,relative_humidity,ph,source
+OCC(O)CO,Glycerin,36,25,50,7,"USP, very stable"
+CC(O)CO,Propylene Glycol,36,25,50,7,USP
+CCO,Ethanol,48,25,50,7,Bulk solvent
+O,Water (purified),12,25,50,7,Microbial growth limit
+OC(=O)CC(O)(CC(=O)O)C(=O)O,Citric Acid,60,25,50,4,Stable solid
+OC(=O)/C=C/C(=O)O,Fumaric Acid,48,25,50,3,Stable
+CC(=O)O,Acetic Acid,60,25,50,3,Stable
+NC(=O)N,Urea,24,25,60,7,Slow decomposition with heat
+NC(N)=O,Urea (resonance),24,25,60,7,Slow decomposition
+[H][N]([H])[H],Ammonia,1,25,50,11,Highly volatile
+NCCO,MEA (monoethanolamine),12,25,50,11,Discolors with air
+OCCN(CCO)CCO,TEA (triethanolamine),24,25,50,10,Stable in dark
+OCCOc1ccccc1,Phenoxyethanol,48,25,50,5,Preservative
+OCc1ccccc1,Benzyl Alcohol,36,25,50,7,Preservative
+CCCCCCCCCCCCOS(=O)(=O)O,SLS,30,25,50,7,Anionic surfactant
+CCCCCCCCCCCCOCCOCCOS(=O)(=O)O,SLES (3EO),24,25,50,7,Hydrolyzes slow
+CCCCCCCCCCCCC(=O)NCCC[N+](C)(C)CC(=O)[O-],CAPB,18,25,50,6,Mild surfactant
+CCCCCCCCCCCCN(C)(C)O,Lauramine Oxide,24,25,50,7,Amphoteric
+OCC1OC(O)C(O)C(O)C1O,Glucose,18,25,50,5,Maillard browning risk
+OC1=C(O)C(=O)OC1C(O)CO,Ascorbic Acid (Vit C),6,15,40,4,Oxidizes rapidly
+CC(C)CCCC(C)CCCC(C)CCCC1(C)CCC2=C(C)C(O)=C(C)C(C)=C2O1,alpha-Tocopherol,12,15,40,7,Light-sensitive
+[Na+].[O-]Cl,Sodium Hypochlorite,2,15,50,12,Loses 5% per month
+OO,Hydrogen Peroxide,6,15,50,4,Decomposes with metals
+[Mg+2].[O-]CC(=O)[O-],Mg Stearate,60,25,50,7,Inert lubricant
+OS(=O)(=O)O,Sulfuric Acid,120,25,50,1,Stable indefinitely
+[Na+].[OH-],Sodium Hydroxide,120,25,40,14,Stable solid
+OC(C)(C)C(=O)O,Lactic Acid,36,25,50,3,Stable
+OC(=O)CCCCCCCCCCCCCCC,Palmitic Acid,60,25,50,5,Saturated fat acid
+OC(=O)CCCCCCC/C=C\CCCCCCCC,Oleic Acid,18,25,40,5,Auto-oxidizes
+CCCCCCCC/C=C\CCCCCCCC(=O)O,Oleic Acid (alt),18,25,40,5,Auto-oxidizes
+[H]/C(=C(\[H])/c1ccccc1)/c1ccccc1,Stilbene,36,25,50,7,Solid stable
+CCCCOC(=O)c1ccccc1C(=O)OCC,Diethyl Phthalate,36,25,50,7,Solvent
+CCCCCCCCCCOC1OC(CO)C(O)C(O)C1O,Decyl Glucoside,24,25,50,7,Mild surfactant
+CN1CCN(C)CC1,DMP (dimethylpiperazine),24,25,50,9,pH adjuster
+O=C(OCc1ccccc1)c1ccccc1,Benzyl Benzoate,48,25,50,6,Stable ester
+CCOC(=O)c1ccc(O)cc1,Ethyl Paraben,48,25,50,5,Preservative
+COC(=O)c1ccc(O)cc1,Methyl Paraben,48,25,50,5,Preservative
+CCCOC(=O)c1ccc(O)cc1,Propyl Paraben,48,25,50,5,Preservative
+NC(=O)C(=O)N,Oxalamide,12,25,50,7,Slow hydrolysis
+NC1=NC(=O)NC=N1,Cytosine analog,24,25,50,7,Stable solid
+[O-]S(=O)(=O)[O-].[Mg+2],MgSO4,120,25,40,7,Inert salt
+O=Cc1ccccc1,Benzaldehyde,3,15,50,7,Auto-oxidizes to acid
+COc1ccc(C=O)cc1,Anisaldehyde,4,15,50,7,Aldehyde
+CC(=O)C,Acetone,24,25,30,7,Volatile but stable
+CC(=O)CC(C)C,MIBK,18,25,30,7,Solvent
+ClCCCl,Methylene chloride,24,25,30,7,Chlorinated solvent
+CCN(CC)CC,Triethylamine,12,25,30,11,Volatile amine
+N#Cc1ccccc1,Benzonitrile,36,25,50,7,Stable
+O=S(=O)(O)c1ccc(C)cc1,p-Toluenesulfonic Acid,48,25,40,1,Strong acid
+[Na+].[O-]C(=O)C,Sodium Acetate,60,25,50,7,Salt
+O=C1CCC(=O)N1,Succinimide,36,25,50,6,Stable
+OC1=CC=C(C=C1)O,Hydroquinone,3,15,40,5,Oxidizes to quinone
+OC1=CC=CC=C1,Phenol,18,15,40,5,Slow oxidation
+NC1=CC=CC=C1,Aniline,6,15,30,7,Discolors
+[Cu+2].[O-]S(=O)(=O)[O-],Copper Sulfate,120,25,50,4,Inert
+[Fe+3].[O-]Cl,Ferric Chloride,36,25,30,2,Hygroscopic
+O=C1NC(=O)NC(=O)N1,Cyanuric Acid,60,25,50,5,Stable
+OS(=O)(=O)CCS(=O)(=O)O,EDMS,48,25,50,2,Stable diacid
+CC(C)(C)c1ccc(O)cc1,BHT-like,24,15,40,7,Antioxidant
+CC1=CC(=O)C=CC1=O,Tolyl-quinone,4,15,40,6,Reactive quinone
+OC(=O)C(O)C(O)C(=O)O,Tartaric Acid,60,25,50,3,Stable acid
+OCC(N)C(O)=O,Serine,18,25,50,6,Amino acid
+OC(=O)CN,Glycine,36,25,50,6,Stable amino acid
+[Cl-].[NH4+],Ammonium Chloride,60,25,40,5,Stable salt
+[Na+].[Cl-],Sodium Chloride,120,25,50,7,Stable salt
+CC(=O)Nc1ccc(O)cc1,Paracetamol,36,25,50,6,Stable solid
+CCN(CC)C(=O)Nc1ccc(C)cc1,Diethyltoluamide,36,25,50,7,DEET stable
+O=C(O)c1ccccc1O,Salicylic Acid,48,25,50,3,Stable solid
+CC(=O)Oc1ccccc1C(=O)O,Aspirin,12,25,40,5,Hydrolyzes
+CC1=C(C(=NC(=N1)N)N)N,Triamterene-like,48,25,50,6,Stable
+Cc1ccc(S(=O)(=O)Cl)cc1,p-Toluenesulfonyl chloride,2,15,30,7,Hydrolyzes fast
+COc1ccccc1,Anisole,36,25,50,7,Stable ether
+COCCOC,DME,24,25,30,7,Ether
+COCCOCCOC,Diglyme,24,25,30,7,Ether
+COC(=O)C,Methyl Acetate,18,25,40,5,Slow hydrolysis
+CCOC(=O)C,Ethyl Acetate,18,25,40,5,Solvent
+CCCOC(=O)C,Propyl Acetate,18,25,40,5,Solvent
+OCCCCO,1,4-Butanediol,30,25,50,7,Diol
+OCCCCCO,1,5-Pentanediol,30,25,50,7,Diol
+OCCCCCCO,1,6-Hexanediol,30,25,50,7,Diol
+OCCCCCCCC,1-Octanol,30,25,50,7,Fatty alcohol
+OCCCCCCCCCCCC,1-Dodecanol,36,25,50,7,Lauryl alcohol
+OCCCCCCCCCCCCCCCC,1-Hexadecanol,48,25,50,7,Cetyl alcohol
+OCCCCCCCCCCCCCCCCCC,1-Octadecanol,48,25,50,7,Stearyl alcohol
+O=C(O)CCCCCCCCC,Decanoic Acid,48,25,50,5,Saturated FA
+O=C(O)CCCCCCCCCCC,Lauric Acid,48,25,50,5,Saturated FA
+O=C(O)CCCCCCCCCCCCC,Myristic Acid,48,25,50,5,Saturated FA
+O=C(O)CCCCCCCCCCCCCCCCC,Stearic Acid,60,25,50,5,Saturated FA
+CCCCCCCC=O,Octanal,4,15,40,6,Aldehyde
+CCCCCCCCC=O,Nonanal,4,15,40,6,Aldehyde
+CCCCCCCCCC=O,Decanal,4,15,40,6,Aldehyde
+CC(C)=CCC/C(C)=C/CO,Geraniol,12,15,40,7,Terpene alcohol
+CC(C)=CCCC(C)=CCO,Nerol,12,15,40,7,Terpene alcohol
+CC(C)=CCC/C(C)=C/C=O,Citral,3,15,40,6,Aldehyde
+CC1=CCC(CC1)C(C)C,Limonene,9,15,40,7,Terpene
+CC1=CC=C(C=C1)C(C)C,p-Cymene,18,15,40,7,Aromatic
+COc1ccc(\C=C\CO)cc1,Anisyl alcohol,18,25,50,7,Aromatic
+COc1ccc(CO)cc1,Anisyl alcohol (alt),18,25,50,7,Aromatic
+CC(C)CCO,Isoamyl alcohol,30,25,50,7,Alcohol
+CCCCO,1-Butanol,36,25,50,7,Alcohol
+CCC(C)O,2-Butanol,36,25,50,7,Alcohol
+CCCCCO,1-Pentanol,36,25,50,7,Alcohol
+CCCCCCO,1-Hexanol,36,25,50,7,Alcohol

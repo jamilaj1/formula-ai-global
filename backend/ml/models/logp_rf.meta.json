@@ -1,0 +1,39 @@
+{
+  "task": "regression",
+  "target": "logP (octanol-water partition coefficient)",
+  "algorithm": "RandomForestRegressor",
+  "hyperparameters": {
+    "n_estimators": 300,
+    "max_depth": 20,
+    "random_state": 42
+  },
+  "features": {
+    "descriptor_count": 12,
+    "descriptor_names": [
+      "mw",
+      "logp",
+      "tpsa",
+      "hbd",
+      "hba",
+      "rotatable_bonds",
+      "rings",
+      "aromatic_atoms",
+      "heteroatoms",
+      "fraction_sp3",
+      "halogens",
+      "formal_charge"
+    ],
+    "fingerprint_bits": 512,
+    "fingerprint_radius": 2,
+    "total_features": 524
+  },
+  "n_train": 172,
+  "n_test": 43,
+  "metrics": {
+    "mae_test": 0.5289,
+    "r2_test": 0.8843
+  },
+  "train_seconds": 0.73,
+  "dataset_path": "H:\\FormulaAI-Backup-2026-05-11\\backend\\ml\\data\\logp_train.csv",
+  "trained_at": "2026-05-14T15:54:55+00:00"
+}

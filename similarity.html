@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Molecular Similarity — Formula AI Global</title>
+  <meta name="description" content="Compare any two molecules with Morgan ECFP4 + Tanimoto, or search our 7K-chemical database for everything that resembles your target." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .sim-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
+    .sim-grid .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+
+    .mode-tabs { display: flex; gap: 6px; background: var(--bg-card); padding: 6px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; }
+    .mode-tab { flex: 1; padding: 9px 8px; border: 0; background: transparent; color: var(--text-2); font-family: inherit; font-weight: 700; font-size: 0.9rem; border-radius: calc(var(--radius) - 4px); cursor: pointer; }
+    .mode-tab.active { background: var(--grad-primary); color: #02110a; }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
+    .field input, .field textarea {
+      width: 100%; padding: 11px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.95rem;
+    }
+    .field textarea { resize: vertical; min-height: 60px; font-family: monospace; }
+
+    .gauge { text-align: center; padding: 18px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; }
+    .gauge .big { font-size: 3.4rem; font-weight: 900; line-height: 1; background: var(--grad-primary); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+    .gauge .label { font-size: 0.85rem; color: var(--text-3); margin-top: 4px; }
+    .gauge .tier { display: inline-block; margin-top: 8px; padding: 4px 12px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; }
+    .tier-essentially_identical { background: rgba(0,255,136,.2); color: #00ff88; }
+    .tier-close_analog          { background: rgba(0,212,255,.18); color: #00d4ff; }
+    .tier-related_family        { background: rgba(168,107,255,.18); color: #a86bff; }
+    .tier-different_scaffolds   { background: rgba(255,90,90,.18); color: #ff7a7a; }
+
+    .hit-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 10px; }
+    .hit-card:hover { border-color: var(--primary); }
+    .hit-card .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .hit-card .pct { font-size: 1.4rem; font-weight: 900; color: var(--primary); }
+    .hit-card .score-bar { height: 5px; background: var(--bg-2); border-radius: 999px; overflow: hidden; margin: 6px 0; }
+    .hit-card .score-bar > div { height: 100%; background: var(--grad-primary); }
+    .hit-card code { font-family: monospace; font-size: 0.78rem; color: var(--text-3); word-break: break-all; }
+
+    .pair-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; margin-top: 10px; font-size: 0.85rem; color: var(--text-2); }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./similarity.html" class="active" data-i18n-ar="تشابه جزيئي">Similarity</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.35;"></div>
+      <div class="hero-orb purple" style="opacity: 0.35;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 36px;">
+        <span class="eyebrow" data-i18n-ar="بصمة Morgan · معامل Tanimoto">Morgan ECFP4 · Tanimoto coefficient</span>
+        <h1 style="margin-bottom: 16px;" data-i18n-ar='قِس <span class="gradient-text">التشابه الجزيئي</span> الحقيقي'>
+          Measure <span class="gradient-text">real molecular similarity</span>
+        </h1>
+        <p style="color: var(--text-2); font-size: 1.1rem;" data-i18n-ar="قارن جزيئَين، أو ابحث في قاعدة بياناتنا (7K مادة كيميائية، 3,381 تركيبة) عن كل ما يُشبه هدفك. نفس الخوارزمية التي تستخدمها Schrödinger و BenevolentAI.">
+          Compare two molecules, or search our database (7K chemicals, 3,381 formulas) for everything that resembles your target. The same algorithm used by Schrödinger and BenevolentAI.
+        </p>
+      </div>
+
+      <div class="sim-grid">
+        <!-- LEFT: input -->
+        <div class="panel">
+          <div class="mode-tabs" role="tablist">
+            <button class="mode-tab active" data-mode="pair" type="button" data-i18n-ar="مقارنة جزيئين">Compare two</button>
+            <button class="mode-tab" data-mode="search" type="button" data-i18n-ar="بحث في القاعدة">Search the DB</button>
+          </div>
+
+          <!-- Pair mode -->
+          <div id="mode-pair">
+            <div class="field">
+              <label data-i18n-ar="الجزيء A — اسم أو SMILES">Molecule A — name or SMILES</label>
+              <input id="pair-a" type="text" placeholder="e.g. Triclosan  or  Oc1cc(Cl)ccc1Oc1cc(Cl)c(Cl)cc1" />
+            </div>
+            <div class="field">
+              <label data-i18n-ar="الجزيء B — اسم أو SMILES">Molecule B — name or SMILES</label>
+              <input id="pair-b" type="text" placeholder="e.g. Triclocarban  or  ClC(Cl)=O" />
+            </div>
+            <button id="pair-run" class="btn btn-primary btn-block btn-lg" style="margin-top: 6px;"
+                    data-i18n-ar="قارن">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M8 7h12M8 12h12M8 17h12M4 7h.01M4 12h.01M4 17h.01"/></svg>
+              Compare
+            </button>
+          </div>
+
+          <!-- Search mode -->
+          <div id="mode-search" style="display:none;">
+            <div class="field">
+              <label data-i18n-ar="هدف البحث — اسم أو SMILES">Search target — name or SMILES</label>
+              <input id="srch-target" type="text" placeholder="e.g. Caffeine  or  Cn1cnc2n(C)c(=O)n(C)c(=O)c12" />
+            </div>
+            <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label data-i18n-ar="حد التشابه الأدنى">Min similarity</label>
+                <input id="srch-min" type="number" min="0" max="1" step="0.05" value="0.3" />
+              </div>
+              <div>
+                <label data-i18n-ar="عدد النتائج">How many results</label>
+                <input id="srch-limit" type="number" min="1" max="50" value="20" />
+              </div>
+            </div>
+            <button id="srch-run" class="btn btn-primary btn-block btn-lg" style="margin-top: 6px;"
+                    data-i18n-ar="ابحث">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+              Search database
+            </button>
+          </div>
+
+          <div id="loading" style="display:none; margin-top: 18px; text-align: center; color: var(--text-3); font-size: 0.92rem;">
+            <span data-i18n-ar="جاري الحساب…">Computing…</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: results -->
+        <div class="panel">
+          <h3 style="margin-bottom: 14px;" data-i18n-ar="النتائج">Results</h3>
+          <div id="empty-state" style="color: var(--text-3); padding: 30px 10px; text-align: center; font-size: 0.95rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin: 0 auto 12px; opacity: .35;"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+            <div data-i18n-ar="اختر وضعاً وأدخل البيانات على اليسار.">Pick a mode and enter the inputs on the left.</div>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+
+      <!-- Educational footer -->
+      <div style="max-width: 1100px; margin: 36px auto 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); color: var(--text-3); font-size: 0.88rem; line-height: 1.7;" data-i18n-ar="<strong>كيف يعمل:</strong> كل جزيء يُحوَّل إلى بصمة Morgan ECFP4 (radius=2، 2048 bit) ثم يُحسب معامل Tanimoto = |A∩B| / |A∪B|. القِيَم الناتجة: 0.85–1.0 = شِبه متطابق · 0.6–0.85 = نظير قريب · 0.3–0.6 = عائلة مرتبطة · أقل من 0.3 = هياكل مختلفة. هذا هو نفس البروتوكول المُتّبَع في صناعة الأدوية وعلوم المواد.">
+        <strong>How it works:</strong> Each molecule is converted to a Morgan ECFP4 fingerprint (radius = 2, 2048 bits) and the Tanimoto coefficient is computed as |A∩B| / |A∪B|. Tiers: 0.85–1.0 = essentially identical · 0.6–0.85 = close analog · 0.3–0.6 = related family · &lt; 0.3 = different scaffolds. This is the same protocol used in drug discovery and materials science.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./similarity.html" data-i18n-ar="تشابه جزيئي">Similarity</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chem-client.js"></script>
+  <script>
+  /* similarity.html — page logic */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      tabs:     document.querySelectorAll('.mode-tab'),
+      modePair: $('mode-pair'),
+      modeSrch: $('mode-search'),
+      // pair
+      pairA:    $('pair-a'),
+      pairB:    $('pair-b'),
+      pairRun:  $('pair-run'),
+      // search
+      srchT:    $('srch-target'),
+      srchMin:  $('srch-min'),
+      srchLim:  $('srch-limit'),
+      srchRun:  $('srch-run'),
+      // shared
+      loading:  $('loading'),
+      empty:    $('empty-state'),
+      results:  $('results'),
+    };
+
+    let mode = 'pair';
+    els.tabs.forEach((t) => t.addEventListener('click', () => {
+      mode = t.dataset.mode;
+      els.tabs.forEach((u) => u.classList.toggle('active', u === t));
+      els.modePair.style.display = (mode === 'pair')   ? 'block' : 'none';
+      els.modeSrch.style.display = (mode === 'search') ? 'block' : 'none';
+      els.results.innerHTML = '';
+      els.empty.style.display = 'block';
+    }));
+
+    async function resolveOne(s) {
+      const v = (s || '').trim();
+      if (!v) return null;
+      // Heuristic: looks like SMILES if it contains lowercase letters or special chars typical of SMILES
+      if (/^[A-Za-z0-9@+\-\[\]\(\)=#\$:\/\\\.%]+$/.test(v) && /[a-z\[\(=#]/.test(v) && v.length <= 200) {
+        // Try as SMILES first — verify via /chem/properties
+        const p = await FAI_CHEM.properties(v);
+        if (p && !p.error && p.molecular_weight) {
+          return { name: v, smiles: v, mw: p.molecular_weight, lookup: p };
+        }
+      }
+      // Fall back to PubChem lookup
+      const pc = await FAI_CHEM.lookupByName(v);
+      if (pc && pc.found && pc.smiles) {
+        return { name: v, smiles: pc.smiles, mw: parseFloat(pc.molecular_weight) || null, lookup: pc };
+      }
+      return null;
+    }
+
+    function tierFor(score) {
+      if (score >= 0.85) return 'essentially_identical';
+      if (score >= 0.6)  return 'close_analog';
+      if (score >= 0.3)  return 'related_family';
+      return 'different_scaffolds';
+    }
+
+    // ─── Pair mode ────────────────────────────────────────
+    els.pairRun.addEventListener('click', async () => {
+      els.loading.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = '';
+      els.pairRun.disabled = true;
+      try {
+        const [a, b] = await Promise.all([resolveOne(els.pairA.value), resolveOne(els.pairB.value)]);
+        if (!a || !b) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><div data-i18n-ar="تعذّر تحديد أحد الجزيئات. تأكّد من الاسم أو SMILES.">Could not resolve one of the molecules. Check the name or SMILES.</div></div>`;
+          applyLang(); return;
+        }
+        const result = await FAI_CHEM.similarity(a.smiles, b.smiles);
+        if (result?.error) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(result.detail || result.error)}</div>`;
+          return;
+        }
+        const score = result.similarity ?? result.tanimoto ?? result.score ?? 0;
+        const pct = Math.round(score * 100);
+        const tier = tierFor(score);
+        els.results.innerHTML = `
+          <div class="gauge">
+            <div class="big">${pct}%</div>
+            <div class="label" data-i18n-ar="معامل Tanimoto">Tanimoto similarity</div>
+            <div class="tier tier-${tier}">${tier.replace(/_/g, ' ')}</div>
+          </div>
+          <div class="pair-block">
+            <div style="font-weight: 700; margin-bottom: 4px;">${escapeHtml(a.name)}</div>
+            <code style="font-family:monospace; color: var(--text-3); font-size: 0.78rem; word-break: break-all;">${escapeHtml(a.smiles)}</code>
+            ${a.mw ? `<div style="color: var(--text-3); font-size: 0.78rem; margin-top: 4px;">MW ${Number(a.mw).toFixed(2)}</div>` : ''}
+          </div>
+          <div class="pair-block">
+            <div style="font-weight: 700; margin-bottom: 4px;">${escapeHtml(b.name)}</div>
+            <code style="font-family:monospace; color: var(--text-3); font-size: 0.78rem; word-break: break-all;">${escapeHtml(b.smiles)}</code>
+            ${b.mw ? `<div style="color: var(--text-3); font-size: 0.78rem; margin-top: 4px;">MW ${Number(b.mw).toFixed(2)}</div>` : ''}
+          </div>
+          ${result.interpretation ? `<div style="font-size: 0.88rem; color: var(--text-2); margin-top: 12px; line-height: 1.6;">${escapeHtml(result.interpretation)}</div>` : ''}
+        `;
+        applyLang();
+      } finally {
+        els.loading.style.display = 'none';
+        els.pairRun.disabled = false;
+      }
+    });
+
+    // ─── Search mode ──────────────────────────────────────
+    async function fetchCandidates() {
+      try {
+        const r = await fetch('https://ivabcssceeaqgqjzgmdx.supabase.co/rest/v1/formulas?select=name_en,components&limit=200&order=trust_score.desc', {
+          headers: { apikey: window.SUPABASE_ANON_KEY || (window.FAI_DB && window.FAI_DB._anon) || '' }
+        });
+        if (!r.ok) return [];
+        const rows = await r.json();
+        const seen = new Set(); const out = [];
+        for (const row of rows) {
+          for (const c of (row.components || [])) {
+            const smi = c.chem?.smiles;
+            if (!smi || seen.has(smi)) continue;
+            seen.add(smi);
+            out.push({
+              name: c.name_en, smiles: smi,
+              function: c.function || null,
+              molecular_weight: c.chem?.molecular_weight || null,
+            });
+            if (out.length >= 800) break;
+          }
+          if (out.length >= 800) break;
+        }
+        return out;
+      } catch (_) { return []; }
+    }
+
+    els.srchRun.addEventListener('click', async () => {
+      els.loading.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = '';
+      els.srchRun.disabled = true;
+      try {
+        const t = await resolveOne(els.srchT.value);
+        if (!t) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><div data-i18n-ar="تعذّر تحديد الهدف. تأكّد من الاسم أو SMILES.">Could not resolve the target. Check the name or SMILES.</div></div>`;
+          applyLang(); return;
+        }
+        const candidates = await fetchCandidates();
+        if (!candidates.length) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><div data-i18n-ar="لا تتوفّر مرشَّحات في القاعدة. أكمل عملية الإثراء (backfill) أو جرّب وضع المقارنة.">No candidates available. Finish the enrichment backfill, or try the pairwise mode.</div></div>`;
+          applyLang(); return;
+        }
+        const result = await FAI_CHEM.findSimilar(t.smiles, candidates, {
+          limit: parseInt(els.srchLim.value) || 20,
+          minSimilarity: parseFloat(els.srchMin.value) || 0.3,
+        });
+        if (result?.error) {
+          els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(result.detail || result.error)}</div>`;
+          return;
+        }
+        const hits = result.matches || result.results || result.similar || [];
+        if (!hits.length) {
+          els.results.innerHTML = `<div class="card" style="text-align:center; color: var(--text-3);"><div data-i18n-ar="لا توجد مطابقات بهذا الحد. خفّض حد التشابه.">No matches above this threshold. Lower the minimum similarity.</div></div>`;
+          applyLang(); return;
+        }
+        const header = `
+          <div class="pair-block" style="margin-top: 0; margin-bottom: 14px;">
+            <div style="color: var(--text-3); font-size: 0.78rem;" data-i18n-ar="الهدف">Target</div>
+            <div style="font-weight: 700;">${escapeHtml(t.name)}</div>
+            <code style="font-family:monospace; color: var(--text-3); font-size: 0.78rem; word-break: break-all;">${escapeHtml(t.smiles)}</code>
+            <div style="color: var(--text-3); font-size: 0.78rem; margin-top: 4px;">
+              ${candidates.length} candidates · ${hits.length} matches above ${(parseFloat(els.srchMin.value) || 0.3).toFixed(2)}
+            </div>
+          </div>
+        `;
+        els.results.innerHTML = header + hits.map((h) => {
+          const score = h.similarity ?? h.score ?? 0;
+          const pct = Math.round(score * 100);
+          const tier = tierFor(score);
+          return `
+            <div class="hit-card">
+              <div class="head">
+                <div style="flex:1;">
+                  <div style="font-weight: 800;">${escapeHtml(h.name || '?')}</div>
+                  <div style="color: var(--text-3); font-size: 0.78rem; margin-top: 2px;">
+                    ${h.function ? `${escapeHtml(h.function)} · ` : ''}
+                    ${h.molecular_weight ? `MW ${Number(h.molecular_weight).toFixed(2)} · ` : ''}
+                    <span class="tier tier-${tier}" style="font-size: 0.7rem; padding: 1px 8px;">${tier.replace(/_/g, ' ')}</span>
+                  </div>
+                </div>
+                <div class="pct">${pct}%</div>
+              </div>
+              <div class="score-bar"><div style="width: ${pct}%;"></div></div>
+              <code>${escapeHtml(h.smiles || '')}</code>
+            </div>
+          `;
+        }).join('');
+        applyLang();
+      } finally {
+        els.loading.style.display = 'none';
+        els.srchRun.disabled = false;
+      }
+    });
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+
+    [els.pairA, els.pairB].forEach((el) => el.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.pairRun.click(); }));
+    els.srchT.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.srchRun.click(); });
+  })();
+  </script>
+</body>
+</html>

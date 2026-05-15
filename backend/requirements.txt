@@ -36,6 +36,9 @@ python-docx==1.1.2
 rdkit==2024.9.4
 numpy==1.26.4
 scipy==1.13.1
+# Trained ML models (Phase 7 — Random Forests for logP / compatibility / stability)
+scikit-learn==1.5.2
+joblib==1.4.2
 # DeepChem (heavyweight, optional — for ML-based property prediction in Phase 4)
 # deepchem==2.8.0
 

@@ -2226,6 +2226,108 @@ async function handleBackendProxy(path, request, auth, env) {
   }
 }
 
+// worker-src/observability.js
+function anonymizeIp(ip) {
+  if (!ip) return "";
+  try {
+    if (ip.includes(":")) {
+      const head = ip.split(":").slice(0, 3).join(":");
+      return `${head}::`;
+    }
+    const parts = ip.split(".");
+    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+    return "";
+  } catch {
+    return "";
+  }
+}
+function getConfig(env) {
+  return {
+    token: env.BETTER_STACK_TOKEN || "",
+    host: (env.BETTER_STACK_HOST || "https://in.logs.betterstack.com").replace(/\/+$/, ""),
+    name: env.SERVICE_NAME || "formula-ai-worker",
+    envName: env.SERVICE_ENV || "production"
+  };
+}
+async function shipLog(env, record, ctx) {
+  const cfg = getConfig(env);
+  if (!cfg.token) return;
+  const payload = {
+    dt: (/* @__PURE__ */ new Date()).toISOString(),
+    service: cfg.name,
+    env: cfg.envName,
+    ...record
+  };
+  const p = fetch(cfg.host, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${cfg.token}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  }).catch(() => null);
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(p);
+  } else {
+    await p;
+  }
+}
+async function shipError(env, err, ctx, extra = {}) {
+  await shipLog(env, {
+    level: "error",
+    message: err?.message || String(err),
+    stack: err?.stack || null,
+    ...extra
+  }, ctx);
+}
+function withObservability(handler) {
+  return async function wrapped(request, env, ctx) {
+    const url = new URL(request.url);
+    const start = Date.now();
+    let status = 500;
+    let errored = false;
+    try {
+      const response = await handler(request, env, ctx);
+      status = response.status;
+      errored = status >= 500;
+      return response;
+    } catch (err) {
+      errored = true;
+      await shipError(env, err, ctx, {
+        method: request.method,
+        path: url.pathname,
+        cf_ray: request.headers.get("cf-ray") || null
+      });
+      return new Response(
+        JSON.stringify({ error: "unhandled", detail: err.message }),
+        { status: 500, headers: { "content-type": "application/json" } }
+      );
+    } finally {
+      const elapsed = Date.now() - start;
+      const path = url.pathname;
+      const slow = elapsed > 3e3;
+      const noisy = path === "/" || path === "/health";
+      const shouldShip = errored || status >= 400 || slow || !noisy;
+      if (shouldShip) {
+        await shipLog(env, {
+          level: errored ? "error" : status >= 400 ? "warning" : "info",
+          message: `${request.method} ${path} \u2192 ${status} (${elapsed}ms)`,
+          method: request.method,
+          path,
+          status,
+          duration_ms: elapsed,
+          slow,
+          cf_country: request.cf?.country || null,
+          cf_colo: request.cf?.colo || null,
+          // GDPR: never ship a raw client IP to the 3rd-party logger.
+          ip_prefix: anonymizeIp(request.headers.get("cf-connecting-ip")),
+          user_agent: request.headers.get("user-agent") || ""
+        }, ctx);
+      }
+    }
+  };
+}
+
 // worker-src/index.js
 var SERVICE_VERSION = "Formula AI Brain v8";
 function healthResponse() {
@@ -2290,81 +2392,82 @@ function healthResponse() {
     }
   });
 }
-var index_default = {
-  async fetch(request, env) {
-    if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
-    }
-    const url = new URL(request.url);
-    const path = url.pathname;
-    try {
-      if (path === "/" || path === "/health") return healthResponse();
-      if (path === "/stripe/webhook" && request.method === "POST") {
-        return await handleStripeWebhook(request, env);
-      }
-      if (path === "/paystack/webhook" && request.method === "POST") {
-        return await handlePaystackWebhook(request, env);
-      }
-      const auth = await resolveCaller(request, env);
-      if (path === "/search") return await handleSearch(url, auth, env);
-      if (path === "/usage") return await handleUsage(auth, env);
-      if (path === "/chat" && request.method === "POST")
-        return await handleChat(request, auth, env);
-      if (path === "/chat/sessions" && request.method === "GET")
-        return await handleListSessions(auth, env);
-      if (path === "/chat/messages" && request.method === "GET")
-        return await handleLoadMessages(url, auth, env);
-      if (path === "/save_formula" && request.method === "POST")
-        return await handleSaveFormula(request, auth, env);
-      if (path === "/my_formulas" && request.method === "GET")
-        return await handleMyFormulas(auth, env);
-      if (path === "/library" && request.method === "GET")
-        return await handleLibraryList(auth, env);
-      if (path.startsWith("/library/") && request.method === "GET")
-        return await handleLibraryGet(path.slice("/library/".length), auth, env);
-      if (path.startsWith("/library/") && request.method === "PUT")
-        return await handleLibraryUpdate(path.slice("/library/".length), request, auth, env);
-      if (path.startsWith("/library/") && request.method === "DELETE")
-        return await handleLibraryDelete(path.slice("/library/".length), auth, env);
-      if (path === "/prices" && request.method === "GET")
-        return await handlePricesList(auth, env);
-      if (path === "/prices" && request.method === "POST")
-        return await handlePriceUpsert(request, auth, env);
-      if (path.startsWith("/prices/") && request.method === "DELETE")
-        return await handlePriceDelete(path.slice("/prices/".length), auth, env);
-      if (path === "/cost" && request.method === "POST")
-        return await handleCost(request, auth, env);
-      if (path === "/scale" && request.method === "POST")
-        return await handleScale(request, auth, env);
-      if (path === "/extract" && request.method === "POST")
-        return await handleExtract(request, auth, env);
-      if (path === "/discover" && request.method === "POST")
-        return await handleDiscover(request, auth, env);
-      if (path === "/discover/jobs" && request.method === "GET")
-        return await handleListDiscoveryJobs(auth, env);
-      if (path === "/discover/debug" && request.method === "GET")
-        return await handleDiscoverDebug(url, auth, env);
-      if (path === "/safety" && request.method === "POST")
-        return await handleSafety(request, env);
-      if (path === "/lab" && request.method === "POST")
-        return await handleLab(request, env);
-      if (path === "/paystack/checkout" && request.method === "POST")
-        return await handlePaystackCheckout(request, auth, env);
-      if (path === "/paystack/verify" && request.method === "GET")
-        return await handlePaystackVerify(url, env);
-      if (path === "/stripe/checkout" && request.method === "POST")
-        return await handleStripeCheckout(request, auth, env);
-      if (path.startsWith("/chem/") || path === "/chem")
-        return await handleChemProxy(path, request, auth, env);
-      if (path.startsWith("/agents/") || path === "/agents")
-        return await handleBackendProxy(path, request, auth, env);
-      if (path.startsWith("/vision/") || path === "/vision")
-        return await handleBackendProxy(path, request, auth, env);
-      return new Response("Not Found", { status: 404, headers: corsHeaders });
-    } catch (err) {
-      return json({ error: "unhandled", detail: err.message }, 500);
-    }
+async function handleRequest(request, env, ctx) {
+  if (request.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
   }
+  const url = new URL(request.url);
+  const path = url.pathname;
+  try {
+    if (path === "/" || path === "/health") return healthResponse();
+    if (path === "/stripe/webhook" && request.method === "POST") {
+      return await handleStripeWebhook(request, env);
+    }
+    if (path === "/paystack/webhook" && request.method === "POST") {
+      return await handlePaystackWebhook(request, env);
+    }
+    const auth = await resolveCaller(request, env);
+    if (path === "/search") return await handleSearch(url, auth, env);
+    if (path === "/usage") return await handleUsage(auth, env);
+    if (path === "/chat" && request.method === "POST")
+      return await handleChat(request, auth, env);
+    if (path === "/chat/sessions" && request.method === "GET")
+      return await handleListSessions(auth, env);
+    if (path === "/chat/messages" && request.method === "GET")
+      return await handleLoadMessages(url, auth, env);
+    if (path === "/save_formula" && request.method === "POST")
+      return await handleSaveFormula(request, auth, env);
+    if (path === "/my_formulas" && request.method === "GET")
+      return await handleMyFormulas(auth, env);
+    if (path === "/library" && request.method === "GET")
+      return await handleLibraryList(auth, env);
+    if (path.startsWith("/library/") && request.method === "GET")
+      return await handleLibraryGet(path.slice("/library/".length), auth, env);
+    if (path.startsWith("/library/") && request.method === "PUT")
+      return await handleLibraryUpdate(path.slice("/library/".length), request, auth, env);
+    if (path.startsWith("/library/") && request.method === "DELETE")
+      return await handleLibraryDelete(path.slice("/library/".length), auth, env);
+    if (path === "/prices" && request.method === "GET")
+      return await handlePricesList(auth, env);
+    if (path === "/prices" && request.method === "POST")
+      return await handlePriceUpsert(request, auth, env);
+    if (path.startsWith("/prices/") && request.method === "DELETE")
+      return await handlePriceDelete(path.slice("/prices/".length), auth, env);
+    if (path === "/cost" && request.method === "POST")
+      return await handleCost(request, auth, env);
+    if (path === "/scale" && request.method === "POST")
+      return await handleScale(request, auth, env);
+    if (path === "/extract" && request.method === "POST")
+      return await handleExtract(request, auth, env);
+    if (path === "/discover" && request.method === "POST")
+      return await handleDiscover(request, auth, env);
+    if (path === "/discover/jobs" && request.method === "GET")
+      return await handleListDiscoveryJobs(auth, env);
+    if (path === "/discover/debug" && request.method === "GET")
+      return await handleDiscoverDebug(url, auth, env);
+    if (path === "/safety" && request.method === "POST")
+      return await handleSafety(request, env);
+    if (path === "/lab" && request.method === "POST")
+      return await handleLab(request, env);
+    if (path === "/paystack/checkout" && request.method === "POST")
+      return await handlePaystackCheckout(request, auth, env);
+    if (path === "/paystack/verify" && request.method === "GET")
+      return await handlePaystackVerify(url, env);
+    if (path === "/stripe/checkout" && request.method === "POST")
+      return await handleStripeCheckout(request, auth, env);
+    if (path.startsWith("/chem/") || path === "/chem")
+      return await handleChemProxy(path, request, auth, env);
+    if (path.startsWith("/agents/") || path === "/agents")
+      return await handleBackendProxy(path, request, auth, env);
+    if (path.startsWith("/vision/") || path === "/vision")
+      return await handleBackendProxy(path, request, auth, env);
+    return new Response("Not Found", { status: 404, headers: corsHeaders });
+  } catch (err) {
+    return json({ error: "unhandled", detail: err.message }, 500);
+  }
+}
+var index_default = {
+  fetch: withObservability(handleRequest)
 };
 export {
   index_default as default

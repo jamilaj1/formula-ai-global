@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>AI Formulator — Formula AI Global</title>
+  <meta name="description" content="A panel of six specialised AI agents — Formulator, Safety, Cost, Stability, Regulatory and Orchestrator — debate your formula in seconds and return a verdict." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .agent-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1180px; margin: 0 auto; }
+    @media (max-width: 980px) { .agent-grid { grid-template-columns: 1fr; } }
+    .agent-grid .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+
+    .mode-pills { display: flex; gap: 6px; background: var(--bg-card); padding: 6px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; }
+    .mode-pill { flex: 1; padding: 9px 8px; border: 0; background: transparent; color: var(--text-2); font-family: inherit; font-weight: 700; font-size: 0.9rem; border-radius: calc(var(--radius) - 4px); cursor: pointer; }
+    .mode-pill.active { background: var(--grad-primary); color: #02110a; }
+
+    .field { margin-bottom: 16px; }
+    .field label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
+    .field input, .field select, .field textarea {
+      width: 100%; padding: 11px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.95rem;
+    }
+    .field textarea { resize: vertical; min-height: 80px; font-family: monospace; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--primary); }
+
+    .comp-row { display: grid; grid-template-columns: 2fr 1fr 1.2fr auto; gap: 8px; margin-bottom: 8px; }
+    .comp-row input, .comp-row select { padding: 9px 10px; font-size: 0.88rem; }
+    .comp-row button { background: var(--bg-card); border: 1px solid var(--border); color: var(--text-3); border-radius: var(--radius); padding: 0 12px; cursor: pointer; }
+    .comp-row button:hover { color: #ff7a7a; border-color: #ff7a7a; }
+
+    .agent-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 600px) { .agent-cards { grid-template-columns: 1fr; } }
+    .agent-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 12px 14px; transition: border-color .15s ease, transform .15s ease, opacity .2s ease;
+    }
+    .agent-card.thinking { opacity: 0.55; border-color: var(--primary); animation: pulse 1.4s ease-in-out infinite; }
+    .agent-card.done { border-color: var(--primary); }
+    .agent-card.error { border-color: #ff7a7a; }
+    @keyframes pulse { 0%,100%{transform: scale(1);} 50%{transform: scale(1.01);} }
+    .agent-card .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .agent-card .head .name { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 0.95rem; }
+    .agent-card .head svg { width: 18px; height: 18px; }
+    .agent-card .verdict { font-size: 0.75rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; }
+    .v-pass    { background: rgba(0,255,136,.18); color: #00ff88; }
+    .v-warning { background: rgba(255,170,0,.18); color: #ffb74a; }
+    .v-fail    { background: rgba(255,90,90,.18); color: #ff7a7a; }
+    .v-pending { background: var(--bg-2); color: var(--text-3); }
+    .agent-card .body { font-size: 0.85rem; color: var(--text-2); line-height: 1.55; margin-top: 8px; max-height: 200px; overflow-y: auto; }
+
+    .verdict-banner {
+      padding: 18px 22px; border-radius: var(--radius); margin-bottom: 16px;
+      background: linear-gradient(135deg, var(--bg-card), rgba(0, 255, 136, 0.08));
+      border: 1px solid var(--primary);
+    }
+    .verdict-banner.fail   { background: linear-gradient(135deg, var(--bg-card), rgba(255, 90, 90, 0.10)); border-color: #ff7a7a; }
+    .verdict-banner.warning{ background: linear-gradient(135deg, var(--bg-card), rgba(255, 170, 0, 0.10));  border-color: #ffb74a; }
+    .verdict-banner h2 { margin: 0 0 6px; font-size: 1.3rem; }
+    .verdict-banner p  { margin: 0; color: var(--text-2); font-size: 0.92rem; line-height: 1.55; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./agent.html" class="active" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.35;"></div>
+      <div class="hero-orb purple" style="opacity: 0.35;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 780px; margin: 0 auto 36px;">
+        <span class="eyebrow" data-i18n-ar="ستة خبراء يعملون لك">Six experts working for you</span>
+        <h1 style="margin-bottom: 16px;" data-i18n-ar='لوحة من <span class="gradient-text">6 وكلاء ذكاء اصطناعي</span> يُحلّلون تركيبتك'>
+          A panel of <span class="gradient-text">six AI agents</span> reviews your formula
+        </h1>
+        <p style="color: var(--text-2); font-size: 1.1rem;" data-i18n-ar="مُصمِّم تركيبات، خبير سلامة، محلّل تكلفة، خبير ثبات، مستشار تنظيمي، ومنسّق نهائي — كلٌّ بمنظور مختلف. يعملون بالتوازي ويُسلّمون قراراً مُوحَّداً خلال ثوانٍ.">
+          A Formulator, Safety Officer, Cost Analyst, Stability Expert, Regulatory Advisor, and a final Orchestrator — each with a distinct lens. They run in parallel and deliver a unified verdict in seconds.
+        </p>
+      </div>
+
+      <div class="agent-grid">
+        <!-- LEFT: form -->
+        <div class="panel">
+          <div class="mode-pills" role="tablist">
+            <button class="mode-pill active" data-mode="evaluate" type="button" data-i18n-ar="قيِّم تركيبة">Evaluate a formula</button>
+            <button class="mode-pill" data-mode="formulate" type="button" data-i18n-ar="صمِّم لي تركيبة">Design a new one</button>
+          </div>
+
+          <!-- Mode: evaluate -->
+          <div id="mode-evaluate">
+            <div class="field">
+              <label data-i18n-ar="اسم التركيبة">Formula name</label>
+              <input id="ev-name" type="text" placeholder="e.g. Anti-bacterial hand soap v3" />
+            </div>
+            <div class="field">
+              <label data-i18n-ar="الفئة">Category</label>
+              <input id="ev-category" type="text" placeholder="e.g. personal care, surface cleaner, fertilizer" />
+            </div>
+            <div class="field">
+              <label data-i18n-ar="المكوّنات (اسم · نسبة% · وظيفة)">Components (name · % · function)</label>
+              <div id="comp-list"></div>
+              <button id="add-comp" type="button" class="btn btn-ghost btn-sm" style="margin-top: 4px;"
+                      data-i18n-ar="+ إضافة مكوّن">+ Add component</button>
+            </div>
+            <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label data-i18n-ar="حجم الدفعة (kg)">Batch size (kg)</label>
+                <input id="ev-batch" type="number" min="0.1" step="0.1" value="1" />
+              </div>
+              <div>
+                <label data-i18n-ar="مناطق الامتثال">Compliance regions</label>
+                <select id="ev-regions" multiple style="height: 80px;">
+                  <option value="EU" selected>EU</option>
+                  <option value="US" selected>US</option>
+                  <option value="UK">UK</option>
+                  <option value="GCC">GCC</option>
+                  <option value="China">China</option>
+                  <option value="Japan">Japan</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mode: formulate -->
+          <div id="mode-formulate" style="display:none;">
+            <div class="field">
+              <label data-i18n-ar="ما الذي تريد إنتاجه؟">What do you want to produce?</label>
+              <textarea id="fm-goal" rows="3" placeholder="e.g. A pH-balanced sulphate-free shampoo with mild surfactants, suitable for daily use, EU + GCC compliant."></textarea>
+            </div>
+            <div class="field" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div>
+                <label data-i18n-ar="الفئة">Category</label>
+                <select id="fm-category">
+                  <option value="personal_care">Personal care</option>
+                  <option value="home_care">Home care</option>
+                  <option value="industrial_cleaner">Industrial cleaner</option>
+                  <option value="cosmetics">Cosmetics</option>
+                  <option value="agrochemicals">Agrochemicals</option>
+                  <option value="food_supplement">Food supplement</option>
+                </select>
+              </div>
+              <div>
+                <label data-i18n-ar="حجم الدفعة (kg)">Batch size (kg)</label>
+                <input id="fm-batch" type="number" min="0.1" step="0.1" value="100" />
+              </div>
+            </div>
+            <div class="field">
+              <label data-i18n-ar="قيود (اختياري)">Constraints (optional)</label>
+              <input id="fm-constraints" type="text" placeholder="e.g. avoid parabens, max cost 4$/kg, biodegradable only" />
+            </div>
+          </div>
+
+          <button id="run-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 8px;"
+                  data-i18n-ar="ابدأ التحليل">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+            Run the panel
+          </button>
+
+          <div id="loading" style="display:none; margin-top: 18px; text-align: center; color: var(--text-3); font-size: 0.92rem;">
+            <span data-i18n-ar="ستة وكلاء يفكرون بالتوازي…">Six agents thinking in parallel…</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: agent results -->
+        <div class="panel">
+          <h3 style="margin-bottom: 14px;" data-i18n-ar="رأي الوكلاء">Agents' verdict</h3>
+          <div id="verdict-banner-host"></div>
+
+          <div class="agent-cards" id="agent-cards">
+            <!-- 6 cards inserted by JS -->
+          </div>
+
+          <div id="empty-state" style="color: var(--text-3); padding: 30px 10px; text-align: center; font-size: 0.95rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin: 0 auto 12px; opacity: .35;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+            <div data-i18n-ar="املأ النموذج على اليسار وابدأ المراجعة.">Fill the form on the left and start the review.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Educational footer -->
+      <div style="max-width: 1180px; margin: 36px auto 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); color: var(--text-3); font-size: 0.88rem; line-height: 1.7;" data-i18n-ar="<strong>كيف يعمل:</strong> ست شخصيات Claude مدرَّبة بأدوار خبيرة (Formulator، Safety، Cost، Stability، Regulatory، Orchestrator) تُشغَّل في موازاة عبر asyncio.gather. كل وكيل يستخدم بيانات RDKit الحقيقية + قاعدة بياناتنا (3,381 تركيبة + 7K مادة كيميائية + اللوائح العالمية) ثم يكتب رأياً مع درجة. المنسّق يجمع كل ذلك في قرار واحد.">
+        <strong>How it works:</strong> Six Claude personas, each prompted as a domain expert (Formulator, Safety, Cost, Stability, Regulatory, Orchestrator), run in parallel via asyncio.gather. Each agent consults real RDKit data + our database (3,381 formulas + 7K chemicals + global regulations), then writes a scored verdict. The Orchestrator merges them into a single decision.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chem-client.js"></script>
+  <script>
+  /* agent.html — multi-agent orchestrator page */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      pills:     document.querySelectorAll('.mode-pill'),
+      modeEv:    $('mode-evaluate'),
+      modeFm:    $('mode-formulate'),
+      compList:  $('comp-list'),
+      addComp:   $('add-comp'),
+      runBtn:    $('run-btn'),
+      loading:   $('loading'),
+      empty:     $('empty-state'),
+      banner:    $('verdict-banner-host'),
+      cards:     $('agent-cards'),
+      // evaluate
+      evName:    $('ev-name'),
+      evCategory:$('ev-category'),
+      evBatch:   $('ev-batch'),
+      evRegions: $('ev-regions'),
+      // formulate
+      fmGoal:    $('fm-goal'),
+      fmCategory:$('fm-category'),
+      fmBatch:   $('fm-batch'),
+      fmConstraints: $('fm-constraints'),
+    };
+
+    const AGENTS = [
+      { id: 'formulator', name: 'Formulator',   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v6L4 22h16L14 8V2"/><path d="M9 2h6"/></svg>' },
+      { id: 'safety',     name: 'Safety',       icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6z"/></svg>' },
+      { id: 'cost',       name: 'Cost',         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>' },
+      { id: 'stability',  name: 'Stability',    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12c0-5 4-9 9-9s9 4 9 9-4 9-9 9"/><path d="M3 12h6l3-3 3 6 3-3h3"/></svg>' },
+      { id: 'regulatory', name: 'Regulatory',   icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 14l2 2 4-4"/></svg>' },
+      { id: 'orchestrator', name: 'Orchestrator', icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 11-14 0M12 5V2M12 22v-3M5 12H2M22 12h-3"/></svg>' },
+    ];
+
+    // ─── Mode toggle ──────────────────────────────────────
+    let mode = 'evaluate';
+    els.pills.forEach((p) => p.addEventListener('click', () => {
+      mode = p.dataset.mode;
+      els.pills.forEach((q) => q.classList.toggle('active', q === p));
+      els.modeEv.style.display = (mode === 'evaluate') ? 'block' : 'none';
+      els.modeFm.style.display = (mode === 'formulate') ? 'block' : 'none';
+    }));
+
+    // ─── Component editor ─────────────────────────────────
+    function addComponentRow(prefill) {
+      const row = document.createElement('div');
+      row.className = 'comp-row';
+      row.innerHTML = `
+        <input class="c-name" type="text" placeholder="Ingredient name" value="${prefill?.name || ''}" />
+        <input class="c-pct"  type="number" min="0" max="100" step="0.1" placeholder="%"
+               value="${prefill?.pct != null ? prefill.pct : ''}" />
+        <select class="c-fn">
+          <option value="">function…</option>
+          <option value="surfactant">Surfactant</option>
+          <option value="preservative">Preservative</option>
+          <option value="antimicrobial">Antimicrobial</option>
+          <option value="emulsifier">Emulsifier</option>
+          <option value="thickener">Thickener</option>
+          <option value="chelator">Chelator</option>
+          <option value="antioxidant">Antioxidant</option>
+          <option value="solvent">Solvent</option>
+          <option value="fragrance">Fragrance</option>
+          <option value="colorant">Colorant</option>
+          <option value="ph_adjuster">pH adjuster</option>
+          <option value="active">Active ingredient</option>
+        </select>
+        <button type="button" aria-label="Remove">&times;</button>
+      `;
+      row.querySelector('button').addEventListener('click', () => row.remove());
+      els.compList.appendChild(row);
+    }
+    els.addComp.addEventListener('click', () => addComponentRow());
+
+    // Seed with 3 empty rows
+    addComponentRow({ name: 'Water', pct: 80 });
+    addComponentRow({ name: 'Sodium Laureth Sulfate', pct: 12 });
+    addComponentRow({ name: 'Cocamidopropyl Betaine', pct: 6 });
+
+    // ─── Render placeholder cards ─────────────────────────
+    function renderAgentCards(state) {
+      els.cards.innerHTML = AGENTS.map((a) => {
+        const st = (state && state[a.id]) || { status: 'pending', verdict: '—', body: '' };
+        const verdictClass = ({ pass: 'v-pass', warning: 'v-warning', fail: 'v-fail' })[st.verdict] || 'v-pending';
+        const cardClass = ({ thinking: 'thinking', done: 'done', error: 'error' })[st.status] || '';
+        return `
+          <div class="agent-card ${cardClass}" data-agent="${a.id}">
+            <div class="head">
+              <div class="name">${a.icon}${a.name}</div>
+              <span class="verdict ${verdictClass}">${escapeHtml(st.verdict || '—')}</span>
+            </div>
+            <div class="body">${escapeHtml(st.body || (st.status === 'thinking' ? 'Thinking…' : ''))}</div>
+          </div>
+        `;
+      }).join('');
+    }
+    renderAgentCards();
+
+    // ─── Submit ───────────────────────────────────────────
+    els.runBtn.addEventListener('click', async () => {
+      els.empty.style.display = 'none';
+      els.banner.innerHTML = '';
+      els.loading.style.display = 'block';
+      els.runBtn.disabled = true;
+
+      // Mark all as thinking
+      const state = Object.fromEntries(AGENTS.map((a) => [a.id, { status: 'thinking', verdict: '…', body: '' }]));
+      renderAgentCards(state);
+
+      try {
+        let result;
+        if (mode === 'evaluate') {
+          const formula = buildFormulaFromEvaluate();
+          if (!formula.components.length) {
+            showError('Add at least one component.');
+            return;
+          }
+          const regions = Array.from(els.evRegions.selectedOptions).map((o) => o.value);
+          result = await FAI_CHEM.agentEvaluate(formula, {
+            regions, batchKg: parseFloat(els.evBatch.value) || 1.0
+          });
+        } else {
+          const goal = (els.fmGoal.value || '').trim();
+          if (!goal) { showError('Describe what you want to produce.'); return; }
+          result = await FAI_CHEM.agentFormulate({
+            goal,
+            category: els.fmCategory.value,
+            constraints: (els.fmConstraints.value || '').trim(),
+          }, { batchKg: parseFloat(els.fmBatch.value) || 100.0 });
+        }
+
+        renderResult(result);
+      } catch (err) {
+        showError(err.message || String(err));
+      } finally {
+        els.loading.style.display = 'none';
+        els.runBtn.disabled = false;
+      }
+    });
+
+    function buildFormulaFromEvaluate() {
+      const rows = Array.from(els.compList.querySelectorAll('.comp-row'));
+      const components = rows
+        .map((r) => ({
+          name_en: r.querySelector('.c-name').value.trim(),
+          percentage: parseFloat(r.querySelector('.c-pct').value) || 0,
+          function:    r.querySelector('.c-fn').value || null,
+        }))
+        .filter((c) => c.name_en);
+      return {
+        name: els.evName.value.trim() || 'Untitled formula',
+        category: els.evCategory.value.trim() || null,
+        components,
+      };
+    }
+
+    function showError(msg) {
+      els.banner.innerHTML = `<div class="verdict-banner fail"><h2>Error</h2><p>${escapeHtml(msg)}</p></div>`;
+      renderAgentCards();
+    }
+
+    function renderResult(result) {
+      if (!result || result.error) {
+        return showError(result?.detail || result?.error || 'Unknown error');
+      }
+
+      // Map results onto the 6 cards
+      const agents = result.agents || result.results || {};
+      const state = {};
+      for (const a of AGENTS) {
+        const r = agents[a.id] || agents[a.name?.toLowerCase()] || null;
+        if (r) {
+          state[a.id] = {
+            status: r.error ? 'error' : 'done',
+            verdict: (r.verdict || r.status || (r.error ? 'fail' : 'pass')).toLowerCase(),
+            body: r.summary || r.reasoning || r.notes || r.message || (typeof r === 'string' ? r : JSON.stringify(r).slice(0, 280)),
+          };
+        } else {
+          state[a.id] = { status: 'done', verdict: 'pass', body: 'No response.' };
+        }
+      }
+      renderAgentCards(state);
+
+      // Final orchestrated verdict
+      const orch = agents.orchestrator || result.orchestrator || result.final || null;
+      const overall = (result.overall_verdict || orch?.verdict || 'pass').toLowerCase();
+      const banner = (overall === 'fail') ? 'fail' : (overall === 'warning' ? 'warning' : '');
+      const title  = overall === 'fail' ? 'Needs work' : overall === 'warning' ? 'Acceptable with caveats' : 'Ready to proceed';
+      const titleAr = overall === 'fail' ? 'تحتاج تعديلاً' : overall === 'warning' ? 'مقبولة مع تحفّظات' : 'جاهزة للمتابعة';
+      const summary = orch?.summary || result.summary || 'The panel has completed its review.';
+      els.banner.innerHTML = `<div class="verdict-banner ${banner}">
+        <h2 data-i18n-ar="${escapeHtml(titleAr)}">${escapeHtml(title)}</h2>
+        <p>${escapeHtml(summary)}</p>
+      </div>`;
+      applyLang();
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+  })();
+  </script>
+</body>
+</html>

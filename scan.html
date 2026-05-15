@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Vision Scan — Formula AI Global</title>
+  <meta name="description" content="Scan a product label, a hand-drawn molecule, or an MSDS page. Claude Vision + RDKit extract every chemical detail in seconds." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./assets/styles.css" />
+  <style>
+    .scan-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+    @media (max-width: 880px) { .scan-grid { grid-template-columns: 1fr; } }
+    .scan-grid .panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+
+    .mode-tabs { display: flex; gap: 6px; background: var(--bg-card); padding: 6px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 22px; }
+    .mode-tab { flex: 1; padding: 10px 8px; border: 0; background: transparent; color: var(--text-2); font-family: inherit; font-weight: 700; font-size: 0.9rem; border-radius: calc(var(--radius) - 4px); cursor: pointer; transition: background .15s ease, color .15s ease; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .mode-tab svg { width: 16px; height: 16px; }
+    .mode-tab.active { background: var(--grad-primary); color: #02110a; }
+    .mode-tab:not(.active):hover { color: var(--text-1); }
+
+    .dropzone { border: 2px dashed var(--border); border-radius: var(--radius); padding: 36px 20px; text-align: center; cursor: pointer; transition: border-color .15s ease, background .15s ease; background: var(--bg-card); }
+    .dropzone:hover, .dropzone.drag { border-color: var(--primary); background: rgba(0, 255, 136, 0.04); }
+    .dropzone svg { width: 48px; height: 48px; color: var(--text-3); margin-bottom: 12px; }
+    .dropzone.has-image { padding: 12px; border-style: solid; }
+    .dropzone img { max-width: 100%; max-height: 260px; border-radius: calc(var(--radius) - 4px); }
+    .dropzone input[type=file] { display: none; }
+
+    .info-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 14px 0; }
+    .info-pill { background: var(--bg-card); border: 1px solid var(--border); padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; color: var(--text-2); }
+
+    .result-block { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 12px; }
+    .result-block h4 { margin: 0 0 8px; font-size: 0.9rem; color: var(--text-3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .ingredient-row { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--border); font-size: 0.9rem; }
+    .ingredient-row:last-child { border-bottom: 0; }
+    .ingredient-row .pct { font-weight: 700; color: var(--primary); }
+    .hazard-tag { display: inline-block; background: rgba(255,90,90,.18); color: #ff7a7a; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; margin: 2px; }
+    .gh-pic { display: inline-block; background: rgba(255,170,0,.18); color: #ffb74a; padding: 3px 10px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; margin: 2px; }
+    .smile-code { font-family: monospace; font-size: 0.82rem; word-break: break-all; background: var(--bg-2); padding: 8px 10px; border-radius: 6px; display: block; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./scan.html" class="active" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <section style="padding: 130px 0 40px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.35;"></div>
+      <div class="hero-orb purple" style="opacity: 0.35;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto 36px;">
+        <span class="eyebrow" data-i18n-ar="رؤية حاسوبية + كيمياء">Computer Vision + Chemistry</span>
+        <h1 style="margin-bottom: 16px;" data-i18n-ar='التقط <span class="gradient-text">أي صورة</span> كيميائية واستخرج كل التفاصيل'>
+          Snap <span class="gradient-text">any chemical image</span> — get every detail
+        </h1>
+        <p style="color: var(--text-2); font-size: 1.1rem;" data-i18n-ar="ملصق منتج؟ تركيب جزيئي مرسوم باليد؟ ورقة MSDS؟ Claude Vision يقرأ الصورة، يستخرج المكوّنات، ويُحوّلها إلى SMILES وخصائص RDKit قابلة للقياس.">
+          Product label? Hand-drawn molecule? MSDS page? Claude Vision reads the image, extracts every component, and converts it to SMILES + measurable RDKit properties.
+        </p>
+      </div>
+
+      <div class="scan-grid">
+        <!-- LEFT: upload -->
+        <div class="panel">
+          <div class="mode-tabs" role="tablist">
+            <button class="mode-tab active" data-mode="label" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+              <span data-i18n-ar="ملصق منتج">Product Label</span>
+            </button>
+            <button class="mode-tab" data-mode="structure" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="6" r="2"/><circle cx="18" cy="6" r="2"/><circle cx="12" cy="18" r="2"/><path d="M8 7l3 9M16 7l-3 9"/></svg>
+              <span data-i18n-ar="بنية جزيئية">Molecule</span>
+            </button>
+            <button class="mode-tab" data-mode="msds" type="button">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+              <span data-i18n-ar="ورقة MSDS">MSDS Sheet</span>
+            </button>
+          </div>
+
+          <div id="mode-hint" style="font-size: 0.86rem; color: var(--text-3); margin-bottom: 14px; min-height: 38px;"></div>
+
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="file-input" accept="image/*" />
+            <div id="dz-empty">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+              <div style="font-weight: 700; color: var(--text-1); margin-bottom: 4px;" data-i18n-ar="اسحب الصورة هنا أو انقر للاختيار">Drop an image here or click to choose</div>
+              <div style="font-size: 0.8rem; color: var(--text-3);" data-i18n-ar="PNG · JPG · WEBP — حتى 8MB">PNG · JPG · WEBP — up to 8MB</div>
+            </div>
+            <div id="dz-preview" style="display:none;">
+              <img id="preview-img" alt="" />
+              <div style="font-size: 0.8rem; color: var(--text-3); margin-top: 8px;" id="file-meta"></div>
+            </div>
+          </label>
+
+          <button id="run-btn" class="btn btn-primary btn-block btn-lg" style="margin-top: 18px;" disabled
+                  data-i18n-ar="حلِّل الصورة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            Analyse image
+          </button>
+
+          <button id="reset-btn" class="btn btn-ghost btn-block" style="margin-top: 8px; display: none;"
+                  data-i18n-ar="مسح الصورة">
+            Clear image
+          </button>
+
+          <div id="loading" style="display:none; margin-top: 18px; text-align: center; color: var(--text-3); font-size: 0.92rem;">
+            <span data-i18n-ar="جاري قراءة الصورة بواسطة Claude Vision…">Claude Vision is reading your image…</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: results -->
+        <div class="panel">
+          <h3 style="margin-bottom: 14px;" data-i18n-ar="النتائج المُستخرجة">Extracted results</h3>
+          <div id="empty-state" style="color: var(--text-3); padding: 30px 10px; text-align: center; font-size: 0.95rem;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:48px;height:48px;margin: 0 auto 12px; opacity: .35;"><circle cx="12" cy="12" r="10"/><path d="M9 12l2 2 4-4"/></svg>
+            <div data-i18n-ar="ارفع صورة لرؤية البيانات المستخرجة هنا.">Upload an image to see extracted data here.</div>
+          </div>
+          <div id="results"></div>
+        </div>
+      </div>
+
+      <!-- Educational footer -->
+      <div style="max-width: 1100px; margin: 36px auto 0; padding: 20px 24px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl); color: var(--text-3); font-size: 0.88rem; line-height: 1.7;" data-i18n-ar="<strong>كيف يعمل:</strong> الصورة تُرسَل إلى Claude Vision API الذي يقرأ النصّ والرسومات الجزيئية. كل اسم مكوّن يُمرَّر تلقائياً إلى PubChem لاستخراج SMILES + InChIKey، ثم RDKit يحسب الكتلة الجزيئية وlogP وقواعد Lipinski. النتيجة: بيانات منظَّمة قابلة للبحث والمقارنة — وليست مجرد نصّ.">
+        <strong>How it works:</strong> Your image is sent to the Claude Vision API which reads both text and molecular diagrams. Every detected ingredient is auto-resolved through PubChem for SMILES + InChIKey, then RDKit computes molecular weight, logP, and Lipinski violations. The output is structured, queryable data — not just transcribed text.
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=3"></script>
+  <script type="module" src="./assets/auth.js"></script>
+  <script type="module" src="./assets/supabase-client.js"></script>
+  <script src="./assets/chem-client.js"></script>
+  <script>
+  /* scan.html — vision page logic */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      tabs:      document.querySelectorAll('.mode-tab'),
+      hint:      $('mode-hint'),
+      dropzone:  $('dropzone'),
+      fileInput: $('file-input'),
+      dzEmpty:   $('dz-empty'),
+      dzPreview: $('dz-preview'),
+      previewImg:$('preview-img'),
+      fileMeta:  $('file-meta'),
+      runBtn:    $('run-btn'),
+      resetBtn:  $('reset-btn'),
+      loading:   $('loading'),
+      empty:     $('empty-state'),
+      results:   $('results'),
+    };
+
+    const HINTS = {
+      label:     { en: 'Detects every INCI ingredient, percentages, brand, claims, and warning text on a product label.', ar: 'يكتشف كل مكوّن INCI، النسب، العلامة التجارية، الادعاءات، وتحذيرات السلامة على ملصق المنتج.' },
+      structure: { en: 'Reads a 2D chemical structure drawing (Skeletal / Lewis) and returns SMILES + InChI + RDKit properties.', ar: 'يقرأ رسم بنية جزيئية ثنائية الأبعاد (Skeletal / Lewis) ويُرجِع SMILES + InChI + خواص RDKit.' },
+      msds:      { en: 'Parses an MSDS / SDS page: section numbers, GHS pictograms, hazard codes (H-statements), and CAS numbers.', ar: 'يحلّل ورقة MSDS / SDS: أرقام الأقسام، رموز GHS، أكواد الخطورة (H-statements)، وأرقام CAS.' },
+    };
+
+    let mode = 'label';
+    let currentBase64 = null;
+
+    function setMode(next) {
+      mode = next;
+      els.tabs.forEach((t) => t.classList.toggle('active', t.dataset.mode === next));
+      const h = HINTS[next] || HINTS.label;
+      els.hint.textContent = (document.documentElement.lang === 'ar') ? h.ar : h.en;
+      els.hint.setAttribute('data-i18n-ar', h.ar);
+      // Clear previous results when mode changes (different data shape)
+      els.results.innerHTML = '';
+      els.empty.style.display = currentBase64 ? 'none' : 'block';
+    }
+
+    els.tabs.forEach((tab) => {
+      tab.addEventListener('click', () => setMode(tab.dataset.mode));
+    });
+    setMode('label');
+
+    // ─── File handling ─────────────────────────────────────
+    function readFileAsDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+
+    async function handleFile(file) {
+      if (!file) return;
+      if (!file.type.startsWith('image/')) {
+        alert('Please choose an image file (PNG/JPG/WEBP).');
+        return;
+      }
+      if (file.size > 8 * 1024 * 1024) {
+        alert('Image is larger than 8MB. Please choose a smaller file.');
+        return;
+      }
+      const dataUrl = await readFileAsDataURL(file);
+      currentBase64 = dataUrl; // full data:image/...;base64,xxx
+      els.previewImg.src = dataUrl;
+      els.fileMeta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+      els.dzEmpty.style.display = 'none';
+      els.dzPreview.style.display = 'block';
+      els.dropzone.classList.add('has-image');
+      els.runBtn.disabled = false;
+      els.resetBtn.style.display = 'block';
+    }
+
+    function resetImage() {
+      currentBase64 = null;
+      els.fileInput.value = '';
+      els.dzEmpty.style.display = 'block';
+      els.dzPreview.style.display = 'none';
+      els.dropzone.classList.remove('has-image');
+      els.runBtn.disabled = true;
+      els.resetBtn.style.display = 'none';
+      els.results.innerHTML = '';
+      els.empty.style.display = 'block';
+    }
+
+    els.fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+    els.resetBtn.addEventListener('click', resetImage);
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach((ev) =>
+      els.dropzone.addEventListener(ev, (e) => { e.preventDefault(); els.dropzone.classList.add('drag'); })
+    );
+    ['dragleave', 'drop'].forEach((ev) =>
+      els.dropzone.addEventListener(ev, (e) => { e.preventDefault(); els.dropzone.classList.remove('drag'); })
+    );
+    els.dropzone.addEventListener('drop', (e) => {
+      const file = e.dataTransfer?.files?.[0];
+      if (file) handleFile(file);
+    });
+
+    // ─── Submit ─────────────────────────────────────────────
+    els.runBtn.addEventListener('click', async () => {
+      if (!currentBase64) return;
+      els.loading.style.display = 'block';
+      els.empty.style.display = 'none';
+      els.results.innerHTML = '';
+      els.runBtn.disabled = true;
+
+      try {
+        let result;
+        if (mode === 'label')     result = await FAI_CHEM.visionLabel(currentBase64);
+        else if (mode === 'structure') result = await FAI_CHEM.visionStructure(currentBase64);
+        else if (mode === 'msds') result = await FAI_CHEM.visionMsds(currentBase64);
+
+        renderResult(result);
+      } catch (err) {
+        els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(err.message || 'unknown')}</div>`;
+      } finally {
+        els.loading.style.display = 'none';
+        els.runBtn.disabled = false;
+      }
+    });
+
+    // ─── Rendering ──────────────────────────────────────────
+    function renderResult(result) {
+      if (!result || result.error) {
+        const detail = result?.detail || result?.error || 'Unknown error';
+        els.results.innerHTML = `<div class="card" style="border-color: var(--accent);"><strong>Error:</strong> ${escapeHtml(detail)}</div>`;
+        return;
+      }
+      if (mode === 'label')         els.results.innerHTML = renderLabel(result);
+      else if (mode === 'structure')els.results.innerHTML = renderStructure(result);
+      else if (mode === 'msds')     els.results.innerHTML = renderMsds(result);
+      applyLang();
+    }
+
+    function renderLabel(r) {
+      const product = r.product_name || r.brand || 'Unknown product';
+      const ingredients = r.ingredients || r.components || [];
+      const claims = r.claims || [];
+      const warnings = r.warnings || [];
+
+      let html = `
+        <div class="result-block">
+          <h4 data-i18n-ar="المنتج">Product</h4>
+          <div style="font-weight: 800; font-size: 1.05rem;">${escapeHtml(product)}</div>
+          ${r.category ? `<div style="font-size: 0.82rem; color: var(--text-3); margin-top: 2px;">${escapeHtml(r.category)}</div>` : ''}
+          <div class="info-row">
+            ${r.brand ? `<span class="info-pill">${escapeHtml(r.brand)}</span>` : ''}
+            ${r.size  ? `<span class="info-pill">${escapeHtml(r.size)}</span>` : ''}
+            ${r.country_of_origin ? `<span class="info-pill">${escapeHtml(r.country_of_origin)}</span>` : ''}
+          </div>
+        </div>
+      `;
+
+      if (ingredients.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="المكوّنات">Ingredients (${ingredients.length})</h4>`;
+        for (const it of ingredients) {
+          const name = it.name_en || it.name || it.inci || '?';
+          const pct  = it.percentage != null ? `${Number(it.percentage).toFixed(2)}%` : '';
+          const fn   = it.function || '';
+          html += `<div class="ingredient-row">
+            <div>
+              <strong>${escapeHtml(name)}</strong>
+              ${fn ? ` <span style="color:var(--text-3); font-size:0.8rem;">· ${escapeHtml(fn)}</span>` : ''}
+              ${it.cas_number ? ` <span style="color:var(--text-3); font-size:0.78rem;">· CAS ${escapeHtml(it.cas_number)}</span>` : ''}
+            </div>
+            <div class="pct">${pct}</div>
+          </div>`;
+        }
+        html += `</div>`;
+      }
+
+      if (claims.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="ادعاءات تسويقية">Marketing claims</h4>
+          <div>${claims.map((c) => `<span class="info-pill">${escapeHtml(c)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      if (warnings.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="تحذيرات">Warnings</h4>
+          <div>${warnings.map((w) => `<span class="hazard-tag">${escapeHtml(w)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      return html;
+    }
+
+    function renderStructure(r) {
+      const smiles = r.smiles || r.canonical_smiles || '';
+      let html = `
+        <div class="result-block">
+          <h4 data-i18n-ar="البنية الجزيئية">Molecular structure</h4>
+          ${r.name ? `<div style="font-weight: 800; font-size: 1.05rem;">${escapeHtml(r.name)}</div>` : ''}
+          ${smiles ? `<code class="smile-code">${escapeHtml(smiles)}</code>` : '<div style="color: var(--text-3);">No structure detected.</div>'}
+          ${r.inchi_key ? `<div style="font-size: 0.78rem; color: var(--text-3); margin-top: 6px; word-break: break-all;">InChIKey: ${escapeHtml(r.inchi_key)}</div>` : ''}
+        </div>
+      `;
+
+      if (r.molecular_weight || r.logp != null || r.tpsa != null) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="خصائص RDKit">RDKit properties</h4>
+          <div class="info-row">
+            ${r.molecular_weight ? `<span class="info-pill">MW <strong>${Number(r.molecular_weight).toFixed(2)}</strong></span>` : ''}
+            ${r.logp != null ? `<span class="info-pill">logP <strong>${Number(r.logp).toFixed(2)}</strong></span>` : ''}
+            ${r.tpsa != null ? `<span class="info-pill">TPSA <strong>${Number(r.tpsa).toFixed(1)}</strong></span>` : ''}
+            ${r.h_bond_donors != null ? `<span class="info-pill">HBD ${r.h_bond_donors}</span>` : ''}
+            ${r.h_bond_acceptors != null ? `<span class="info-pill">HBA ${r.h_bond_acceptors}</span>` : ''}
+            ${r.lipinski_violations != null ? `<span class="info-pill">Lipinski ${r.lipinski_violations}/4</span>` : ''}
+          </div>
+        </div>`;
+      }
+      if (r.confidence != null) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="ثقة الاستخراج">Extraction confidence</h4>
+          <div style="font-size: 1.4rem; font-weight: 900; color: var(--primary);">${Math.round(r.confidence * 100)}%</div>
+        </div>`;
+      }
+      return html;
+    }
+
+    function renderMsds(r) {
+      const product = r.product_name || r.identifier || 'Unknown';
+      const hazards = r.hazard_statements || r.h_statements || [];
+      const pictos  = r.ghs_pictograms || r.pictograms || [];
+      const ppe     = r.ppe || r.protective_equipment || [];
+      const sections = r.sections || {};
+
+      let html = `
+        <div class="result-block">
+          <h4 data-i18n-ar="الهوية">Identification</h4>
+          <div style="font-weight: 800; font-size: 1.05rem;">${escapeHtml(product)}</div>
+          <div class="info-row">
+            ${r.cas_number ? `<span class="info-pill">CAS ${escapeHtml(r.cas_number)}</span>` : ''}
+            ${r.manufacturer ? `<span class="info-pill">${escapeHtml(r.manufacturer)}</span>` : ''}
+            ${r.revision_date ? `<span class="info-pill">${escapeHtml(r.revision_date)}</span>` : ''}
+          </div>
+        </div>
+      `;
+      if (pictos.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="رموز GHS">GHS pictograms</h4>
+          <div>${pictos.map((p) => `<span class="gh-pic">${escapeHtml(p)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      if (hazards.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="عبارات الخطر">Hazard statements (H-codes)</h4>
+          <div>${hazards.map((h) => `<span class="hazard-tag">${escapeHtml(typeof h === 'string' ? h : (h.code + ' — ' + h.text))}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      if (ppe.length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="معدات الحماية">Recommended PPE</h4>
+          <div>${ppe.map((p) => `<span class="info-pill">${escapeHtml(p)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      if (r.first_aid) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="إسعافات أولية">First aid</h4>
+          <div style="font-size: 0.9rem; color: var(--text-2); line-height: 1.6;">${escapeHtml(typeof r.first_aid === 'string' ? r.first_aid : JSON.stringify(r.first_aid))}</div>
+        </div>`;
+      }
+      if (Object.keys(sections).length) {
+        html += `<div class="result-block">
+          <h4 data-i18n-ar="أقسام مكتشفة">Sections detected</h4>
+          <div>${Object.keys(sections).map((s) => `<span class="info-pill">§${escapeHtml(s)}</span>`).join(' ')}</div>
+        </div>`;
+      }
+      return html;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+    }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+  })();
+  </script>
+</body>
+</html>
