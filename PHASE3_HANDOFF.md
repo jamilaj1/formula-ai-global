@@ -158,12 +158,13 @@ the sanctioned stack (backend is Render). Verify nothing depends on its
    into it (outlook account). Hard-refresh (Ctrl+Shift+R) or use
    Incognito on `https://www.jamilformula.com` to confirm — the server
    is verified correct, any residue is local browser cache only.
-4. **(Spun-off task, pre-existing, out of Phase 3 scope)** —
-   `formula.html` "Analyse safety" calls `window.FAI_DB.analyzeSafety`
-   which does not exist (the method is `getSafety`). Free users are
-   correctly gated before it; paid users hit a silent failure. Fix =
-   rename call to `getSafety` or add an alias, then re-bump `?v` +
-   rebuild zip.
+4. ✅ **DONE — `formula.html` "Analyse safety" fixed.** The call is now
+   `window.FAI_DB.getSafety(FORMULA)` (matches `supabase-client.js`).
+   `formula.html` asset refs bumped `?v=9 → ?v=10`; `DEPLOY_PHASE3.zip`
+   rebuilt (36 entries, 0 backslash, 233,355 B, `getSafety` confirmed).
+   **ACTION: owner must re-upload `DEPLOY_PHASE3.zip` to Hostinger
+   `public_html` (overwrite)** — the live site still serves the old
+   build (`analyzeSafety`, `?v=9`) until then.
 5. **(Informational)** second Vercel project `formula-ai-api` still
    exists with no custom domain — does not affect the live site (see
    §5 note). Leave unless a future audit confirms it is unused.

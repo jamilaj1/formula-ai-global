@@ -1,6 +1,5 @@
-# Working-tree code snapshot — 2026-05-19
-# Scope: *.html + assets/*.js + sw.js (CODE ONLY).
-# EXCLUDED: all *.md (PROJECT_CONTEXT.md etc. contain an Admin API key), backend/.
+# Working-tree code snapshot — 2026-05-19 (refreshed: incl. analyzeSafety->getSafety fix, formula.html ?v=10)
+# Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
 diff --git a/about.html b/about.html
