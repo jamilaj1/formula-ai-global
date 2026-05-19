@@ -1,4 +1,4 @@
-# Working-tree code snapshot — 2026-05-19 (refreshed: incl. analyzeSafety->getSafety fix, formula.html ?v=10)
+# Working-tree code snapshot — 2026-05-19 (refreshed: incl. analyzeSafety fix + chat markdown renderer)
 # Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
@@ -109,6 +109,9 @@ index 6fb872a..f2c5f0c 100644
  }
  
  // Year for footer
+diff --git a/assets/chat-live.js b/assets/chat-live.js
+index 65fd9c7..6d28209 100644
+Binary files a/assets/chat-live.js and b/assets/chat-live.js differ
 diff --git a/assets/chem-client.js b/assets/chem-client.js
 index 5eba21c..47f68a2 100644
 --- a/assets/chem-client.js
@@ -563,7 +566,7 @@ index d412ad7..6820173 100644
 +window.FAI_DB = FAI_DB;
 \ No newline at end of file
 diff --git a/chat.html b/chat.html
-index f31e4e9..7f112ca 100644
+index f31e4e9..8aa7894 100644
 --- a/chat.html
 +++ b/chat.html
 @@ -11,7 +11,7 @@
@@ -571,11 +574,72 @@ index f31e4e9..7f112ca 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=11" />
    <style>
      .chat-page-shell {
        display: grid;
-@@ -224,6 +224,7 @@
+@@ -211,6 +211,60 @@
+       background: var(--bg-glass);
+       border-radius: 999px;
+     }
++
++    /* ── Rendered AI markdown ─────────────────────────────────────── */
++    .chat-msg .bubble .md { white-space: normal; }
++    .chat-msg .bubble .md > :first-child { margin-top: 0; }
++    .chat-msg .bubble .md > :last-child { margin-bottom: 0; }
++    .chat-msg .bubble .md p { margin: 0 0 0.6em; }
++    .chat-msg .bubble .md h4,
++    .chat-msg .bubble .md h5 {
++      margin: 1em 0 0.5em; line-height: 1.35; color: var(--primary);
++      font-weight: 800;
++    }
++    .chat-msg .bubble .md h4 { font-size: 1.02rem; }
++    .chat-msg .bubble .md h5 {
++      font-size: 0.92rem; color: var(--text-1);
++      border-inline-start: 3px solid var(--primary);
++      padding-inline-start: 9px;
++    }
++    .chat-msg .bubble .md ul,
++    .chat-msg .bubble .md ol { margin: 0.4em 0 0.7em; padding-inline-start: 1.5em; }
++    .chat-msg .bubble .md li { margin: 0.25em 0; }
++    .chat-msg .bubble .md code {
++      background: rgba(255,255,255,0.08); padding: 1px 6px;
++      border-radius: 5px; font-size: 0.88em;
++      font-family: ui-monospace, "Courier New", monospace;
++      direction: ltr; unicode-bidi: embed;
++    }
++    .chat-msg .bubble .md pre.md-pre {
++      background: rgba(0,0,0,0.32); border: 1px solid var(--border);
++      border-radius: 10px; padding: 12px 14px; margin: 0.6em 0;
++      overflow-x: auto; direction: ltr;
++    }
++    .chat-msg .bubble .md pre.md-pre code {
++      background: none; padding: 0; font-size: 0.86rem;
++      color: var(--text-1); white-space: pre;
++    }
++    .chat-msg .bubble .md a { color: var(--secondary); text-decoration: underline; }
++    .chat-msg .bubble .md .md-tablewrap { overflow-x: auto; margin: 0.7em 0; }
++    .chat-msg .bubble .md table.md-table {
++      border-collapse: collapse; width: 100%; min-width: 320px;
++      font-size: 0.9rem; background: var(--bg-glass);
++      border-radius: 10px; overflow: hidden;
++    }
++    .chat-msg .bubble .md table.md-table th,
++    .chat-msg .bubble .md table.md-table td {
++      border: 1px solid var(--border); padding: 8px 12px;
++      text-align: start; vertical-align: top;
++    }
++    .chat-msg .bubble .md table.md-table th {
++      background: rgba(0,255,136,0.12); color: var(--primary);
++      font-weight: 800; white-space: nowrap;
++    }
++    .chat-msg .bubble .md table.md-table tbody tr:nth-child(even) td {
++      background: rgba(255,255,255,0.03);
++    }
+   </style>
+ </head>
+ <body>
+@@ -224,6 +278,7 @@
          <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
          <li><a href="./chat.html" class="active" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
          <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
@@ -583,7 +647,7 @@ index f31e4e9..7f112ca 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -318,9 +319,9 @@
+@@ -318,9 +373,9 @@
      </div>
    </footer>
  
@@ -591,10 +655,10 @@ index f31e4e9..7f112ca 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chat-live.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chat-live.js?v=9"></script>
++  <script src="./assets/app.js?v=11"></script>
++  <script type="module" src="./assets/auth.js?v=11"></script>
++  <script type="module" src="./assets/supabase-client.js?v=11"></script>
++  <script src="./assets/chat-live.js?v=11"></script>
  </body>
  </html>
 diff --git a/compliance.html b/compliance.html

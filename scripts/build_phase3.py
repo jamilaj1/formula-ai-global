@@ -28,6 +28,7 @@ ASSETS = [
     "assets/search-live.js",
     "assets/chem-client.js",
     "assets/formula-detail-live.js",  # changed in Phase 3, loaded by formulas.html
+    "assets/chat-live.js",            # markdown renderer upgrade (chat.html)
 ]
 zip_path = os.path.join(ROOT, "DEPLOY_PHASE3.zip")
 entries = []

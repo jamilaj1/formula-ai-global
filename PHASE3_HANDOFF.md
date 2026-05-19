@@ -169,6 +169,30 @@ the sanctioned stack (backend is Render). Verify nothing depends on its
    exists with no custom domain — does not affect the live site (see
    §5 note). Leave unless a future audit confirms it is unused.
 
+## 6b. Post-Phase-3 enhancement — chat markdown rendering (2026-05-19)
+
+Owner request: the AI chat showed raw markdown (`###`, `| tables |`)
+and mixed Arabic/English with no direction handling.
+
+- `assets/chat-live.js` — `formatReply()` rewritten into a safe,
+  line-based markdown→HTML renderer: headings, **bold**, `code`, fenced
+  ```code```, ordered/unordered lists, GitHub-style tables, paragraphs.
+  All text HTML-escaped first (M1-safe); links restricted to
+  `http(s)`/relative. Output wrapped in `dir="auto"` blocks so Arabic
+  renders RTL and English LTR automatically, even when mixed.
+- `chat.html` — added scoped `.bubble .md` CSS (tables, headings,
+  lists, code/pre, RTL-aware via logical properties); asset refs bumped
+  `?v=9 → ?v=11`.
+- `scripts/build_phase3.py` — **fixed**: added `assets/chat-live.js` to
+  the deploy asset list (it was missing, so chat fixes would not have
+  shipped). Zip now 37 entries.
+- Verified: `node --check` OK; functional test confirms table/heading/
+  list/pre render and code is XSS-escaped.
+- **ACTION: owner re-upload `DEPLOY_PHASE3.zip`** (37 entries, 0
+  backslash, ~238 KB) to Hostinger `public_html` (overwrite), then cold-
+  check `https://jamilformula.com/chat.html` (ask a question that
+  returns a table — should render as a styled table, not raw `|`).
+
 ## 7. Re-verify commands (copy/paste)
 
 ```bash
@@ -191,11 +215,13 @@ index.html  encyclopedia.html  pricing.html  formula.html  safety.html
 assets/formula-detail-live.js  assets/supabase-client.js
 assets/chem-client.js
 + ?v=8→?v=9 in all 29 root *.html
-NEW: scripts/build_phase3.py
-NEW: PHASE3_HANDOFF.md (this file)
-ARTIFACT: DEPLOY_PHASE3.zip
+formula.html (?v=10, getSafety fix)
+chat.html (?v=11, .md CSS)  assets/chat-live.js (markdown renderer)
+NEW: scripts/build_phase3.py  PHASE3_HANDOFF.md  PHASE3_WORKINGTREE_2026-05-19.patch
+ARTIFACT: DEPLOY_PHASE3.zip (37 entries, 0 backslash, ~238 KB)
 ```
 
 _Last updated: 2026-05-19 — Phase 3 complete & verified live on BOTH
-apex and `www`. Legacy Vercel project deleted, `www` DNS corrected and
-verified serving Phase 3. No open code or infra blockers._
+apex and `www`. Legacy Vercel deleted, `www` DNS fixed, analyzeSafety
+fixed, chat markdown renderer added. Pending: owner re-upload of the
+latest `DEPLOY_PHASE3.zip` (chat fix) + optional admin-key rotation._
