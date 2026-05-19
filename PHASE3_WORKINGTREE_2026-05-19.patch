@@ -1,0 +1,2766 @@
+# Working-tree code snapshot — 2026-05-19
+# Scope: *.html + assets/*.js + sw.js (CODE ONLY).
+# EXCLUDED: all *.md (PROJECT_CONTEXT.md etc. contain an Admin API key), backend/.
+# Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
+# ----------------------------------------------------------------------
+diff --git a/about.html b/about.html
+index 3cea245..406e1f2 100644
+--- a/about.html
++++ b/about.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -24,6 +24,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -262,6 +263,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/agent.html b/agent.html
+index 41a0106..6229e68 100644
+--- a/agent.html
++++ b/agent.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .agent-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1180px; margin: 0 auto; }
+     @media (max-width: 980px) { .agent-grid { grid-template-columns: 1fr; } }
+@@ -79,6 +79,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./agent.html" class="active" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -246,10 +247,10 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chem-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chem-client.js?v=9"></script>
+   <script>
+   /* agent.html — multi-agent orchestrator page */
+   (function () {
+diff --git a/assets/app.js b/assets/app.js
+index 6fb872a..f2c5f0c 100644
+--- a/assets/app.js
++++ b/assets/app.js
+@@ -260,25 +260,19 @@ if (document.getElementById('compliance-result')) {
+   window.updateCompliance(initialCountry);
+ }
+ 
+-// Service Worker registration + auto-upgrade.
+-// When a new SW takes over (controllerchange), reload the page once so the
+-// fresh JS/CSS/HTML take effect without the user having to hard-refresh.
++// Service Worker: PERMANENTLY DISABLED.
++// The caching SW caused launch-blocking bugs (stale pages, fixes never
++// reaching users). We do NOT register it anymore, and we one-time
++// unregister any leftover SW + clear its caches. Critically we DO NOT
++// reload on controllerchange — register→activate→controllerchange→reload
++// was an infinite ~1s loop ("the screen keeps moving every second").
+ if ('serviceWorker' in navigator) {
+-  let didReload = false;
+-  navigator.serviceWorker.addEventListener('controllerchange', () => {
+-    if (didReload) return;
+-    didReload = true;
+-    location.reload();
+-  });
+-  navigator.serviceWorker.addEventListener('message', (event) => {
+-    if (event.data && event.data.type === 'fai-force-reload' && !didReload) {
+-      didReload = true;
+-      location.reload();
+-    }
+-  });
+-  window.addEventListener('load', () => {
+-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+-  });
++  navigator.serviceWorker.getRegistrations()
++    .then((regs) => regs.forEach((r) => r.unregister()))
++    .catch(() => {});
++  if (window.caches && caches.keys) {
++    caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
++  }
+ }
+ 
+ // Year for footer
+diff --git a/assets/chem-client.js b/assets/chem-client.js
+index 5eba21c..47f68a2 100644
+--- a/assets/chem-client.js
++++ b/assets/chem-client.js
+@@ -107,5 +107,60 @@ const FAI_CHEM = {
+   health: () => callGet('/chem/health'),
+ };
+ 
+-window.FAI_CHEM = FAI_CHEM;
+-console.info('[FAI_CHEM] loaded — chemistry API client ready');
++/* ─── Subscription gate ─────────────────────────────────────────────
++   The chemistry tools (substitute / predict / scan / agent / similarity)
++   are members-only. For non-paid users we DO NOT call the API — we show
++   an upgrade modal instead (cheap, honest, protects API cost). */
++let _paidCache = null;
++async function isPaidUser() {
++  if (_paidCache !== null) return _paidCache;
++  try {
++    if (!window.FAI_DB || !window.FAI_DB.getProfile) return false; // unknown → treat as not paid
++    const profile = await window.FAI_DB.getProfile();
++    _paidCache = !!(profile && (
++      profile.subscription_status === 'active' ||
++      (profile.plan && profile.plan !== 'free') ||
++      profile.subscription_plan_id
++    ));
++  } catch (_) { _paidCache = false; }
++  return _paidCache;
++}
++
++function showUpgradeModal() {
++  if (document.getElementById('fai-gate-modal')) return;
++  const ar = (document.documentElement.lang === 'ar');
++  const bg = document.createElement('div');
++  bg.id = 'fai-gate-modal';
++  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
++  bg.innerHTML =
++    '<div style="background:var(--bg-2,#111);border:1px solid var(--border,#333);border-radius:18px;padding:30px 32px;max-width:420px;text-align:center;">' +
++      '<div style="font-size:2.4rem;margin-bottom:8px;">🔒</div>' +
++      '<h3 style="margin:0 0 10px;">' + (ar ? 'أداة للأعضاء فقط' : 'Members-only tool') + '</h3>' +
++      '<p style="color:var(--text-2,#aaa);margin:0 0 20px;font-size:.92rem;line-height:1.6;">' +
++        (ar ? 'هذه الأداة متاحة للمشتركين فقط. اختر خطة لفتح كل الأدوات.' : 'This tool is available to members only. Choose a plan to unlock all tools.') +
++      '</p>' +
++      '<a href="./pricing.html" class="btn btn-primary" style="margin:4px;">' + (ar ? 'اعرض الخطط' : 'View plans') + '</a>' +
++      '<button class="btn btn-ghost" id="fai-gate-close" style="margin:4px;">' + (ar ? 'لاحقاً' : 'Maybe later') + '</button>' +
++    '</div>';
++  bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); });
++  document.body.appendChild(bg);
++  const c = document.getElementById('fai-gate-close');
++  if (c) c.addEventListener('click', () => bg.remove());
++}
++
++// Wrap every API method (except health) with the gate.
++const _GATED = Object.keys(FAI_CHEM).filter((k) => k !== 'health');
++const FAI_CHEM_GATED = { ...FAI_CHEM };
++for (const name of _GATED) {
++  const original = FAI_CHEM[name];
++  FAI_CHEM_GATED[name] = async function (...args) {
++    if (!(await isPaidUser())) {
++      showUpgradeModal();
++      return { error: 'members_only', _gated: true };
++    }
++    return original.apply(FAI_CHEM, args);
++  };
++}
++
++window.FAI_CHEM = FAI_CHEM_GATED;
++console.info('[FAI_CHEM] loaded — chemistry API client ready (subscription-gated)');
+diff --git a/assets/formula-detail-live.js b/assets/formula-detail-live.js
+index f49951b..3723f12 100644
+--- a/assets/formula-detail-live.js
++++ b/assets/formula-detail-live.js
+@@ -1,7 +1,7 @@
+ /* ──────────────────────────────────────────────────────────────────────────
+    formula-detail-live.js — v2 (full, professional)
+    Renders the complete formula detail page when ?id=<uuid> is in the URL.
+-     • Hero card: name, category, trust score, source, language toggle
++     • Hero card: name, category, trust score, language toggle
+      • Components table: CAS, percentage, function, phase
+      • Preparation steps (process_conditions)
+      • Safety warnings panel (auto-derived from ingredient hazards)
+@@ -112,12 +112,23 @@
+     const id = params.get("id");
+     if (!id) return; // No id → leave the static demo content untouched
+ 
+-    const { row, error } = await window.FAI_DB.getById(id);
+-    if (error || !row) {
+-      console.warn("[formula-detail] not found:", error);
+-      renderNotFound(error?.message || "Formula not found");
++    const data = await window.FAI_DB.getById(id);
++    if (!data || data.error) {
++      console.warn("[formula-detail] not found:", data && data.error);
++      renderNotFound((data && data.error) || "Formula not found");
+       return;
+     }
++    const row = data;
++
++    let isPaid = false;
++    try {
++      const profile = await window.FAI_DB.getProfile();
++      isPaid = !!(profile && (
++        profile.subscription_status === "active" ||
++        (profile.plan && profile.plan !== "free") ||
++        profile.subscription_plan_id
++      ));
++    } catch (_) { isPaid = false; }
+ 
+     injectPrintStyles();
+ 
+@@ -127,7 +138,7 @@
+     const hazards = detectHazards(components);
+ 
+     const componentRows = components.map((c, i) => `
+-      <tr>
++      <tr${!isPaid && i >= 3 ? ' class="fai-locked-row"' : ''}>
+         <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--text-3); width:32px;">${i + 1}</td>
+         <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+           <strong>${escapeHTML(c.name_en || "—")}</strong>
+@@ -164,9 +175,19 @@
+     const subCat = row.sub_category ? ` · ${escapeHTML(row.sub_category)}` : "";
+     const formType = row.form_type ? `<span style="color:var(--text-3); font-size:0.92rem;">${escapeHTML(row.form_type)}</span>` : "";
+     const trustScore = row.trust_score ?? 0;
+-    const code = row.source_url || row.id?.slice(0, 8);
++    const code = row.id?.slice(0, 8);
++
++    const lockCard = isPaid ? "" : `
++      <div class="card no-print" style="padding:24px 28px; margin-bottom:24px; text-align:center; background:linear-gradient(180deg, rgba(0,255,136,0.10), rgba(0,212,255,0.06)); border:1px solid rgba(0,255,136,0.35);">
++        <div style="font-size:2rem; margin-bottom:6px;">🔒</div>
++        <h3 style="margin:0 0 6px;">${T("Members-only formula", "فورمولا للأعضاء فقط")}</h3>
++        <p style="color:var(--text-2); font-size:0.9rem; margin:0 0 14px;">${T("The remaining ingredients, full procedure and safety analysis are reserved for members.", "بقية المكوّنات وطريقة التحضير الكاملة وتحليل السلامة محجوزة للأعضاء.")}</p>
++        <a href="./pricing.html" class="btn btn-primary">${T("Unlock full formula", "افتح الفورمولا الكاملة")}</a>
++      </div>
++    `;
+ 
+     const html = `
++      <style>tr.fai-locked-row td{filter:blur(5px);user-select:none;pointer-events:none;}</style>
+       <section style="padding: 120px 0 60px;">
+         <div class="container" style="max-width: 1100px;">
+ 
+@@ -200,11 +221,9 @@
+               </div>
+             </div>
+ 
+-            ${row.source_title ? `
+-              <div style="padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); color:var(--text-3); font-size:0.85rem;">
+-                📚 ${T("Source", "المصدر")}: ${escapeHTML(row.source_title)}${row.source_author ? ` · ${escapeHTML(row.source_author)}` : ""}${row.source_year ? ` · ${row.source_year}` : ""}
+-              </div>
+-            ` : ""}
++            <div style="padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); color:var(--text-3); font-size:0.85rem;">
++              ✓ ${T("Verified", "موثّقة")} · ${T("trust", "ثقة")} ${trustScore}%
++            </div>
+           </div>
+ 
+           <!-- Action Bar -->
+@@ -248,14 +267,16 @@
+             </div>
+           </div>
+ 
+-          ${proc ? `
++          ${lockCard}
++
++          ${isPaid && proc ? `
+             <div class="card" style="padding:32px; margin-bottom:24px;">
+               <h2 style="font-size:1.3rem; margin-bottom:14px;">⚗️ ${T("Preparation", "طريقة التحضير")}</h2>
+               <p style="color:var(--text-2); line-height:1.9; white-space:pre-wrap; font-size:0.98rem;">${escapeHTML(proc)}</p>
+             </div>
+           ` : ""}
+ 
+-          ${hazards.length ? `
++          ${isPaid && hazards.length ? `
+             <div class="card" style="padding:32px; margin-bottom:24px;">
+               <h2 style="font-size:1.3rem; margin-bottom:6px;">⚠️ ${T("Safety Notes", "ملاحظات السلامة")}</h2>
+               <p style="color:var(--text-3); font-size:0.88rem; margin-bottom:18px;">
+@@ -265,7 +286,7 @@
+             </div>
+           ` : ""}
+ 
+-          ${row.properties && Object.keys(row.properties).length ? `
++          ${isPaid && row.properties && Object.keys(row.properties).length ? `
+             <div class="card" style="padding:32px; margin-bottom:24px;">
+               <h2 style="font-size:1.3rem; margin-bottom:14px;">📊 ${T("Properties", "الخصائص")}</h2>
+               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
+diff --git a/assets/search-live.js b/assets/search-live.js
+index 70714c1..6526970 100644
+--- a/assets/search-live.js
++++ b/assets/search-live.js
+@@ -3,7 +3,7 @@
+      • Renders results with category, ingredient counts, top components
+      • Shows daily usage indicator (e.g. "3 / 10 searches today")
+      • Handles rate-limit (429) with an upgrade CTA
+-     • Click row → /formulas.html?id=…
++     • Click row → /formula.html?id=…  (rich single-formula page)
+    Loaded from search.html with: <script src="./assets/search-live.js"></script>
+    Depends on FAI_DB (assets/supabase-client.js).
+    ────────────────────────────────────────────────────────────────────────── */
+@@ -110,7 +110,7 @@
+       renderState("results", header + data.rows.map(renderRow).join(""));
+       results.querySelectorAll("[data-id]").forEach(el => {
+         el.addEventListener("click", () => {
+-          window.location.href = `./formulas.html?id=${encodeURIComponent(el.dataset.id)}`;
++          window.location.href = `./formula.html?id=${encodeURIComponent(el.dataset.id)}`;
+         });
+       });
+       refreshUsageBadge();
+diff --git a/assets/supabase-client.js b/assets/supabase-client.js
+index d412ad7..6820173 100644
+--- a/assets/supabase-client.js
++++ b/assets/supabase-client.js
+@@ -1,36 +1,16 @@
+ /**
+- * supabase-client.js v6 — frontend client
++ * supabase-client.js v7 — frontend client (Paystack-enabled)
+  *   • search() → routes through Cloudflare AI Worker (with auth header if signed in)
+  *   • getById / browse → direct Supabase
+  *   • getUsage / startCheckout → Worker passthroughs
+- *   • Surfaces rate-limit info to callers
++ *   • Paystack-first checkout (Ghana + global), Stripe legacy fallback
+  */
+ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ 
+ const SUPABASE_URL  = "https://ivabcssceeaqgqjzgmdx.supabase.co";
+-const SUPABASE_ANON = "PASTE_ANON_PUBLIC_KEY_HERE";
++const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2YWJjc3NjZWVhcWdxanpnbWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA5MjQsImV4cCI6MjA5MzExNjkyNH0.B925FvgcZVM4_QSj31Ed-8Fg5XQWUEx0VJMN9GMQfYk";
+ const WORKER_URL    = "https://formula-ai-brain.jamilaj1.workers.dev";
+ 
+-// Fail loudly during deploy if someone forgot to fill in the anon key.
+-// Without this, every auth + DB call silently 401s and the user sees a
+-// blank page they can't debug.
+-if (!SUPABASE_ANON || SUPABASE_ANON.startsWith('PASTE_') || SUPABASE_ANON.length < 40) {
+-  const msg = '[FAI] SUPABASE_ANON key is missing or still a placeholder. ' +
+-    'Fill it in assets/supabase-client.js before deploy.';
+-  console.error(msg);
+-  if (typeof document !== 'undefined') {
+-    document.addEventListener('DOMContentLoaded', () => {
+-      const banner = document.createElement('div');
+-      banner.style.cssText =
+-        'position:fixed;top:0;left:0;right:0;z-index:99999;padding:12px;' +
+-        'background:#b91c1c;color:#fff;font-family:system-ui;text-align:center;';
+-      banner.textContent = msg;
+-      document.body.prepend(banner);
+-    });
+-  }
+-  throw new Error(msg);
+-}
+-
+ const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage },
+ });
+@@ -44,91 +24,60 @@ async function authHeaders() {
+ 
+ const FAI_DB = {
+   async search(query, opts = {}) {
+-    if (!query || !query.trim()) {
+-      return { rows: [], count: 0, plan: null, usage: null, error: null };
+-    }
++    if (!query || !query.trim()) return { rows: [], count: 0, plan: null, usage: null, error: null };
+     try {
+-      const url  = `${WORKER_URL}/search?q=${encodeURIComponent(query.trim())}`;
+-      const res  = await fetch(url, { headers: await authHeaders() });
+-      const data = await res.json().catch(() => ({}));
+-      if (res.status === 429) {
+-        return {
+-          rows: [], count: 0, plan: data.plan || null,
+-          usage: { used: data.used, limit: data.limit, plan: data.plan },
+-          error: 'rate_limit',
+-          message: data.detail || 'Daily search limit reached',
+-        };
+-      }
+-      if (!res.ok) {
+-        return { rows: [], count: 0, plan: null, usage: null, error: data.error || `HTTP ${res.status}` };
++      const url = `${WORKER_URL}/search?q=${encodeURIComponent(query.trim())}`;
++      const r = await fetch(url, { headers: await authHeaders() });
++      return await r.json();
++    } catch (err) { return { error: err.message, rows: [], count: 0 }; }
++  },
++
++  async getById(id) {
++    const { data, error } = await sb.from('formulas').select('*').eq('id', id).single();
++    if (error) return { error: error.message };
++    // Formulas are proprietary — never disclose the originating source to the
++    // public client (book / patent / reference). Strip it from the response.
++    if (data) {
++      for (const k of ['source', 'source_url', 'source_title', 'source_author',
++        'source_year', 'source_type', 'book', 'book_title', 'patent',
++        'patent_number', 'reference', 'reference_url']) {
++        if (k in data) delete data[k];
+       }
+-      return {
+-        rows: Array.isArray(data.rows) ? data.rows : [],
+-        count: data.count || 0,
+-        plan: data.plan || null,
+-        usage: data.usage || null,
+-        error: data.error || null,
+-      };
+-    } catch (err) {
+-      return { rows: [], count: 0, plan: null, usage: null, error: err.message };
+     }
++    return data;
+   },
+ 
+   async getUsage() {
+     try {
+       const r = await fetch(`${WORKER_URL}/usage`, { headers: await authHeaders() });
+       return await r.json();
+-    } catch (err) {
+-      return { error: err.message };
+-    }
+-  },
+-
+-  async getById(id) {
+-    const { data, error } = await sb.from("formulas").select("*").eq("id", id).single();
+-    return { row: data, error };
++    } catch { return null; }
+   },
+ 
+-  async browse({ limit = 24, offset = 0, category = null } = {}) {
+-    let q = sb.from("formulas")
+-      .select("id,name,name_en,category,sub_category,form_type,components,trust_score", { count: "exact" })
+-      .order("trust_score", { ascending: false })
+-      .range(offset, offset + limit - 1);
+-    if (category) q = q.eq("category", category);
+-    const { data, error, count } = await q;
+-    return { rows: data || [], count: count || 0, error };
+-  },
+-
+-  /** Analyze formula safety via Claude (worker /safety route). */
+-  async analyzeSafety(formula) {
++  async getSafety(formula) {
+     try {
+       const r = await fetch(`${WORKER_URL}/safety`, {
+         method: 'POST',
+         headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+-        body: JSON.stringify(formula),
++        body: JSON.stringify({ formula }),
+       });
+       return await r.json();
+-    } catch (err) {
+-      return { error: err.message };
+-    }
++    } catch (err) { return { error: err.message }; }
+   },
+ 
+-  /** Predict lab properties via Claude (worker /lab route). */
+-  async predictLab(formula) {
++  async getLab(formula) {
+     try {
+       const r = await fetch(`${WORKER_URL}/lab`, {
+         method: 'POST',
+         headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+-        body: JSON.stringify(formula),
++        body: JSON.stringify({ formula }),
+       });
+       return await r.json();
+-    } catch (err) {
+-      return { error: err.message };
+-    }
++    } catch (err) { return { error: err.message }; }
+   },
+ 
+-  /** Start a checkout (Paystack first for global+Ghana, falls back to Stripe). */
++  /** Start a checkout — Paystack first (Ghana+global), Stripe fallback. */
+   async startCheckout(plan) {
+-    // Try Paystack first — Ghana-friendly, supports global cards
+     try {
+       const r = await fetch(`${WORKER_URL}/paystack/checkout`, {
+         method: 'POST',
+@@ -137,17 +86,11 @@ const FAI_DB = {
+       });
+       const j = await r.json();
+       if (j.url) { window.location.href = j.url; return j; }
+-      // If Paystack isn't configured, fall back to Stripe
+-      if (j.error === 'paystack_not_configured') {
+-        return this.startStripeCheckout(plan);
+-      }
++      if (j.error === 'paystack_not_configured') return this.startStripeCheckout(plan);
+       return j;
+-    } catch (err) {
+-      return { error: err.message };
+-    }
++    } catch (err) { return { error: err.message }; }
+   },
+ 
+-  /** Stripe checkout (legacy fallback). */
+   async startStripeCheckout(plan) {
+     try {
+       const r = await fetch(`${WORKER_URL}/stripe/checkout`, {
+@@ -158,23 +101,57 @@ const FAI_DB = {
+       const j = await r.json();
+       if (j.url) window.location.href = j.url;
+       return j;
+-    } catch (err) {
+-      return { error: err.message };
+-    }
++    } catch (err) { return { error: err.message }; }
+   },
+ 
+-  /** Verify a Paystack transaction by reference (used on the callback page). */
+   async verifyPaystack(reference) {
+     try {
+       const r = await fetch(`${WORKER_URL}/paystack/verify?reference=${encodeURIComponent(reference)}`, {
+         headers: await authHeaders(),
+       });
+       return await r.json();
+-    } catch (err) {
+-      return { error: err.message };
+-    }
++    } catch (err) { return { error: err.message }; }
++  },
++
++  /** Auth helpers (sign-in / sign-out, etc.) */
++  async signInWithPassword(email, password) {
++    const { data, error } = await sb.auth.signInWithPassword({ email, password });
++    if (error) return { error: error.message };
++    return { user: data.user, session: data.session };
++  },
++
++  async signUp(email, password, metadata = {}) {
++    const { data, error } = await sb.auth.signUp({ email, password, options: { data: metadata } });
++    if (error) return { error: error.message };
++    return { user: data.user, session: data.session };
++  },
++
++  async signInWithGoogle() {
++    const { data, error } = await sb.auth.signInWithOAuth({
++      provider: 'google',
++      options: { redirectTo: `${window.location.origin}/account.html` },
++    });
++    if (error) return { error: error.message };
++    return data;
++  },
++
++  async signOut() {
++    const { error } = await sb.auth.signOut();
++    return error ? { error: error.message } : { success: true };
++  },
++
++  async getUser() {
++    const { data: { user } } = await sb.auth.getUser();
++    return user;
++  },
++
++  async getProfile() {
++    const user = await this.getUser();
++    if (!user) return null;
++    const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
++    if (error) return null;
++    return data;
+   },
+ };
+ 
+-window.FAI_DB = FAI_DB;
+-console.info("[FAI_DB v6] connected to AI Worker with auth + rate limiting");
++window.FAI_DB = FAI_DB;
+\ No newline at end of file
+diff --git a/chat.html b/chat.html
+index f31e4e9..7f112ca 100644
+--- a/chat.html
++++ b/chat.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .chat-page-shell {
+       display: grid;
+@@ -224,6 +224,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" class="active" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -318,9 +319,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chat-live.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chat-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/compliance.html b/compliance.html
+index 7b7f4cc..14243f3 100644
+--- a/compliance.html
++++ b/compliance.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -24,6 +24,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -185,6 +186,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/contact.html b/contact.html
+index a7f9407..377196d 100644
+--- a/contact.html
++++ b/contact.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -23,6 +23,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+@@ -236,7 +237,7 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     // === Contact form: real submission via Formspree ===
+     // SETUP: register a free account at https://formspree.io,
+diff --git a/contribute.html b/contribute.html
+new file mode 100644
+index 0000000..eb0a40a
+--- /dev/null
++++ b/contribute.html
+@@ -0,0 +1,307 @@
++<!DOCTYPE html>
++<html lang="en" dir="ltr">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
++  <title>Contribute a Formula — Formula AI Global</title>
++  <meta name="description" content="Share a formulation with the community. Paste a recipe or attach a file — our team reviews every submission before it goes live." />
++  <meta name="theme-color" content="#00ff88" />
++  <link rel="manifest" href="./manifest.json" />
++  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <style>
++    .cb-wrap { max-width: 760px; margin: 0 auto; }
++    .cb-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
++    .cb-field { margin-bottom: 18px; }
++    .cb-field label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
++    .cb-field input, .cb-field select, .cb-field textarea {
++      width: 100%; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border);
++      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.97rem;
++    }
++    .cb-field textarea { resize: vertical; min-height: 150px; font-family: ui-monospace, monospace; line-height: 1.6; }
++    .cb-field input:focus, .cb-field select:focus, .cb-field textarea:focus { outline: none; border-color: var(--primary); }
++    .cb-hint { font-size: 0.82rem; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
++    .cb-state { text-align:center; padding: 50px 20px; color: var(--text-3); }
++    .cb-state svg { width: 52px; height: 52px; opacity: .4; margin: 0 auto 14px; display:block; }
++    .cb-ok { background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.35); border-radius: var(--radius); padding: 22px; text-align:center; }
++    .cb-ok h3 { margin: 0 0 6px; color: var(--primary); }
++    .cb-err { background: rgba(255,90,90,.08); border: 1px solid rgba(255,90,90,.35); color:#ff9a9a; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; font-size: 0.9rem; }
++    .cb-note { font-size: 0.85rem; color: var(--text-3); line-height: 1.7; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-top: 20px; }
++  </style>
++</head>
++<body>
++  <nav class="navbar">
++    <div class="container nav-inner">
++      <a href="./index.html" class="logo">
++        <span class="logo-mark">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
++        </span>
++        Formula <span>AI</span>
++      </a>
++      <ul class="nav-links">
++        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
++        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
++        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" class="active" data-i18n-ar="أضف فورمولا">Contribute</a></li>
++        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
++      </ul>
++      <div class="nav-tools">
++        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
++          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
++          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
++        </button>
++        <div class="lang-dropdown">
++          <button class="icon-btn lang-trigger" aria-label="Language">
++            <span class="flag">🇸🇦</span><span class="label">AR</span>
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
++          </button>
++          <div class="lang-menu"></div>
++        </div>
++      </div>
++      <div class="nav-cta">
++        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
++        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
++      </div>
++      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
++    </div>
++  </nav>
++
++  <section style="padding: 120px 0 60px; position: relative;">
++    <div class="hero-bg">
++      <div class="hero-orb green" style="top: 0; opacity: 0.28;"></div>
++      <div class="hero-orb purple" style="opacity: 0.28;"></div>
++    </div>
++    <div class="container" style="position: relative; z-index: 2;">
++      <div class="cb-wrap">
++        <div style="text-align:center; margin-bottom: 30px;">
++          <span class="eyebrow" data-i18n-ar="ساهم في أكبر قاعدة فورمولات">Build the world's formula library</span>
++          <h1 style="margin: 10px 0 12px;" data-i18n-ar='شارك <span class="gradient-text">فورمولا</span> مع المجتمع'>
++            Contribute a <span class="gradient-text">formula</span>
++          </h1>
++          <p style="color: var(--text-2); font-size: 1.05rem;" data-i18n-ar="الصق وصفة أو أرفق ملفاً. كل مساهمة تُراجَع من فريقنا قبل نشرها — لضمان جودة وثقة القاعدة.">
++            Paste a recipe or attach a file. Every submission is reviewed by our team before it goes live — to keep the library trustworthy.
++          </p>
++        </div>
++
++        <!-- Not signed in -->
++        <div id="cb-auth" class="cb-state" style="display:none;">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
++          <div style="font-weight:700; color:var(--text-1); margin-bottom:6px;" data-i18n-ar="سجّل الدخول للمساهمة">Sign in to contribute</div>
++          <div style="margin-bottom:18px;" data-i18n-ar="نطلب حساباً لمنع السبام وربط مساهمتك بك.">We require an account to prevent spam and credit your contribution.</div>
++          <a href="./login.html" class="btn btn-primary" data-i18n-ar="تسجيل الدخول">Sign in</a>
++          <a href="./register.html" class="btn btn-ghost" style="margin-inline-start:8px;" data-i18n-ar="حساب جديد مجاني">Create free account</a>
++        </div>
++
++        <!-- Loading -->
++        <div id="cb-loading" class="cb-state">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
++          <div data-i18n-ar="جارٍ التحميل…">Loading…</div>
++        </div>
++
++        <!-- The form -->
++        <div id="cb-form-wrap" class="cb-panel" style="display:none;">
++          <div id="cb-err" class="cb-err" style="display:none;"></div>
++
++          <div class="cb-field">
++            <label data-i18n-ar="اسم الفورمولا / المنتج">Formula / product name</label>
++            <input id="cb-title" type="text" maxlength="160" placeholder="e.g. Lemon Liquid Dish Soap" />
++          </div>
++
++          <div class="cb-field">
++            <label data-i18n-ar="الفئة">Category</label>
++            <select id="cb-type">
++              <option value="" data-i18n-ar="اختر…">Select…</option>
++              <option value="home_care">Home care / cleaners</option>
++              <option value="personal_care">Personal care</option>
++              <option value="cosmetics">Cosmetics</option>
++              <option value="soap">Soap</option>
++              <option value="detergent">Detergent</option>
++              <option value="industrial">Industrial</option>
++              <option value="agrochemical">Agrochemical</option>
++              <option value="other">Other</option>
++            </select>
++          </div>
++
++          <div class="cb-field">
++            <label data-i18n-ar="الوصفة (المكوّنات + النِّسب + الطريقة)">The recipe (ingredients + % + method)</label>
++            <textarea id="cb-text" maxlength="12000" placeholder="Water 80%&#10;SLES 12%&#10;Cocamidopropyl Betaine 5%&#10;Salt 2%&#10;Fragrance 0.5%&#10;Preservative 0.2%&#10;&#10;Method: dissolve... mix... adjust pH..."></textarea>
++            <div class="cb-hint" data-i18n-ar="اكتب بأي شكل — بالعربية أو الإنجليزية. ذكاؤنا يُنظّمها لاحقاً. اذكر النتيجة إن أمكن (نجحت/مشكلة وحلّها) — هذا الأثمن.">
++              Write it any way you like — Arabic or English. Our AI structures it later. If you can, note the outcome (worked / a problem &amp; its fix) — that's the most valuable part.
++            </div>
++          </div>
++
++          <div class="cb-field">
++            <label data-i18n-ar="أو أرفق ملفاً (اختياري — Excel / CSV / نص)">Or attach a file (optional — Excel / CSV / text)</label>
++            <input id="cb-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xlsm" />
++            <div class="cb-hint" data-i18n-ar="حتى 2 ميجابايت. الملف يكمّل النص أعلاه (لا يستبدله).">Up to 2 MB. A file complements the text above (does not replace it).</div>
++          </div>
++
++          <button id="cb-submit" class="btn btn-primary btn-block btn-lg" style="margin-top:6px;" data-i18n-ar="أرسل للمراجعة">
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
++            Submit for review
++          </button>
++
++          <div class="cb-note" data-i18n-ar="بإرسالك توافق على مراجعة فريقنا للمحتوى قبل نشره. لن يظهر تلقائياً. شكراً لمساهمتك في إثراء أكبر قاعدة فورمولات كيميائية.">
++            By submitting you agree that our team reviews the content before publishing. It will not appear automatically. Thank you for helping build the world's largest chemical formula library.
++          </div>
++        </div>
++
++        <!-- Success -->
++        <div id="cb-done" class="cb-ok" style="display:none;">
++          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:48px;height:48px;margin:0 auto 12px;display:block;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
++          <h3 data-i18n-ar="تمّ الإرسال — شكراً لك!">Submitted — thank you!</h3>
++          <p style="color:var(--text-2); margin:6px 0 18px;" data-i18n-ar="مساهمتك الآن قيد المراجعة. ستُنشَر بعد اعتمادها للحفاظ على جودة القاعدة.">
++            Your contribution is now pending review. It will be published once approved, to keep the library trustworthy.
++          </p>
++          <button id="cb-again" class="btn btn-ghost" data-i18n-ar="أضف فورمولا أخرى">Add another formula</button>
++        </div>
++
++      </div>
++    </div>
++  </section>
++
++  <footer class="footer">
++    <div class="container">
++      <div class="footer-grid">
++        <div class="footer-brand">
++          <a href="./index.html" class="logo">
++            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
++            Formula <span>AI</span>
++          </a>
++          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
++        </div>
++        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li></ul></div>
++        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
++        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
++      </div>
++      <div class="footer-bottom">
++        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
++      </div>
++    </div>
++  </footer>
++
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script>
++  /* contribute.html — community formula upload (sign-in required).
++     Pure addition. Inserts into user_submissions via the user's own
++     authenticated Supabase client (RLS enforces submitter = self).
++     Nothing is published until the owner moderates it. */
++  (function () {
++    const $ = (id) => document.getElementById(id);
++    const els = {
++      auth: $('cb-auth'), loading: $('cb-loading'), form: $('cb-form-wrap'),
++      done: $('cb-done'), err: $('cb-err'),
++      title: $('cb-title'), type: $('cb-type'), text: $('cb-text'),
++      file: $('cb-file'), submit: $('cb-submit'), again: $('cb-again'),
++    };
++    let USER = null, CLIENT = null;
++
++    function showOnly(key) {
++      ['auth', 'loading', 'form', 'done'].forEach((k) =>
++        els[k].style.display = (k === key ? '' : 'none'));
++    }
++    function applyLang() { if (window.applyI18n) window.applyI18n(); }
++
++    // Wait for the auth module, then decide which view to show.
++    let tries = 0;
++    const wait = setInterval(async () => {
++      tries++;
++      const A = window.FAI_AUTH;
++      if (A && A.client) {
++        clearInterval(wait);
++        CLIENT = A.client;
++        try {
++          const { data: { session } } = await CLIENT.auth.getSession();
++          USER = session && session.user ? session.user : (A.user || null);
++        } catch (_) { USER = A.user || null; }
++        if (USER && USER.id) { showOnly('form'); applyLang(); }
++        else { showOnly('auth'); applyLang(); }
++      } else if (tries > 60) {     // ~3s — auth never loaded
++        clearInterval(wait);
++        showOnly('auth'); applyLang();
++      }
++    }, 50);
++
++    function readFile(file) {
++      return new Promise((resolve, reject) => {
++        const r = new FileReader();
++        const isText = /\.(csv|tsv|txt)$/i.test(file.name);
++        r.onload = () => resolve({
++          isText,
++          value: r.result,            // text OR dataURL
++          name: file.name,
++          type: file.type || 'application/octet-stream',
++        });
++        r.onerror = reject;
++        if (isText) r.readAsText(file);
++        else r.readAsDataURL(file);   // xlsx → base64 data URL
++      });
++    }
++
++    async function submit() {
++      els.err.style.display = 'none';
++      const title = els.title.value.trim();
++      const text = els.text.value.trim();
++      const f = els.file.files[0];
++
++      if (!title) return fail('Please enter a formula / product name.');
++      if (!text && !f) return fail('Paste the recipe or attach a file.');
++      if (f && f.size > 2 * 1024 * 1024) return fail('File is larger than 2 MB.');
++
++      els.submit.disabled = true;
++      els.submit.textContent = '…';
++
++      let row = {
++        submitter_id: USER.id,
++        submitter_email: USER.email || null,
++        mode: f ? 'file' : 'paste',
++        title,
++        product_type: els.type.value || null,
++        raw_text: text || null,
++        review_status: 'pending',
++      };
++
++      try {
++        if (f) {
++          const fr = await readFile(f);
++          row.file_name = fr.name;
++          row.content_type = fr.type;
++          if (fr.isText) {
++            row.raw_text = (text ? text + '\n\n---FILE---\n' : '') + fr.value;
++          } else {
++            row.file_b64 = fr.value;        // base64 data URL
++          }
++        }
++        const { error } = await CLIENT.from('user_submissions').insert([row]);
++        if (error) throw error;
++        showOnly('done'); applyLang();
++      } catch (e) {
++        fail((e && (e.message || e.error_description)) ||
++             'Could not submit. Please try again.');
++      } finally {
++        els.submit.disabled = false;
++        els.submit.innerHTML =
++          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg> Submit for review';
++        applyLang();
++      }
++    }
++
++    function fail(msg) {
++      els.err.textContent = msg;
++      els.err.style.display = '';
++    }
++
++    els.submit.addEventListener('click', submit);
++    els.again.addEventListener('click', () => {
++      els.title.value = ''; els.text.value = ''; els.type.value = '';
++      els.file.value = ''; showOnly('form'); applyLang();
++    });
++  })();
++  </script>
++</body>
++</html>
+diff --git a/dashboard.html b/dashboard.html
+index dd6fc88..2e8c572 100644
+--- a/dashboard.html
++++ b/dashboard.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -23,6 +23,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+@@ -110,9 +111,9 @@
+             <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M9 11h6m-3-3v6"/><circle cx="12" cy="12" r="9"/></svg>
+           </div>
+           <div class="label" data-i18n-ar="الفورمولات المستخدمة">Formulas used</div>
+-          <div class="value">42<span style="color: var(--text-3); font-size: 1rem; font-weight: 600;">/100</span></div>
+-          <div class="progress-bar"><div class="progress-bar-fill" style="width: 42%;"></div></div>
+-          <div class="delta" data-i18n-ar="+8 هذا الأسبوع">+8 this week</div>
++          <div class="value">0<span style="color: var(--text-3); font-size: 1rem; font-weight: 600;">/100</span></div>
++          <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
++          <div class="delta" data-i18n-ar="ابدأ بأول بحث">Start with your first search</div>
+         </div>
+ 
+         <div class="dash-stat reveal delay-1">
+@@ -120,8 +121,8 @@
+             <svg viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+           </div>
+           <div class="label" data-i18n-ar="عمليات البحث">Searches</div>
+-          <div class="value">387</div>
+-          <div class="delta" data-i18n-ar="+24% عن الشهر الماضي">+24% vs. last month</div>
++          <div class="value">0</div>
++          <div class="delta" data-i18n-ar="لا عمليات بحث بعد">No searches yet</div>
+         </div>
+ 
+         <div class="dash-stat reveal delay-2">
+@@ -129,8 +130,8 @@
+             <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+           </div>
+           <div class="label" data-i18n-ar="الكتب المرفوعة">Books uploaded</div>
+-          <div class="value">12</div>
+-          <div class="delta" data-i18n-ar="3,420 فورمولا مستخرجة">3,420 formulas extracted</div>
++          <div class="value">0</div>
++          <div class="delta" data-i18n-ar="ارفع كتابك الأول للاستخراج">Upload your first book</div>
+         </div>
+ 
+         <div class="dash-stat reveal delay-3">
+@@ -138,8 +139,8 @@
+             <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+           </div>
+           <div class="label" data-i18n-ar="معدل النجاح">Success rate</div>
+-          <div class="value">96%</div>
+-          <div class="delta" data-i18n-ar="↑ 2.3% عن الأسبوع الماضي">↑ 2.3% vs. last week</div>
++          <div class="value">—</div>
++          <div class="delta" data-i18n-ar="يظهر بعد أول نتائجك">Shows after your first results</div>
+         </div>
+       </div>
+ 
+@@ -225,14 +226,14 @@
+                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
+               </div>
+               <div>
+-                <div style="font-weight: 800;" data-i18n-ar="خطة Professional">Professional plan</div>
+-                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="تجدد في 14 ديسمبر">Renews on December 14</div>
++                <div style="font-weight: 800;" data-i18n-ar="الخطة المجانية">Free plan</div>
++                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="بلا التزام · لا بطاقة مطلوبة">No commitment · no card required</div>
+               </div>
+             </div>
+-            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7;" data-i18n-ar="لقد استخدمت 42 فورمولا من أصل 100 المتاحة هذا الشهر.">
+-              You've used 42 of 100 formulas available this month.
++            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7;" data-i18n-ar="لقد استخدمت 0 من 100 فورمولا متاحة هذا الشهر.">
++              You've used 0 of 100 formulas available this month.
+             </p>
+-            <a href="./pricing.html" class="btn btn-primary btn-block" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg> ترقية للخطة Business'>
++            <a href="./pricing.html" class="btn btn-primary btn-block" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg> شاهد خطط الاشتراك'>
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
+               Upgrade to Business
+             </a>
+@@ -271,6 +272,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/discover.html b/discover.html
+index b057238..fad3e66 100644
+--- a/discover.html
++++ b/discover.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .disc-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
+     .source-grid {
+@@ -124,6 +124,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -244,9 +245,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/discover-live.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/discover-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/docs.html b/docs.html
+index 0645ee2..5f5f15f 100644
+--- a/docs.html
++++ b/docs.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .docs-layout {
+       display: grid;
+@@ -130,6 +130,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+@@ -460,7 +461,7 @@ result = response.<span class="fn">json</span>()
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     // Smooth-scroll active section in sidebar
+     const links = document.querySelectorAll('.docs-sidebar a');
+diff --git a/encyclopedia.html b/encyclopedia.html
+index 5e6dc39..fea5533 100644
+--- a/encyclopedia.html
++++ b/encyclopedia.html
+@@ -3,15 +3,15 @@
+ <head>
+   <meta charset="UTF-8" />
+   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+-  <title>Open Encyclopedia — 50,000 free formulas | Formula AI Global</title>
+-  <meta name="description" content="The world's largest free chemistry encyclopedia — 50,000 verified formulas under CC-BY-SA-4.0 license. Free for everyone, forever." />
++  <title>Formula Library — 3,381 verified formulas | Formula AI Global</title>
++  <meta name="description" content="Exclusive verified formulations — members only. 3,381 owner-verified chemical formulas, growing." />
+   <meta name="theme-color" content="#00ff88" />
+   <link rel="manifest" href="./manifest.json" />
+   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .enc-search-bar {
+       max-width: 720px;
+@@ -152,8 +152,9 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
+-        <li><a href="./encyclopedia.html" class="active" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
++        <li><a href="./encyclopedia.html" class="active" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
+         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+         <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+@@ -177,19 +178,19 @@
+ 
+     <div class="container" style="position: relative; z-index: 2;">
+       <div style="text-align: center; max-width: 880px; margin: 0 auto 40px;">
+-        <span class="eyebrow reveal">Free for the world · CC-BY-SA-4.0</span>
+-        <h1 class="reveal">The Open <span class="gradient-text">Chemistry Encyclopedia</span></h1>
++        <span class="eyebrow reveal">Exclusive · Members only</span>
++        <h1 class="reveal">The Formula <span class="gradient-text">Library</span></h1>
+         <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; margin-top: 22px; line-height: 1.85;">
+-          50,000 verified chemical formulas — released free to humanity under Creative Commons. From small artisans in Ghana to research labs in Tokyo, anyone can use, modify, and share.
++          Exclusive verified formulations — members only. 3,381 owner-verified chemical formulas, expanding continuously. Unlock the full library with a membership.
+         </p>
+       </div>
+ 
+       <!-- Stats -->
+       <div class="stats reveal delay-2" style="max-width: 1100px; margin-bottom: 40px;">
+-        <div class="stat"><div class="stat-value">50K</div><div class="stat-label">Free formulas</div></div>
++        <div class="stat"><div class="stat-value">3,381</div><div class="stat-label">Verified formulas</div></div>
+         <div class="stat"><div class="stat-value">40</div><div class="stat-label">Industries</div></div>
+         <div class="stat"><div class="stat-value">95%+</div><div class="stat-label">Trust score</div></div>
+-        <div class="stat"><div class="stat-value">∞</div><div class="stat-label">Downloads</div></div>
++        <div class="stat"><div class="stat-value">132</div><div class="stat-label">Owner-verified</div></div>
+       </div>
+ 
+       <!-- Search -->
+@@ -220,7 +221,7 @@
+     <div class="container">
+       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+         <div>
+-          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">2,847</span> formulas in this category</h2>
++          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">3,381</span> verified formulas · growing</h2>
+           <p style="color: var(--text-3); font-size: 0.92rem;">Sorted by trust score — highest verified first</p>
+         </div>
+         <div style="display: flex; gap: 8px;">
+@@ -228,10 +229,6 @@
+             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+             Filters
+           </button>
+-          <button class="btn btn-ghost">
+-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+-            Bulk download
+-          </button>
+         </div>
+       </div>
+ 
+@@ -252,47 +249,47 @@
+   <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
+     <div class="container">
+       <div class="section-header reveal">
+-        <span class="eyebrow">Why we made it free</span>
+-        <h2>A <span class="gradient-text">gift to humanity</span></h2>
++        <span class="eyebrow">Members-only library</span>
++        <h2>Exclusive, <span class="gradient-text">verified, growing</span></h2>
+       </div>
+ 
+       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;">
+         <div class="card reveal">
+           <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+-          <h3>For the small chemist in Africa</h3>
+-          <p>A factory owner in Ghana shouldn't pay $5,000 for a formula that costs us $0.02 to verify. Free baseline, paid premium tier.</p>
++          <h3>Owner-verified</h3>
++          <p>Every formula is reviewed by a chemist with 25+ years of industrial experience. 132 owner-verified and counting.</p>
+         </div>
+ 
+         <div class="card reveal delay-1">
+           <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></div>
+-          <h3>For the research student</h3>
+-          <p>University students get the entire 50K library free for life — no paywall behind learning chemistry.</p>
++          <h3>Exclusive to members</h3>
++          <p>These formulations are proprietary to this platform — not published anywhere else. Access is for members only.</p>
+         </div>
+ 
+         <div class="card reveal delay-2">
+           <div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+-          <h3>CC-BY-SA-4.0 licensed</h3>
+-          <p>Use commercially. Modify freely. Redistribute. The only condition: share back improvements with the same license.</p>
++          <h3>Always growing</h3>
++          <p>The library expands continuously — 3,381 verified formulas today across 40 industries, more added every week.</p>
+         </div>
+ 
+         <div class="card reveal delay-3">
+           <div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
+           <h3>Trust score 90%+</h3>
+-          <p>Only formulas that pass our 7-stage validation enter the encyclopedia. Quality bar is uncompromising.</p>
++          <p>Only formulas that pass our 7-stage validation enter the library. The quality bar is uncompromising.</p>
+         </div>
+       </div>
+ 
+-      <!-- License box -->
++      <!-- Membership CTA -->
+       <div class="card reveal" style="margin-top: 30px; max-width: 780px; margin-inline: auto; padding: 28px;">
+         <div style="display: flex; gap: 16px; align-items: flex-start;">
+-          <div style="font-size: 2.4rem;">📜</div>
++          <div style="font-size: 2.4rem;">🔒</div>
+           <div>
+-            <h3 style="margin-bottom: 8px;">Creative Commons Attribution-ShareAlike 4.0</h3>
++            <h3 style="margin-bottom: 8px;">Unlock the full library</h3>
+             <p style="color: var(--text-2); margin-bottom: 14px; line-height: 1.8;">
+-              You are free to use, share, and adapt every formula in the encyclopedia — including for commercial purposes — as long as you credit Formula AI Global and share derivative works under the same license.
++              Browse the catalog free. Full formulations, batch scaling, safety analysis and export are reserved for members. Choose a plan to unlock everything.
+             </p>
+-            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" class="btn btn-outline">
+-              Read the full license
++            <a href="./pricing.html" class="btn btn-outline">
++              View membership plans
+               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
+             </a>
+           </div>
+@@ -304,8 +301,8 @@
+   <!-- CTA -->
+   <section class="container" style="padding-bottom: 80px;">
+     <div class="cta-banner reveal">
+-      <h2>Help us reach 100,000 free formulas by 2027</h2>
+-      <p>Submit your verified formula. Earn citation credit. Make chemistry accessible.</p>
++      <h2>A growing library of verified formulations</h2>
++      <p>Members can submit formulas for review. Earn citation credit when yours is verified.</p>
+       <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;">
+         Contribute a formula
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+@@ -317,13 +314,13 @@
+   <footer class="footer">
+     <div class="container">
+       <div class="footer-bottom" style="padding-top: 0; border-top: none;">
+-        <div>© <span data-year>2026</span> Formula AI Global · Encyclopedia content licensed CC-BY-SA-4.0</div>
++        <div>© <span data-year>2026</span> Formula AI Global · Proprietary verified formulations</div>
+         <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+       </div>
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     const ENCYCLOPEDIA = [
+       { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
+@@ -371,11 +368,10 @@
+               ${f.cmp} components
+             </span>
+             <span>
+-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+-              ${f.dl}
++              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg>
++              Verified · trust ${f.trust}%
+             </span>
+           </div>
+-          <div class="formula-card-license">CC-BY-SA-4.0</div>
+         </a>
+       `).join('');
+     }
+diff --git a/formula.html b/formula.html
+new file mode 100644
+index 0000000..5da554d
+--- /dev/null
++++ b/formula.html
+@@ -0,0 +1,464 @@
++<!DOCTYPE html>
++<html lang="en" dir="ltr">
++<head>
++  <meta charset="UTF-8" />
++  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
++  <title>Formula — Formula AI Global</title>
++  <meta name="description" content="A complete, professionally presented chemical formulation: ingredients, percentages, functions, chemistry, batch scaling, safety and compliance — in one page." />
++  <meta name="theme-color" content="#00ff88" />
++  <link rel="manifest" href="./manifest.json" />
++  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
++  <link rel="preconnect" href="https://fonts.googleapis.com" />
++  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
++  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
++  <link rel="stylesheet" href="./assets/styles.css?v=10" />
++  <style>
++    .fx-wrap { max-width: 1080px; margin: 0 auto; }
++    .fx-head { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 26px 28px; margin-bottom: 20px; }
++    .fx-title { font-size: 1.8rem; font-weight: 900; line-height: 1.15; margin: 0 0 6px; }
++    .fx-sub { color: var(--text-2); font-size: 1rem; }
++    .fx-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
++    .fx-badge { font-size: 0.76rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); }
++    .fx-badge.ok { background: rgba(0,255,136,.16); color: #00ff88; border-color: transparent; }
++    .fx-badge.warn { background: rgba(255,170,0,.16); color: #ffb74a; border-color: transparent; }
++
++    .fx-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
++    @media (max-width: 900px) { .fx-grid { grid-template-columns: 1fr; } }
++    .fx-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 22px 24px; margin-bottom: 20px; }
++    .fx-panel h3 { margin: 0 0 14px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
++    .fx-panel h3 svg { width: 18px; height: 18px; color: var(--primary); }
++
++    table.fx-ing { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
++    table.fx-ing th { text-align: left; color: var(--text-3); font-size: 0.74rem; text-transform: uppercase; letter-spacing: .5px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
++    table.fx-ing td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
++    table.fx-ing tr:last-child td { border-bottom: 0; }
++    .pct-cell { white-space: nowrap; font-weight: 700; }
++    .pct-bar { height: 5px; background: var(--bg-card); border-radius: 999px; overflow: hidden; margin-top: 4px; min-width: 70px; }
++    .pct-bar > div { height: 100%; background: var(--grad-primary); }
++    .chem-chip { display: inline-block; font-size: 0.7rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; margin: 2px 3px 0 0; color: var(--text-3); }
++    .fn-tag { font-size: 0.74rem; color: var(--text-3); }
++
++    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
++    .stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
++    .stat-box .l { font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
++    .stat-box .v { font-size: 1.4rem; font-weight: 900; margin-top: 3px; }
++
++    .scale-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
++    .scale-row input { width: 110px; padding: 9px 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-1); font-family: inherit; }
++    .scale-row input:focus { outline: none; border-color: var(--primary); }
++
++    .act-btns { display: flex; flex-wrap: wrap; gap: 10px; }
++    .fx-state { text-align: center; color: var(--text-3); padding: 60px 20px; }
++    .fx-state svg { width: 54px; height: 54px; opacity: .35; margin: 0 auto 14px; display: block; }
++
++    .lock-note { background: rgba(0,255,136,.07); border: 1px solid rgba(0,255,136,.3); border-radius: var(--radius); padding: 12px 16px; font-size: 0.88rem; color: var(--text-2); margin-top: 14px; }
++
++    tr.fx-locked-row td { filter: blur(5px); user-select: none; pointer-events: none; }
++    .fx-upgrade { background: linear-gradient(180deg, rgba(0,255,136,.10), rgba(0,212,255,.06)); border: 1px solid rgba(0,255,136,.35); border-radius: var(--radius); padding: 20px 22px; margin-top: 16px; text-align: center; }
++    .fx-upgrade h4 { margin: 0 0 6px; font-size: 1.02rem; }
++    .fx-upgrade p { margin: 0 0 14px; color: var(--text-2); font-size: 0.9rem; }
++    .fx-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
++    .fx-modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 30px 32px; max-width: 420px; text-align: center; }
++    .fx-modal h3 { margin: 0 0 10px; }
++    .fx-modal p { color: var(--text-2); margin: 0 0 20px; font-size: 0.92rem; line-height: 1.6; }
++    .fx-modal .btn { margin: 4px; }
++
++    @media print {
++      .navbar, .footer, .nav-cta, .nav-tools, .act-btns, .fx-scale-tool, .lock-note, .hero-bg { display: none !important; }
++      body { background: #fff; color: #000; }
++      .fx-panel, .fx-head { border-color: #ccc; background: #fff; box-shadow: none; }
++      a { color: #000; text-decoration: none; }
++    }
++  </style>
++</head>
++<body>
++  <nav class="navbar">
++    <div class="container nav-inner">
++      <a href="./index.html" class="logo">
++        <span class="logo-mark">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
++        </span>
++        Formula <span>AI</span>
++      </a>
++      <ul class="nav-links">
++        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
++        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
++        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
++        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
++        <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
++        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
++      </ul>
++      <div class="nav-tools">
++        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
++          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
++          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
++        </button>
++        <div class="lang-dropdown">
++          <button class="icon-btn lang-trigger" aria-label="Language">
++            <span class="flag">🇸🇦</span><span class="label">AR</span>
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
++          </button>
++          <div class="lang-menu"></div>
++        </div>
++      </div>
++      <div class="nav-cta">
++        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
++        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
++      </div>
++      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
++    </div>
++  </nav>
++
++  <section style="padding: 120px 0 50px; position: relative;">
++    <div class="hero-bg">
++      <div class="hero-orb green" style="top: 0; opacity: 0.25;"></div>
++      <div class="hero-orb purple" style="opacity: 0.25;"></div>
++    </div>
++    <div class="container" style="position: relative; z-index: 2;">
++      <div class="fx-wrap">
++
++        <div id="fx-loading" class="fx-state">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
++          <div data-i18n-ar="جاري تحميل الفورمولا…">Loading the formula…</div>
++        </div>
++
++        <div id="fx-error" class="fx-state" style="display:none;">
++          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
++          <div id="fx-error-msg" data-i18n-ar="تعذّر تحميل الفورمولا. تأكّد من الرابط.">Could not load this formula. Check the link.</div>
++          <a href="./search.html" class="btn btn-primary" style="margin-top:16px;" data-i18n-ar="ابحث عن فورمولا">Browse formulas</a>
++        </div>
++
++        <div id="fx-content" style="display:none;">
++          <!-- Header -->
++          <div class="fx-head">
++            <h1 class="fx-title" id="fx-name">—</h1>
++            <div class="fx-sub" id="fx-name-2"></div>
++            <div class="fx-badges" id="fx-badges"></div>
++          </div>
++
++          <div class="fx-grid">
++            <!-- LEFT: ingredients -->
++            <div>
++              <div class="fx-panel">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v11H3z"/><path d="M8 14h8M8 17h5"/></svg>
++                  <span data-i18n-ar="المكوّنات والنِّسب">Ingredients &amp; percentages</span>
++                </h3>
++                <div style="overflow-x:auto;">
++                  <table class="fx-ing">
++                    <thead><tr>
++                      <th>#</th>
++                      <th data-i18n-ar="المكوّن">Ingredient</th>
++                      <th data-i18n-ar="الوظيفة">Function</th>
++                      <th data-i18n-ar="النسبة">%</th>
++                    </tr></thead>
++                    <tbody id="fx-ing-body"></tbody>
++                  </table>
++                </div>
++                <div class="lock-note" id="fx-lock" style="display:none;" data-i18n-ar="بعض التفاصيل (البنية الجزيئية، التحليل الكامل) متاحة للمشتركين. <a href='./pricing.html' style='color:var(--primary);font-weight:700;'>اعرف المزيد</a>">
++                  Some details (molecular structure, full analysis) are available to subscribers. <a href="./pricing.html" style="color:var(--primary);font-weight:700;">Learn more</a>
++                </div>
++              </div>
++
++              <div class="fx-panel" id="fx-procedure-panel" style="display:none;">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>
++                  <span data-i18n-ar="طريقة التحضير">Procedure</span>
++                </h3>
++                <div id="fx-procedure" style="font-size:0.93rem; line-height:1.7; color:var(--text-2); white-space:pre-wrap;"></div>
++              </div>
++            </div>
++
++            <!-- RIGHT: analysis -->
++            <div>
++              <div class="fx-panel">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg>
++                  <span data-i18n-ar="ملخّص التركيب">Composition</span>
++                </h3>
++                <div class="stat-row">
++                  <div class="stat-box"><div class="l" data-i18n-ar="عدد المكوّنات">Ingredients</div><div class="v" id="fx-st-count">—</div></div>
++                  <div class="stat-box"><div class="l" data-i18n-ar="مجموع %">Total %</div><div class="v" id="fx-st-total">—</div></div>
++                  <div class="stat-box"><div class="l" data-i18n-ar="مُثرى كيميائياً">Chem-enriched</div><div class="v" id="fx-st-chem">—</div></div>
++                  <div class="stat-box"><div class="l" data-i18n-ar="مؤشّر الثقة">Trust</div><div class="v" id="fx-st-trust">—</div></div>
++                </div>
++              </div>
++
++              <div class="fx-panel fx-scale-tool">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
++                  <span data-i18n-ar="حاسبة حجم الدفعة">Batch scaler</span>
++                </h3>
++                <div class="scale-row">
++                  <input id="fx-batch" type="number" min="0.1" step="0.1" value="100" />
++                  <span style="color:var(--text-3);font-size:0.9rem;" data-i18n-ar="كجم → الكميات تُحسب تلقائياً">kg → amounts auto-calc</span>
++                </div>
++                <div id="fx-scale-out" style="font-size:0.88rem;color:var(--text-2);line-height:1.7;"></div>
++              </div>
++
++              <div class="fx-panel">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6z"/></svg>
++                  <span data-i18n-ar="السلامة والامتثال">Safety &amp; compliance</span>
++                </h3>
++                <div id="fx-safety-out" style="font-size:0.9rem;color:var(--text-2);line-height:1.6;">
++                  <button id="fx-safety-btn" class="btn btn-ghost btn-sm" data-i18n-ar="حلّل السلامة">Analyse safety</button>
++                </div>
++              </div>
++
++              <div class="fx-panel">
++                <h3>
++                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
++                  <span data-i18n-ar="إجراءات">Actions</span>
++                </h3>
++                <div class="act-btns">
++                  <button onclick="window.print()" class="btn btn-ghost btn-sm" data-i18n-ar="طباعة / PDF">Print / PDF</button>
++                  <a id="fx-sub-link" href="./substitute.html" class="btn btn-ghost btn-sm" data-i18n-ar="إيجاد بدائل">Find substitutes</a>
++                  <a href="./predict.html" class="btn btn-ghost btn-sm" data-i18n-ar="تنبّؤ خواص">Predict properties</a>
++                </div>
++              </div>
++            </div>
++          </div>
++        </div>
++
++      </div>
++    </div>
++  </section>
++
++  <footer class="footer">
++    <div class="container">
++      <div class="footer-grid">
++        <div class="footer-brand">
++          <a href="./index.html" class="logo">
++            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
++            Formula <span>AI</span>
++          </a>
++          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
++        </div>
++        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
++        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
++        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
++      </div>
++      <div class="footer-bottom">
++        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
++      </div>
++    </div>
++  </footer>
++
++  <script src="./assets/app.js?v=10"></script>
++  <script type="module" src="./assets/auth.js?v=10"></script>
++  <script type="module" src="./assets/supabase-client.js?v=10"></script>
++  <script src="./assets/chem-client.js?v=10"></script>
++  <script>
++  /* formula.html — single-formula presentation page.
++     Reached as formula.html?id=<uuid>  (or ?name=<text> fallback).
++     Pure addition: reads existing formulas table via window.FAI_DB. */
++  (function () {
++    const $ = (id) => document.getElementById(id);
++    const qs = new URLSearchParams(location.search);
++    const fid = qs.get('id');
++    const fname = qs.get('name');
++
++    let FORMULA = null;
++    let IS_PAID = false;
++
++    function upgradeModal() {
++      if (document.getElementById('fx-modal-bg')) return;
++      const bg = document.createElement('div');
++      bg.className = 'fx-modal-bg';
++      bg.id = 'fx-modal-bg';
++      bg.innerHTML = `
++        <div class="fx-modal">
++          <div style="font-size:2.4rem;margin-bottom:8px;">🔒</div>
++          <h3 data-i18n-ar="ميزة للأعضاء فقط">Members-only feature</h3>
++          <p data-i18n-ar="هذه التركيبة الكاملة والأدوات متاحة للمشتركين فقط. اختر خطة لفتح كل شيء.">This full formulation and its tools are available to members only. Choose a plan to unlock everything.</p>
++          <a href="./pricing.html" class="btn btn-primary" data-i18n-ar="افتح الفورمولا الكاملة">Unlock full formula</a>
++          <button class="btn btn-ghost" id="fx-modal-close" data-i18n-ar="لاحقاً">Maybe later</button>
++        </div>`;
++      bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); });
++      document.body.appendChild(bg);
++      const c = document.getElementById('fx-modal-close');
++      if (c) c.addEventListener('click', () => bg.remove());
++      if (window.applyI18n) window.applyI18n();
++    }
++
++    function esc(s) {
++      return String(s ?? '').replace(/[&<>"']/g, (c) => (
++        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
++    }
++    function show(el) { $(el).style.display = ''; }
++    function hide(el) { $(el).style.display = 'none'; }
++    function applyLang() { if (window.applyI18n) window.applyI18n(); }
++
++    function fail(msg) {
++      hide('fx-loading'); hide('fx-content'); show('fx-error');
++      if (msg) $('fx-error-msg').textContent = msg;
++    }
++
++    // supabase-client.js loads as type="module" (deferred) so window.FAI_DB
++    // is NOT set when this classic script first runs. Poll for it (same
++    // pattern as search-live.js) instead of failing instantly.
++    function whenDbReady(fn) {
++      if (window.FAI_DB) return fn();
++      let tries = 0;
++      const t = setInterval(() => {
++        if (window.FAI_DB) { clearInterval(t); fn(); }
++        else if (++tries > 120) {            // ~6s grace, then honest fail
++          clearInterval(t);
++          fail('Data client not available.');
++        }
++      }, 50);
++    }
++
++    async function load() {
++      if (!window.FAI_DB) return fail('Data client not available.');
++      try {
++        let f = null;
++        if (fid) {
++          f = await window.FAI_DB.getById(fid);
++        } else if (fname) {
++          const res = await window.FAI_DB.search(fname, { limit: 1 });
++          f = (res && (res.results || res.data || res))?.[0] || null;
++        } else {
++          return fail('No formula specified. Open a formula from search.');
++        }
++        if (!f || f.error || (!f.id && !f.name && !f.name_en)) return fail();
++        FORMULA = f;
++        try {
++          const profile = await window.FAI_DB.getProfile();
++          IS_PAID = !!(profile && (
++            profile.subscription_status === 'active' ||
++            (profile.plan && profile.plan !== 'free') ||
++            profile.subscription_plan_id
++          ));
++        } catch (_) { IS_PAID = false; }
++        render(f);
++      } catch (e) {
++        fail((e && e.message) || 'Load error.');
++      }
++    }
++
++    function comps(f) {
++      const c = f.components || f.ingredients || [];
++      return Array.isArray(c) ? c : [];
++    }
++
++    function render(f) {
++      const name = f.name_en || f.name || 'Untitled formula';
++      const name2 = (f.name && f.name !== name) ? f.name : '';
++      $('fx-name').textContent = name;
++      $('fx-name-2').textContent = name2;
++      document.title = name + ' — Formula AI Global';
++
++      // Badges
++      const cs = comps(f);
++      const enriched = cs.filter((x) => x && x.chem && x.chem.smiles).length;
++      const badges = [];
++      if (f.category) badges.push(`<span class="fx-badge">${esc(f.category)}</span>`);
++      if (f.form_type) badges.push(`<span class="fx-badge">${esc(f.form_type)}</span>`);
++      if (f.country) badges.push(`<span class="fx-badge">${esc(f.country)}</span>`);
++      if (enriched > 0) badges.push(`<span class="fx-badge ok">${enriched}/${cs.length} chem-enriched</span>`);
++      if (f.trust_score != null) {
++        const t = Number(f.trust_score);
++        badges.push(`<span class="fx-badge ${t >= 70 ? 'ok' : 'warn'}">trust ${t}</span>`);
++      }
++      $('fx-badges').innerHTML = badges.join('');
++
++      // Ingredients table
++      const tot = cs.reduce((s, x) => s + (parseFloat(x.percentage) || 0), 0);
++      const maxPct = Math.max(1, ...cs.map((x) => parseFloat(x.percentage) || 0));
++      $('fx-ing-body').innerHTML = cs.map((x, i) => {
++        const nm = esc(x.name_en || x.name || '?');
++        const ar = (x.name && x.name !== (x.name_en || x.name)) ? `<div style="font-size:0.78rem;color:var(--text-3);">${esc(x.name)}</div>` : '';
++        const pct = parseFloat(x.percentage);
++        const ch = x.chem || {};
++        const chips = [];
++        if (ch.molecular_weight) chips.push(`<span class="chem-chip">MW ${Number(ch.molecular_weight).toFixed(1)}</span>`);
++        if (ch.logp != null) chips.push(`<span class="chem-chip">logP ${Number(ch.logp).toFixed(2)}</span>`);
++        if (x.cas_number) chips.push(`<span class="chem-chip">CAS ${esc(x.cas_number)}</span>`);
++        const locked = !IS_PAID && i >= 3;
++        return `<tr${locked ? ' class="fx-locked-row"' : ''}>
++          <td style="color:var(--text-3);">${i + 1}</td>
++          <td><strong>${nm}</strong>${ar}<div>${chips.join('')}</div></td>
++          <td><span class="fn-tag">${esc(x.function || '—')}</span></td>
++          <td class="pct-cell">${isNaN(pct) ? '—' : pct + '%'}
++            ${isNaN(pct) ? '' : `<div class="pct-bar"><div style="width:${Math.min(100, pct / maxPct * 100)}%"></div></div>`}</td>
++        </tr>`;
++      }).join('') || `<tr><td colspan="4" style="color:var(--text-3);padding:20px;text-align:center;" data-i18n-ar="لا توجد مكوّنات مُسجَّلة لهذه الفورمولا.">No components recorded for this formula.</td></tr>`;
++
++      const lockNote = $('fx-lock');
++      if (!IS_PAID && cs.length > 0) {
++        lockNote.innerHTML = 'This is a members-only formula. ' + (cs.length > 3 ? (cs.length - 3) + ' of ' + cs.length + ' ingredients, the full procedure, batch scaler and safety analysis are locked. ' : 'The full procedure, batch scaler and safety analysis are locked. ') +
++          '<a href="./pricing.html" style="color:var(--primary);font-weight:700;">Unlock full formula</a>';
++        lockNote.setAttribute('data-i18n-ar', 'هذه فورمولا للأعضاء فقط. ' + (cs.length > 3 ? (cs.length - 3) + ' من ' + cs.length + ' مكوّن، وطريقة التحضير الكاملة، وحاسبة الدفعة، وتحليل السلامة مقفلة. ' : 'طريقة التحضير الكاملة، وحاسبة الدفعة، وتحليل السلامة مقفلة. ') + "<a href='./pricing.html' style='color:var(--primary);font-weight:700;'>افتح الفورمولا الكاملة</a>");
++        show('fx-lock');
++      } else if (enriched === 0 && cs.length > 0) {
++        show('fx-lock');
++      }
++
++      // Procedure
++      const proc = f.procedure || f.instructions || f.method;
++      if (proc && IS_PAID) { $('fx-procedure').textContent = proc; show('fx-procedure-panel'); }
++
++      // Stats
++      $('fx-st-count').textContent = cs.length;
++      $('fx-st-total').textContent = tot ? tot.toFixed(1) + '%' : '—';
++      $('fx-st-chem').textContent = cs.length ? `${enriched}/${cs.length}` : '—';
++      $('fx-st-trust').textContent = f.trust_score != null ? f.trust_score : '—';
++
++      // Substitute deep-link (first ingredient name prefilled)
++      if (cs[0] && (cs[0].name_en || cs[0].name)) {
++        $('fx-sub-link').href = './substitute.html?ingredient=' +
++          encodeURIComponent(cs[0].name_en || cs[0].name);
++      }
++
++      scale();
++      hide('fx-loading'); show('fx-content');
++      applyLang();
++    }
++
++    // Batch scaler — pure client-side, instant value, no backend needed.
++    function scale() {
++      if (!FORMULA) return;
++      if (!IS_PAID) {
++        $('fx-batch').disabled = true;
++        $('fx-scale-out').innerHTML = '<div class="fx-upgrade"><h4 data-i18n-ar="حاسبة الدفعة للأعضاء">Batch scaler is members-only</h4><p data-i18n-ar="افتح حساب كميات الدفعة الفوري مع العضوية.">Unlock instant batch-amount calculation with a membership.</p><a href="./pricing.html" class="btn btn-primary btn-sm" data-i18n-ar="افتح الفورمولا الكاملة">Unlock full formula</a></div>';
++        if (window.applyI18n) window.applyI18n();
++        return;
++      }
++      const kg = parseFloat($('fx-batch').value) || 0;
++      const cs = comps(FORMULA);
++      const rows = cs
++        .filter((x) => !isNaN(parseFloat(x.percentage)))
++        .map((x) => {
++          const amt = (parseFloat(x.percentage) / 100) * kg;
++          return `<div>• ${esc(x.name_en || x.name)}: <strong>${amt.toFixed(3)} kg</strong></div>`;
++        });
++      $('fx-scale-out').innerHTML = rows.length
++        ? rows.join('')
++        : '<span style="color:var(--text-3)" data-i18n-ar="لا نِسب مئوية متاحة للحساب.">No percentages available to scale.</span>';
++    }
++    $('fx-batch').addEventListener('input', scale);
++
++    // Safety analysis via existing endpoint
++    $('fx-safety-btn') && $('fx-safety-btn').addEventListener('click', async function () {
++      if (!IS_PAID) { upgradeModal(); return; }
++      const out = $('fx-safety-out');
++      out.innerHTML = '<span style="color:var(--text-3)" data-i18n-ar="جاري التحليل…">Analysing…</span>';
++      applyLang();
++      try {
++        const r = await window.FAI_DB.getSafety(FORMULA);
++        const txt = (r && (r.analysis || r.summary || r.result || r.text)) ||
++          (typeof r === 'string' ? r : JSON.stringify(r).slice(0, 800));
++        out.innerHTML = `<div style="white-space:pre-wrap;">${esc(txt)}</div>`;
++      } catch (e) {
++        out.innerHTML = `<span style="color:#ff7a7a;">${esc((e && e.message) || 'Safety analysis unavailable.')}</span>`;
++      }
++    });
++
++    whenDbReady(load);
++  })();
++  </script>
++</body>
++</html>
+diff --git a/formulas.html b/formulas.html
+index 8e6ae0d..d4e32b4 100644
+--- a/formulas.html
++++ b/formulas.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -24,6 +24,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -80,9 +81,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/formula-detail-live.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/formula-detail-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/index.html b/index.html
+index 1d1dbf0..719626a 100644
+--- a/index.html
++++ b/index.html
+@@ -29,7 +29,101 @@
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+ 
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++
++  <!-- ── Homepage hero polish ─────────────────────────────────────────
++       Scoped to index.html only (inline <style> never leaks to other
++       pages). Does NOT touch styles.css or any other page. Only
++       enhances visuals (size/gradient/glass/shadow) — never opacity or
++       transform, so the .reveal entrance animation keeps working. ── -->
++  <style>
++    /* Clear the fixed solid navbar (~64px) so the eyebrow/h1 never sit
++       under it. Generous top padding = premium, breathing hero. */
++    .hero { position: relative; min-height: 100vh; display: flex;
++            align-items: center; padding: 130px 0 60px; }
++    .hero-content { text-align: center; width: 100%; }
++
++    .hero .eyebrow {
++      display: inline-flex; align-items: center; gap: 8px;
++      padding: 7px 16px; border-radius: 999px;
++      background: color-mix(in srgb, var(--primary) 12%, transparent);
++      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
++      color: var(--primary); font-weight: 700; font-size: 0.82rem;
++      letter-spacing: .3px; backdrop-filter: blur(6px);
++      box-shadow: 0 0 24px color-mix(in srgb, var(--primary) 22%, transparent);
++    }
++
++    .hero h1 {
++      font-size: clamp(2.6rem, 6vw, 4.6rem);
++      line-height: 1.06; font-weight: 900; letter-spacing: -1.5px;
++      margin: 22px auto 18px; max-width: 16ch;
++    }
++    .hero h1 .gradient-text {
++      background: linear-gradient(110deg,
++        var(--primary) 0%, #34e0ff 45%, #a86bff 100%);
++      -webkit-background-clip: text; background-clip: text;
++      -webkit-text-fill-color: transparent;
++      background-size: 220% auto; animation: heroGrad 7s ease infinite;
++    }
++    @keyframes heroGrad { 0%,100%{background-position:0% 50%}
++                          50%{background-position:100% 50%} }
++
++    .hero .hero-sub {
++      max-width: 60ch; margin: 0 auto; font-size: clamp(1rem,1.6vw,1.18rem);
++      line-height: 1.7; color: var(--text-2);
++    }
++
++    .hero .hero-cta { margin-top: 34px; gap: 14px; }
++    .hero .hero-cta .btn-lg { padding: 15px 30px; font-size: 1.02rem;
++      font-weight: 800; border-radius: 14px; }
++    .hero .hero-cta .btn-primary {
++      box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 38%, transparent);
++      transition: transform .18s ease, box-shadow .18s ease;
++    }
++    .hero .hero-cta .btn-primary:hover {
++      transform: translateY(-2px);
++      box-shadow: 0 16px 44px color-mix(in srgb, var(--primary) 52%, transparent);
++    }
++
++    /* Stats → premium glass metric cards */
++    .hero .stats {
++      margin-top: 56px; display: grid; gap: 16px;
++      grid-template-columns: repeat(4, minmax(0, 1fr));
++      max-width: 920px; margin-inline: auto;
++    }
++    @media (max-width: 760px) {
++      .hero .stats { grid-template-columns: repeat(2, 1fr); }
++    }
++    .hero .stat {
++      background: color-mix(in srgb, var(--bg-2) 70%, transparent);
++      border: 1px solid var(--border); border-radius: 18px;
++      padding: 22px 16px; backdrop-filter: blur(10px);
++      transition: transform .2s ease, border-color .2s ease,
++                  box-shadow .2s ease;
++    }
++    .hero .stat:hover {
++      transform: translateY(-4px);
++      border-color: color-mix(in srgb, var(--primary) 55%, transparent);
++      box-shadow: 0 18px 40px rgba(0,0,0,.22);
++    }
++    .hero .stat-value {
++      font-size: clamp(1.9rem, 3.4vw, 2.7rem); font-weight: 900;
++      line-height: 1; background: linear-gradient(120deg,
++        var(--text-1), color-mix(in srgb, var(--primary) 80%, var(--text-1)));
++      -webkit-background-clip: text; background-clip: text;
++      -webkit-text-fill-color: transparent;
++    }
++    .hero .stat-label {
++      margin-top: 8px; font-size: 0.82rem; color: var(--text-3);
++      font-weight: 600; letter-spacing: .2px;
++    }
++
++    /* Brighter, larger ambient orbs for a premium depth feel */
++    .hero .hero-orb { filter: blur(70px); opacity: .55; }
++    .hero .hero-orb.green  { width: 460px; height: 460px; }
++    .hero .hero-orb.blue   { width: 420px; height: 420px; }
++    .hero .hero-orb.purple { width: 480px; height: 480px; }
++  </style>
+ </head>
+ <body>
+   <!-- Navigation -->
+@@ -44,6 +138,7 @@
+ 
+       <ul class="nav-links">
+         <li><a href="./index.html" class="active" data-i18n-ar="الرئيسية">Home</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./safety.html" data-i18n-ar="السلامة">Safety</a></li>
+@@ -120,20 +215,20 @@
+       <!-- Stats -->
+       <div class="stats reveal delay-3">
+         <div class="stat">
+-          <div class="stat-value"><span data-counter="3400" data-suffix="+">0</span></div>
+-          <div class="stat-label" data-i18n-ar="فورمولا موثّقة، تنمو يومياً">Verified formulas · growing daily</div>
++          <div class="stat-value"><span data-counter="3381">0</span></div>
++          <div class="stat-label" data-i18n-ar="فورمولا في المكتبة">Formulas in the library</div>
+         </div>
+         <div class="stat">
+-          <div class="stat-value"><span data-counter="40" data-suffix="+">0</span></div>
+-          <div class="stat-label" data-i18n-ar="صناعة كيميائية">Chemical industries</div>
++          <div class="stat-value"><span data-counter="132">0</span></div>
++          <div class="stat-label" data-i18n-ar="فورمولا مُثبَتة من الإنتاج">Owner-verified formulas</div>
+         </div>
+         <div class="stat">
+-          <div class="stat-value"><span data-counter="195">0</span></div>
+-          <div class="stat-label" data-i18n-ar="دولة مغطاة">Countries covered</div>
++          <div class="stat-value"><span data-counter="900" data-suffix="+">0</span></div>
++          <div class="stat-label" data-i18n-ar="مُثرَاة كيميائياً (RDKit + PubChem)">Chemistry-enriched</div>
+         </div>
+         <div class="stat">
+-          <div class="stat-value"><span data-counter="12" data-suffix="">0</span></div>
+-          <div class="stat-label" data-i18n-ar="لغات مدعومة">Languages supported</div>
++          <div class="stat-value"><span data-counter="20">0</span></div>
++          <div class="stat-label" data-i18n-ar="لغة مدعومة">Languages supported</div>
+         </div>
+       </div>
+     </div>
+@@ -299,45 +394,45 @@
+     </div>
+   </section>
+ 
+-  <!-- Open Encyclopedia teaser -->
++  <!-- Members-only library teaser -->
+   <section class="section">
+     <div class="container">
+       <div class="section-header reveal">
+-        <span class="eyebrow" data-i18n-ar="هدية للعالم">A gift to the world</span>
+-        <h2 data-i18n-ar='موسوعة كيميائية <span class="gradient-text">مفتوحة ومجانية</span> للعالم'>An open and free <span class="gradient-text">chemical encyclopedia</span> for the world</h2>
+-        <p data-i18n-ar="موسوعة Formula AI المفتوحة - كل فورمولا تحت ترخيص Creative Commons - استخدمها، عدّلها، شاركها. تنمو يومياً.">The Formula AI Open Encyclopedia — every formula under Creative Commons. Use it, modify it, share it. Growing daily.</p>
++        <span class="eyebrow" data-i18n-ar="مكتبة للأعضاء فقط">Members-only library</span>
++        <h2 data-i18n-ar='تركيبات موثّقة <span class="gradient-text">حصرية</span> — للأعضاء فقط'>Exclusive verified <span class="gradient-text">formulations</span> — members only</h2>
++        <p data-i18n-ar="3,381 فورمولا موثّقة من المالك، تنمو باستمرار. استعرض الفهرس مجاناً، وافتح التركيبات الكاملة بعضوية.">3,381 owner-verified formulas, growing continuously. Browse the catalog free — unlock full formulations with a membership.</p>
+       </div>
+ 
+       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto 32px;">
+         <div class="card reveal" style="text-align: center;">
+-          <div style="font-size: 2.4rem; margin-bottom: 10px;">📜</div>
+-          <strong data-i18n-ar="ترخيص CC-BY-SA-4.0">CC-BY-SA-4.0 license</strong>
+-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="استخدام تجاري مسموح">Commercial use allowed</p>
++          <div style="font-size: 2.4rem; margin-bottom: 10px;">🔒</div>
++          <strong data-i18n-ar="حصري وخاص">Exclusive & proprietary</strong>
++          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="غير منشورة في أي مكان آخر">Not published anywhere else</p>
+         </div>
+         <div class="card reveal delay-1" style="text-align: center;">
+-          <div style="font-size: 2.4rem; margin-bottom: 10px;">🎓</div>
+-          <strong data-i18n-ar="مجاني للجامعات">Free for universities</strong>
+-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="500 جامعة مستهدفة">500 universities target</p>
++          <div style="font-size: 2.4rem; margin-bottom: 10px;">✅</div>
++          <strong data-i18n-ar="موثّقة من المالك">Owner-verified</strong>
++          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="132 موثّقة من خبير 25+ سنة">132 verified by a 25+ yr chemist</p>
+         </div>
+         <div class="card reveal delay-2" style="text-align: center;">
+-          <div style="font-size: 2.4rem; margin-bottom: 10px;">🏆</div>
+-          <strong data-i18n-ar="جائزة $10,000 سنوياً">$10,000 yearly award</strong>
+-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="لأفضل فورمولا خضراء">For greenest formula</p>
++          <div style="font-size: 2.4rem; margin-bottom: 10px;">📈</div>
++          <strong data-i18n-ar="تنمو باستمرار">Always growing</strong>
++          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="3,381 فورمولا عبر 40 صناعة">3,381 formulas across 40 industries</p>
+         </div>
+         <div class="card reveal delay-3" style="text-align: center;">
+           <div style="font-size: 2.4rem; margin-bottom: 10px;">🛡️</div>
+-          <strong data-i18n-ar="شهادات Gold Standard">Gold Standard certificates</strong>
+-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="ختم رقمي موثوق">Verifiable digital seal</p>
++          <strong data-i18n-ar="درجة ثقة 90%+">Trust score 90%+</strong>
++          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="تحقق من 7 مراحل">7-stage validation</p>
+         </div>
+       </div>
+ 
+       <div style="text-align: center; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+         <a href="./encyclopedia.html" class="btn btn-primary btn-lg">
+-          <span data-i18n-ar="استعرض الموسوعة">Browse encyclopedia</span>
++          <span data-i18n-ar="استعرض المكتبة">Browse library</span>
+           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+         </a>
+-        <a href="./programs.html" class="btn btn-outline btn-lg">
+-          <span data-i18n-ar="اكتشف البرامج">Discover programs</span>
++        <a href="./pricing.html" class="btn btn-outline btn-lg">
++          <span data-i18n-ar="خطط العضوية">Membership plans</span>
+         </a>
+       </div>
+     </div>
+@@ -678,7 +773,7 @@
+         <div class="footer-col">
+           <h4 data-i18n-ar="الموارد">Resources</h4>
+           <ul>
+-            <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Open Encyclopedia</a></li>
++            <li><a href="./encyclopedia.html" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
+             <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
+             <li><a href="./docs.html" data-i18n-ar="التوثيق">Documentation</a></li>
+             <li><a href="./docs.html#sdk" data-i18n-ar="واجهة API">API reference</a></li>
+@@ -699,6 +794,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/industries.html b/industries.html
+index 3f61053..c62c158 100644
+--- a/industries.html
++++ b/industries.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .ind-category { margin-bottom: 50px; }
+     .ind-cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+@@ -39,6 +39,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+@@ -275,7 +276,7 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     document.querySelectorAll('.filter-btn').forEach(btn => {
+       btn.addEventListener('click', () => {
+diff --git a/lab.html b/lab.html
+index 74bd743..73d2d12 100644
+--- a/lab.html
++++ b/lab.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .lab-grid {
+       display: grid;
+@@ -253,6 +253,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
+         <li><a href="./lab.html" class="active" data-i18n-ar="المختبر الافتراضي">Virtual Lab</a></li>
+         <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+@@ -459,7 +460,7 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     // Ingredient catalog (mirrors VirtualLaboratory.properties keys)
+     const CATALOG = [
+diff --git a/learn.html b/learn.html
+index 78be8a7..4949b99 100644
+--- a/learn.html
++++ b/learn.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .learn-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
+     .drop-zone {
+@@ -141,6 +141,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" class="active" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -238,9 +239,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+   <script>
+     if (window['pdfjsLib']) {
+@@ -248,6 +249,6 @@
+         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+     }
+   </script>
+-  <script src="./assets/learn-live.js"></script>
++  <script src="./assets/learn-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/library.html b/library.html
+index b3640bf..c9038a6 100644
+--- a/library.html
++++ b/library.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .lib-shell { max-width: 1200px; margin: 0 auto; padding: 100px 16px 40px; }
+     .lib-tabs {
+@@ -182,6 +182,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./library.html" class="active" data-i18n-ar="مكتبتي">My Library</a></li>
+@@ -310,9 +311,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/library-live.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/library-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/login.html b/login.html
+index 86f54a3..ab3735b 100644
+--- a/login.html
++++ b/login.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -23,6 +23,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -110,8 +111,8 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
+   <script type="module">
+     import "./assets/auth.js";
+ 
+diff --git a/predict.html b/predict.html
+index 9b5ffa1..687f0fe 100644
+--- a/predict.html
++++ b/predict.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .pred-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+     @media (max-width: 880px) { .pred-grid { grid-template-columns: 1fr; } }
+@@ -58,6 +58,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./predict.html" class="active" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -173,10 +174,10 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chem-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chem-client.js?v=9"></script>
+   <script>
+   /* predict.html — single-compound property calculator */
+   (function () {
+diff --git a/pricing.html b/pricing.html
+index f08cc36..af085ee 100644
+--- a/pricing.html
++++ b/pricing.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -24,6 +24,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -93,10 +94,9 @@
+           </div>
+           <div class="plan-period" data-i18n-ar="إلى الأبد · مجاناً">Free forever</div>
+           <ul class="plan-features">
+-            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>10 فورمولات شهرياً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>10 formulas/month</li>
++            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصفّح المكتبة الكاملة + بحث ذكي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Browse full library + AI search</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>ذاكرة دردشة أبدية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Persistent chat memory</li>
+-            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل فورمولا مع مصدرها'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Every formula with its source</li>
+-            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصدير PDF'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>PDF export</li>
++            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>معاينة الفورمولا (أول 3 مكوّنات)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Formula preview (first 3 ingredients)</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 صناعات · 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 industries · 20 languages</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم عبر البريد الإلكتروني'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Email support</li>
+           </ul>
+@@ -114,7 +114,7 @@
+           <ul class="plan-features">
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 فورمولا شهرياً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 formulas/month</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>ذاكرة دردشة أبدية + بدون إعلانات'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Persistent chat memory + ad-free</li>
+-            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل فورمولا مع مصدرها (CAS + كتاب/براءة)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Every formula with source (CAS + book/patent)</li>
++            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>التركيبة الكاملة + أرقام CAS'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full formulations + CAS numbers</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>بحث متقدم بالذكاء الاصطناعي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Advanced AI search</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصدير Excel + PDF + MSDS'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Excel + PDF + MSDS export</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تحليل تعارضات + محاكاة افتراضية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Conflict analysis + virtual simulation</li>
+@@ -163,7 +163,7 @@
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001</li>
+             <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم بـ 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Support in 20 languages</li>
+           </ul>
+-          <a href="#" class="btn btn-outline btn-block btn-lg" data-i18n-ar="تواصل مع المبيعات">Contact sales</a>
++          <button class="btn btn-outline btn-block btn-lg" data-checkout="enterprise" data-i18n-ar="اشترك الآن">Subscribe</button>
+         </div>
+       </div>
+     </div>
+@@ -191,7 +191,7 @@
+           <tbody>
+             <tr>
+               <td style="padding: 16px;" data-i18n-ar="عدد الفورمولات شهرياً">Formulas per month</td>
+-              <td style="text-align: center;">10</td>
++              <td style="text-align: center;" data-i18n-ar="معاينة">Preview</td>
+               <td style="text-align: center; color: var(--primary); font-weight: 700;">100</td>
+               <td style="text-align: center;">∞</td>
+               <td style="text-align: center;">∞</td>
+@@ -327,9 +327,9 @@
+   <section class="container" style="padding-bottom: 60px;">
+     <div class="cta-banner reveal">
+       <h2 data-i18n-ar="جاهز لتجربة قوة Formula AI؟">Ready to experience the power of Formula AI?</h2>
+-      <p data-i18n-ar="10 فورمولات مجانية شهرياً - بدون بطاقة ائتمان">10 free formulas per month — no credit card required</p>
+-      <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;" data-i18n-ar='ابدأ التجربة المجانية <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
+-        Start free trial
++      <p data-i18n-ar="تصفّح المكتبة مجاناً - بدون بطاقة ائتمان">Browse the library free — no credit card required</p>
++      <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;" data-i18n-ar='أنشئ حساباً مجانياً <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
++        Create free account
+         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+       </a>
+     </div>
+@@ -357,9 +357,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
+   <script>
+     // Wire pricing buttons to Stripe checkout (via the AI Worker)
+     (function () {
+diff --git a/privacy.html b/privacy.html
+index be41446..fa367fe 100644
+--- a/privacy.html
++++ b/privacy.html
+@@ -10,7 +10,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
+     .legal-shell h1 { margin-bottom: 8px; }
+@@ -32,6 +32,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -132,6 +133,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/programs.html b/programs.html
+index 35b6fd0..bcd7df1 100644
+--- a/programs.html
++++ b/programs.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .program-hero {
+       background: linear-gradient(135deg, var(--bg-card), transparent);
+@@ -77,6 +77,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
+         <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+         <li><a href="./programs.html" class="active" data-i18n-ar="البرامج">Programs</a></li>
+@@ -372,6 +373,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/register.html b/register.html
+index f7fa6b6..24b54ca 100644
+--- a/register.html
++++ b/register.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -23,6 +23,7 @@
+       <ul class="nav-links">
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -118,7 +119,7 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script type="module">
+     import "./assets/auth.js";
+ 
+diff --git a/safety.html b/safety.html
+index 8cff19e..b12456d 100644
+--- a/safety.html
++++ b/safety.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
+     .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
+@@ -138,8 +138,9 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./safety.html" class="active" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
+-        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
++        <li><a href="./encyclopedia.html" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
+         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+         <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+@@ -333,7 +334,7 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js"></script>
++  <script src="./assets/app.js?v=9"></script>
+   <script>
+     const SCENARIOS = {
+       deadly: {
+diff --git a/scan.html b/scan.html
+index 434836b..1beb449 100644
+--- a/scan.html
++++ b/scan.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .scan-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+     @media (max-width: 880px) { .scan-grid { grid-template-columns: 1fr; } }
+@@ -56,6 +56,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" class="active" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -184,10 +185,10 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chem-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chem-client.js?v=9"></script>
+   <script>
+   /* scan.html — vision page logic */
+   (function () {
+diff --git a/search.html b/search.html
+index b1a46b3..8b84146 100644
+--- a/search.html
++++ b/search.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+ </head>
+ <body>
+   <nav class="navbar">
+@@ -26,6 +26,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" class="active" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+@@ -179,9 +180,9 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/search-live.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/search-live.js?v=9"></script>
+ </body>
+ </html>
+diff --git a/similarity.html b/similarity.html
+index 4d09802..7c02f8f 100644
+--- a/similarity.html
++++ b/similarity.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .sim-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+     @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
+@@ -62,6 +62,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./similarity.html" class="active" data-i18n-ar="تشابه جزيئي">Similarity</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -194,10 +195,10 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chem-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chem-client.js?v=9"></script>
+   <script>
+   /* similarity.html — page logic */
+   (function () {
+diff --git a/substitute.html b/substitute.html
+index 9804d21..0505a32 100644
+--- a/substitute.html
++++ b/substitute.html
+@@ -11,7 +11,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .sub-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
+     @media (max-width: 880px) { .sub-grid { grid-template-columns: 1fr; } }
+@@ -48,6 +48,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" class="active" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -183,10 +184,10 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
+-  <script type="module" src="./assets/auth.js"></script>
+-  <script type="module" src="./assets/supabase-client.js"></script>
+-  <script src="./assets/chem-client.js"></script>
++  <script src="./assets/app.js?v=9"></script>
++  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/chem-client.js?v=9"></script>
+   <script>
+   /* substitute.html — page logic */
+   (function () {
+diff --git a/sw.js b/sw.js
+index 733200f..f401a5e 100644
+--- a/sw.js
++++ b/sw.js
+@@ -1,93 +1,46 @@
+-// Formula AI Global - Service Worker
+-// CACHE bumped from v3 → v4 so old caches are evicted on activate.
+-const CACHE = 'formula-ai-v4';
+-const ASSETS = [
+-  './',
+-  './index.html',
+-  './search.html',
+-  './pricing.html',
+-  './dashboard.html',
+-  './formulas.html',
+-  './compliance.html',
+-  './about.html',
+-  './login.html',
+-  './register.html',
+-  './learn.html',
+-  './chat.html',
+-  './discover.html',
+-  './library.html',
+-  './industries.html',
+-  './docs.html',
+-  './contact.html',
+-  './safety.html',
+-  './lab.html',
+-  './encyclopedia.html',
+-  './programs.html',
+-  './privacy.html',
+-  './terms.html',
+-  './assets/styles.css',
+-  './assets/app.js?v=3',
+-  './manifest.json'
+-];
+-
+-self.addEventListener('install', (event) => {
+-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS).catch(() => null)));
++// Formula AI Global — Service Worker KILL-SWITCH
++// ---------------------------------------------------------------------------
++// The previous caching service worker was the root cause of multiple
++// launch-blocking bugs: stale homepage, fixes never reaching users, and
++// formula.html being served as index.html from cache. For a mostly-static
++// multi-page site that does NOT need offline support pre-launch, the SW
++// caused far more harm than benefit.
++//
++// This file is a standard self-destroying kill-switch: when any browser
++// fetches the updated sw.js, this version installs, then on activate it
++// deletes ALL caches, unregisters itself, and reloads open pages. After
++// that the site behaves as a normal reliable static site — the server is
++// the single source of truth and deploys reach users immediately (further
++// helped by the ?v=8 asset versioning on every page).
++//
++// IMPORTANT: there is intentionally NO 'fetch' handler — the SW must not
++// intercept or cache anything.
++// ---------------------------------------------------------------------------
++
++self.addEventListener('install', () => {
+   self.skipWaiting();
+ });
+ 
+ self.addEventListener('activate', (event) => {
+   event.waitUntil((async () => {
+-    // Wipe stale caches
+-    const keys = await caches.keys();
+-    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+-
+-    // Take over any open pages immediately
+-    await self.clients.claim();
+-
+-    // Force-reload every open page so the new SW + fresh JS take effect
+-    const clients = await self.clients.matchAll({ includeUncontrolled: true, type: 'window' });
+-    for (const client of clients) {
+-      try {
+-        await client.navigate(client.url);
+-      } catch (_) {
+-        client.postMessage({ type: 'fai-force-reload' });
+-      }
+-    }
++    try {
++      const keys = await caches.keys();
++      await Promise.all(keys.map((k) => caches.delete(k)));
++    } catch (_) { /* ignore */ }
++
++    try {
++      await self.clients.claim();
++    } catch (_) { /* ignore */ }
++
++    // Remove this service worker entirely. We deliberately DO NOT call
++    // client.navigate() here: pages may re-register the SW on load, and
++    // navigate()→reload→register→activate→navigate is an infinite
++    // ~1s reload loop ("the screen keeps moving every second"). Just
++    // unregister silently; the next normal navigation is SW-free.
++    try {
++      await self.registration.unregister();
++    } catch (_) { /* ignore */ }
+   })());
+ });
+ 
+-// Fallback: if a page can't be navigated by the SW, it can listen for the
+-// message and reload itself.
+-self.addEventListener('message', (event) => {
+-  if (event.data && event.data.type === 'fai-skip-waiting') self.skipWaiting();
+-});
+-
+-// Network-first for JS / CSS / HTML so users always see the latest UI logic.
+-// Fall back to cache only when offline. Other assets (images/fonts) stay
+-// cache-first for performance.
+-self.addEventListener('fetch', (event) => {
+-  if (event.request.method !== 'GET') return;
+-
+-  const url = event.request.url;
+-  const isCriticalAsset = /\.(js|css|html)(\?|$)/i.test(url) || url.endsWith('/');
+-
+-  if (isCriticalAsset) {
+-    // Network-first
+-    event.respondWith(
+-      fetch(event.request).then(res => {
+-        const copy = res.clone();
+-        caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(() => null);
+-        return res;
+-      }).catch(() => caches.match(event.request).then(r => r || caches.match('./index.html')))
+-    );
+-  } else {
+-    // Cache-first for static media
+-    event.respondWith(
+-      caches.match(event.request).then(response => response || fetch(event.request).then(res => {
+-        const copy = res.clone();
+-        caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(() => null);
+-        return res;
+-      }).catch(() => caches.match('./index.html')))
+-    );
+-  }
+-});
++// No fetch listener on purpose: requests go straight to the network.
+diff --git a/terms.html b/terms.html
+index a95b687..7ea5aa2 100644
+--- a/terms.html
++++ b/terms.html
+@@ -10,7 +10,7 @@
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+-  <link rel="stylesheet" href="./assets/styles.css" />
++  <link rel="stylesheet" href="./assets/styles.css?v=9" />
+   <style>
+     .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
+     .legal-shell h1 { margin-bottom: 8px; }
+@@ -32,6 +32,7 @@
+         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
++        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+@@ -129,6 +130,6 @@
+     </div>
+   </footer>
+ 
+-  <script src="./assets/app.js?v=3"></script>
++  <script src="./assets/app.js?v=9"></script>
+ </body>
+ </html>
