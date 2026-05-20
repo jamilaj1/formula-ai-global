@@ -1,5 +1,6 @@
-# Working-tree code snapshot — 2026-05-19 (refreshed: incl. analyzeSafety fix + chat markdown renderer)
-# Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/.
+# Working-tree code snapshot — 2026-05-19 (final: chat md + clickable choices + mobile search bidi + Worker search relevance)
+# Scope: *.html + assets/*.js + sw.js + worker-src/handlers/search.js (CODE ONLY).
+# EXCLUDED: *.md, backend/, worker.js build artifact.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
 diff --git a/about.html b/about.html
@@ -110,7 +111,7 @@ index 6fb872a..f2c5f0c 100644
  
  // Year for footer
 diff --git a/assets/chat-live.js b/assets/chat-live.js
-index 65fd9c7..6d28209 100644
+index 65fd9c7..c878c13 100644
 Binary files a/assets/chat-live.js and b/assets/chat-live.js differ
 diff --git a/assets/chem-client.js b/assets/chem-client.js
 index 5eba21c..47f68a2 100644
@@ -294,7 +295,7 @@ index f49951b..3723f12 100644
                <h2 style="font-size:1.3rem; margin-bottom:14px;">📊 ${T("Properties", "الخصائص")}</h2>
                <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
 diff --git a/assets/search-live.js b/assets/search-live.js
-index 70714c1..6526970 100644
+index 70714c1..179f5a4 100644
 --- a/assets/search-live.js
 +++ b/assets/search-live.js
 @@ -3,7 +3,7 @@
@@ -306,7 +307,56 @@ index 70714c1..6526970 100644
     Loaded from search.html with: <script src="./assets/search-live.js"></script>
     Depends on FAI_DB (assets/supabase-client.js).
     ────────────────────────────────────────────────────────────────────────── */
-@@ -110,7 +110,7 @@
+@@ -49,25 +49,31 @@
+       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+ 
+     function renderRow(f) {
+-      const compCount = Array.isArray(f.components) ? f.components.length : 0;
+-      const top = (Array.isArray(f.components) ? f.components.slice(0, 3) : [])
+-        .map(c => `<span style="color:var(--text-2);font-size:0.85rem;">${escape(c.name_en||"")}<span style="color:var(--text-3);"> ${(c.percentage??0).toFixed(1)}%</span></span>`)
+-        .join('<span style="color:var(--text-3);margin:0 8px;">·</span>');
++      const comps = Array.isArray(f.components) ? f.components : [];
++      const compCount = comps.length;
++      // Each ingredient is an LTR bidi-isolated chip so the English name +
++      // numeric % never scramble when the page is in Arabic RTL mode.
++      const top = comps.slice(0, 4).map(c => {
++        const n = escape(c.name_en || c.name || "—");
++        const pv = Number(c.percentage);
++        const p = (c.percentage != null && !isNaN(pv))
++          ? `<span class="p">${pv.toFixed(1)}%</span>` : "";
++        return `<span class="fx-res-ing">${n}${p}</span>`;
++      }).join("");
+       const cat = escape(f.category || "specialty");
+-      const form = f.form_type ? `<span style="color:var(--text-3);font-size:0.78rem;">${escape(f.form_type)}</span>` : "";
+-      return `<article class="card" style="padding:22px;margin-bottom:12px;cursor:pointer;" data-id="${escape(f.id)}">
+-        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
+-          <div style="flex:1;min-width:0;">
+-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+-              <span style="background:rgba(0,255,136,0.12);color:var(--primary);padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">🧪 ${cat}</span>
+-              ${form}
+-            </div>
+-            <h3 style="margin:0 0 8px;font-size:1.15rem;line-height:1.4;">${escape(f.name_en||f.name||"—")}</h3>
+-            <div style="color:var(--text-3);font-size:0.85rem;margin-bottom:6px;">${compCount} ingredients</div>
+-            ${top ? `<div style="margin-top:6px;">${top}</div>` : ""}
+-          </div>
+-          <div style="text-align:right;flex-shrink:0;color:var(--primary);font-weight:700;font-size:0.85rem;">${f.trust_score||0}%</div>
++      const form = f.form_type
++        ? `<span class="fx-res-tag muted">${escape(f.form_type)}</span>` : "";
++      const trust = (f.trust_score != null)
++        ? `<span class="fx-res-trust">${escape(String(f.trust_score))}%</span>` : "";
++      return `<article class="card fx-res" data-id="${escape(f.id)}">
++        <div class="fx-res-top">
++          <span class="fx-res-tag">🧪 ${cat}</span>
++          ${form}
++          ${trust}
+         </div>
++        <h3 class="fx-res-title" dir="auto">${escape(f.name_en || f.name || "—")}</h3>
++        <div class="fx-res-meta">${compCount} ingredients</div>
++        ${top ? `<div class="fx-res-ings">${top}</div>` : ""}
+       </article>`;
+     }
+ 
+@@ -110,7 +116,7 @@
        renderState("results", header + data.rows.map(renderRow).join(""));
        results.querySelectorAll("[data-id]").forEach(el => {
          el.addEventListener("click", () => {
@@ -566,7 +616,7 @@ index d412ad7..6820173 100644
 +window.FAI_DB = FAI_DB;
 \ No newline at end of file
 diff --git a/chat.html b/chat.html
-index f31e4e9..8aa7894 100644
+index f31e4e9..fd1fe75 100644
 --- a/chat.html
 +++ b/chat.html
 @@ -11,7 +11,7 @@
@@ -574,11 +624,11 @@ index f31e4e9..8aa7894 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=11" />
++  <link rel="stylesheet" href="./assets/styles.css?v=13" />
    <style>
      .chat-page-shell {
        display: grid;
-@@ -211,6 +211,60 @@
+@@ -211,6 +211,81 @@
        background: var(--bg-glass);
        border-radius: 999px;
      }
@@ -636,10 +686,31 @@ index f31e4e9..8aa7894 100644
 +    .chat-msg .bubble .md table.md-table tbody tr:nth-child(even) td {
 +      background: rgba(255,255,255,0.03);
 +    }
++    /* Clickable disambiguation choices → open formula directly */
++    .chat-msg .bubble .md ul.md-choices,
++    .chat-msg .bubble .md ol.md-choices {
++      list-style: none; padding-inline-start: 0; margin: 0.5em 0;
++      display: flex; flex-direction: column; gap: 8px;
++    }
++    .chat-msg .bubble .md .md-choices li { margin: 0; }
++    .chat-msg .bubble .md a.fx-choice {
++      display: block; text-decoration: none; color: var(--text-1);
++      background: rgba(0,255,136,0.10);
++      border: 1px solid rgba(0,255,136,0.35);
++      padding: 10px 14px; border-radius: 10px; font-weight: 600;
++      line-height: 1.5; transition: background .15s ease, transform .15s ease;
++    }
++    .chat-msg .bubble .md a.fx-choice:hover {
++      background: rgba(0,255,136,0.20); transform: translateY(-1px);
++    }
++    .chat-msg .bubble .md a.fx-choice::after {
++      content: " ↗"; color: var(--primary); font-weight: 800;
++    }
++    .chat-msg .bubble .md a.fx-choice strong { color: inherit; }
    </style>
  </head>
  <body>
-@@ -224,6 +278,7 @@
+@@ -224,6 +299,7 @@
          <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
          <li><a href="./chat.html" class="active" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
          <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
@@ -647,7 +718,7 @@ index f31e4e9..8aa7894 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -318,9 +373,9 @@
+@@ -318,9 +394,9 @@
      </div>
    </footer>
  
@@ -655,10 +726,10 @@ index f31e4e9..8aa7894 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chat-live.js"></script>
-+  <script src="./assets/app.js?v=11"></script>
-+  <script type="module" src="./assets/auth.js?v=11"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=11"></script>
-+  <script src="./assets/chat-live.js?v=11"></script>
++  <script src="./assets/app.js?v=13"></script>
++  <script type="module" src="./assets/auth.js?v=13"></script>
++  <script type="module" src="./assets/supabase-client.js?v=13"></script>
++  <script src="./assets/chat-live.js?v=13"></script>
  </body>
  </html>
 diff --git a/compliance.html b/compliance.html
@@ -2556,19 +2627,48 @@ index 434836b..1beb449 100644
    /* scan.html — vision page logic */
    (function () {
 diff --git a/search.html b/search.html
-index b1a46b3..8b84146 100644
+index b1a46b3..17cf308 100644
 --- a/search.html
 +++ b/search.html
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,36 @@
    <link rel="preconnect" href="https://fonts.googleapis.com" />
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=12" />
++  <style>
++    /* Search result cards — mobile-first + bidi-safe (RTL/LTR mixed) */
++    .fx-res { padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
++      transition: border-color .15s ease, transform .15s ease; }
++    .fx-res:hover { border-color: var(--border-primary); transform: translateY(-2px); }
++    .fx-res-top { display: flex; flex-wrap: wrap; align-items: center;
++      gap: 8px; margin-bottom: 10px; }
++    .fx-res-tag { background: rgba(0,255,136,0.12); color: var(--primary);
++      padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
++    .fx-res-tag.muted { background: var(--bg-glass); color: var(--text-3); font-weight: 600; }
++    .fx-res-trust { margin-inline-start: auto; color: var(--primary);
++      font-weight: 800; font-size: 0.82rem; }
++    .fx-res-title { margin: 0 0 6px; font-size: 1.1rem; line-height: 1.4;
++      text-align: start; }
++    .fx-res-meta { color: var(--text-3); font-size: 0.82rem; margin-bottom: 10px; }
++    .fx-res-ings { display: flex; flex-wrap: wrap; gap: 6px 8px; }
++    .fx-res-ing { direction: ltr; unicode-bidi: isolate;
++      display: inline-flex; align-items: baseline; gap: 6px;
++      background: var(--bg-glass); border: 1px solid var(--border);
++      border-radius: 8px; padding: 4px 10px; font-size: 0.82rem;
++      color: var(--text-2); max-width: 100%; }
++    .fx-res-ing .p { color: var(--primary); font-weight: 700; font-size: 0.78rem; }
++    @media (max-width: 600px) {
++      .fx-res { padding: 14px; }
++      .fx-res-title { font-size: 1rem; }
++      .fx-res-ing { font-size: 0.78rem; }
++      .fx-res-ings { gap: 6px; }
++    }
++  </style>
  </head>
  <body>
    <nav class="navbar">
-@@ -26,6 +26,7 @@
+@@ -26,6 +55,7 @@
          <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
          <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
          <li><a href="./search.html" class="active" data-i18n-ar="البحث الذكي">Smart Search</a></li>
@@ -2576,7 +2676,7 @@ index b1a46b3..8b84146 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -179,9 +180,9 @@
+@@ -179,9 +209,9 @@
      </div>
    </footer>
  
@@ -2584,10 +2684,10 @@ index b1a46b3..8b84146 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/search-live.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/search-live.js?v=9"></script>
++  <script src="./assets/app.js?v=12"></script>
++  <script type="module" src="./assets/auth.js?v=12"></script>
++  <script type="module" src="./assets/supabase-client.js?v=12"></script>
++  <script src="./assets/search-live.js?v=12"></script>
  </body>
  </html>
 diff --git a/similarity.html b/similarity.html
@@ -2827,3 +2927,103 @@ index a95b687..7ea5aa2 100644
 +  <script src="./assets/app.js?v=9"></script>
  </body>
  </html>
+diff --git a/worker-src/handlers/search.js b/worker-src/handlers/search.js
+index 2075ff6..dfc82f7 100644
+--- a/worker-src/handlers/search.js
++++ b/worker-src/handlers/search.js
+@@ -60,13 +60,19 @@ export async function handleSearch(url, auth, env) {
+   if (!plan) return json({ rows: [], plan: null, error: 'claude_failed' }, 500);
+   if (!plan.must?.length) return json({ rows: [], plan, error: 'no_must_term' });
+ 
+-  // Step 2: Supabase
+-  const must = String(plan.must[0] || '').replace(/[%_,()*\s]/g, '').trim();
+-  if (!must) return json({ rows: [], plan, error: 'empty_must' });
++  // Step 2: build a candidate pool, then rank by RELEVANCE (not trust).
++  // Keep the primary product noun but DO NOT strip spaces — turn them
++  // into ilike wildcards so "hand wash" matches "Hand Wash"/"Handwash".
++  const nounRaw = String(plan.must[0] || '').trim();
++  const noun = nounRaw.replace(/[%_(),"]/g, ' ').replace(/\s+/g, ' ').trim();
++  if (!noun) return json({ rows: [], plan, error: 'empty_must' });
++  const nounLike = noun.split(' ').filter(Boolean).join('*');
+ 
+   const select =
+     'id,name,name_en,category,sub_category,form_type,components,trust_score';
+-  let path = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
++  const baseFilter =
++    `or=(name.ilike.*${nounLike}*,name_en.ilike.*${nounLike}*,sub_category.ilike.*${nounLike}*)`;
++  let path = `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`;
+   if (Array.isArray(plan.categories) && plan.categories.length) {
+     const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
+     path += `&category=in.(${cats})`;
+@@ -82,27 +88,57 @@ export async function handleSearch(url, auth, env) {
+   let rows = await sbRes.json();
+   if (!Array.isArray(rows)) rows = [];
+ 
+-  // Fallback: drop category filter
++  // Fallback 1: same noun filter, drop category
+   if (rows.length === 0 && plan.categories?.length) {
+-    const fbPath = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
+-    const fb = await sb(env, fbPath);
+-    if (fb.ok) {
+-      const j = await fb.json();
+-      if (Array.isArray(j)) rows = j;
+-    }
++    const fb = await sb(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`);
++    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
++  }
++  // Fallback 2: category-only pool (stay on-topic instead of empty)
++  if (rows.length === 0 && plan.categories?.length) {
++    const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
++    const fb = await sb(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&category=in.(${cats})`);
++    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
+   }
+ 
+-  // Boost ranking
+-  const boost = (plan.boost || []).map((b) => String(b).toLowerCase()).filter(Boolean);
+-  const ranked = rows
++  // ── Relevance ranking ──────────────────────────────────────────────
++  // Topical match dominates; trust is only a small tiebreaker so generic
++  // matches no longer outrank the formula the user actually asked for.
++  const norm = (s) => String(s || '').toLowerCase();
++  const STOP = new Set(['the', 'a', 'an', 'of', 'for', 'and', 'with', 'to',
++    'مع', 'من', 'في', 'عن', 'على', 'الى', 'هل']);
++  const qTokens = [...new Set(
++    norm(query).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w))
++  )];
++  const mustTokens = (plan.must || []).flatMap((m) => norm(m).split(/\s+/)).filter(Boolean);
++  const boost = (plan.boost || []).map(norm).filter(Boolean);
++  const planCats = (plan.categories || []).map(norm);
++  const nounLc = norm(noun);
++
++  let ranked = rows
+     .map((r) => {
+-      const hay = `${r.name || ''} ${r.name_en || ''} ${r.sub_category || ''}`.toLowerCase();
++      const name = `${norm(r.name)} ${norm(r.name_en)}`;
++      const comps = Array.isArray(r.components)
++        ? r.components.map((c) => norm(c && (c.name_en || c.name))).join(' ')
++        : '';
++      const hay = `${name} ${norm(r.sub_category)} ${norm(r.category)} ${comps}`;
+       let score = 0;
+-      for (const b of boost) if (hay.includes(b)) score += 10;
+-      score += (r.trust_score || 0) / 10;
++      if (nounLc && name.includes(nounLc)) score += 40;
++      for (const b of boost) if (b && hay.includes(b)) score += 12;
++      for (const m of mustTokens) if (m && name.includes(m)) score += 8;
++      for (const t of qTokens) if (hay.includes(t)) score += 5;
++      if (planCats.includes(norm(r.category))) score += 6;
++      score += Math.min(5, (r.trust_score || 0) * 0.05);
+       return { ...r, _score: score };
+     })
+-    .sort((a, b) => b._score - a._score);
++    .filter((r) => r._score > 5)
++    .sort((a, b) => b._score - a._score || (b.trust_score || 0) - (a.trust_score || 0));
++
++  // Safety: never show "nothing" if we had candidate rows
++  if (ranked.length === 0 && rows.length) {
++    ranked = rows
++      .map((r) => ({ ...r, _score: (r.trust_score || 0) * 0.05 }))
++      .sort((a, b) => b._score - a._score);
++  }
+ 
+   await recordUsage(auth.id, '/search', env);
+ 

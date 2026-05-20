@@ -188,12 +188,58 @@ and mixed Arabic/English with no direction handling.
   shipped). Zip now 37 entries.
 - Verified: `node --check` OK; functional test confirms table/heading/
   list/pre render and code is XSS-escaped.
-- **ACTION: owner re-upload `DEPLOY_PHASE3.zip`** (37 entries, 0
-  backslash, ~238 KB) to Hostinger `public_html` (overwrite), then cold-
-  check `https://jamilformula.com/chat.html` (ask a question that
-  returns a table — should render as a styled table, not raw `|`).
+- ✅ **DONE — uploaded & verified live (2026-05-19).** Owner re-uploaded
+  the zip. Confirmed: `https://jamilformula.com/chat.html` serves
+  `?v=11` + `table.md-table` CSS + new `chat-live.js` renderer; a live
+  AI answer with a markdown table now renders as a styled RTL table
+  (header, borders, zebra rows) instead of raw `|` — verified by owner
+  screenshot + curl.
 
-## 7. Re-verify commands (copy/paste)
+## 6c. Mobile search + chat choices + Worker search relevance (2026-05-19)
+
+Three follow-on enhancements after the chat markdown renderer.
+
+**(1) Mobile search display — `search-live.js` + `search.html`** ✅ LIVE
+- Each ingredient is now a bidi-isolated chip (`direction: ltr;
+  unicode-bidi: isolate;`) → English name + numeric % stay together
+  even when the page is in Arabic RTL (fixes the scrambled "%·name"
+  output the owner reported on mobile).
+- Card redesigned mobile-first: tag/form/trust row that wraps,
+  `dir="auto"` title, ingredients as wrapping chips, smaller paddings
+  under 600 px.
+- Asset refs bumped `?v=12`.
+
+**(2) Chat clickable disambiguation — `chat-live.js` + `chat.html`** ✅ LIVE
+- New `enhanceChoices(html, rawText)` detects clarification cues
+  (`هل تقصد` / `do you mean` / `which of these` / etc.) and turns the
+  first option list into clickable chips linking to
+  `./formula.html?name=<text>` (opens the formula page directly,
+  one-click, new tab, preserves the chat).
+- `.fx-choice` CSS adds a green chip button look with hover +
+  `↗` cue. Existing markdown rendering for non-cue replies unchanged.
+- XSS-safe (text escaped first; already-linked items skipped).
+- Asset refs bumped `?v=13`.
+
+**(3) Worker `/search` relevance fix — `worker-src/handlers/search.js`** ✅ LIVE
+- Stop stripping spaces from the noun; multi-word nouns now use ilike
+  wildcards (`hand wash` → `*hand*wash*`).
+- Widened pool: also matches `sub_category`; two-tier fallback (drop
+  category, then category-only) so we stay on-topic instead of empty.
+- New relevance score: noun in name (+40), each boost term in haystack
+  including components (+12), each must token in name (+8), each
+  meaningful query token (+5), category match (+6), and **trust is now
+  only a small tiebreaker (≤+5)** instead of dominating (was /10 = up
+  to +10).
+- Safety net: if every row scored 0 but rows were fetched, fall back to
+  trust order rather than returning nothing.
+- Build: `npm run build:worker` → `worker.js` (~92 KB). Owner pasted
+  into Cloudflare → live. Verified e2e:
+  - "شامبو السيارات عالية الرغوة" → top hits = automotive car-wash
+    snow-foam shampoos (`_score` 70.4); previously generic shampoos.
+  - "car wash foam shampoo" → top hits = Color Foam Car Wash Shampoo
+    variants (`_score` 130.4).
+
+
 
 ```bash
 # apex (should always be Hostinger Phase 3)
@@ -221,7 +267,8 @@ NEW: scripts/build_phase3.py  PHASE3_HANDOFF.md  PHASE3_WORKINGTREE_2026-05-19.p
 ARTIFACT: DEPLOY_PHASE3.zip (37 entries, 0 backslash, ~238 KB)
 ```
 
-_Last updated: 2026-05-19 — Phase 3 complete & verified live on BOTH
-apex and `www`. Legacy Vercel deleted, `www` DNS fixed, analyzeSafety
-fixed, chat markdown renderer added. Pending: owner re-upload of the
-latest `DEPLOY_PHASE3.zip` (chat fix) + optional admin-key rotation._
+_Last updated: 2026-05-19 — Phase 3 complete & verified live on apex
+and `www`. Legacy Vercel deleted, www DNS fixed, analyzeSafety fixed,
+chat markdown renderer added, mobile search display bidi-fixed, chat
+disambiguation choices clickable, Worker search ranking now relevance-
+dominated (trust = tiebreaker only). Open: optional admin-key rotation._
