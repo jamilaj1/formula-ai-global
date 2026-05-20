@@ -254,6 +254,36 @@ nslookup -type=CNAME www.jamilformula.com atlas.dns-parking.com   # authoritativ
 cd <repo> && python scripts/build_phase3.py
 ```
 
+## 6d. SEO + 40 industry pages + data growth playbook (2026-05-19)
+
+Strategic push toward 9.5+ via discoverability:
+
+- **formula.html** — `updateSeo(f)` injects per-formula `<title>`, meta
+  description, canonical, Open Graph, Twitter Card, and full Schema.org
+  `Product`/`ChemicalSubstance` JSON-LD (incl. `aggregateRating` from
+  trust, `additionalProperty` list of ingredients). 3,381 distinct
+  indexable formula pages.
+- **`scripts/build_sitemap.py`** (NEW) — pulls every formula from
+  Supabase (anon key + RLS), writes `sitemap.xml` (3,434 URLs ≈ 720 KB).
+  Re-run after backfills or new ingestion.
+- **`scripts/build_industries.py`** (NEW) — generates **40 industry
+  landing pages** at `industries/<slug>.html` + `industries/index.html`.
+  Each: unique meta, JSON-LD `CollectionPage` + `ItemList`, up to 12
+  top formulas (by trust), pricing CTA. 37 DB categories + 3 cross-
+  groupings (personal-care, sanitation, heavy-industry).
+- **`scripts/build_phase3.py`** — extended to bundle `industries/*.html`
+  + `sitemap.xml` into `DEPLOY_PHASE3.zip` (now 79 entries, ~475 KB).
+- **`DATA_GROWTH_PLAYBOOK.md`** (NEW) — owner-run ops doc: finish
+  SMILES backfill, retrain ML, ingest via Discover, quality bar.
+  Target: **3,381 → 10,000+** formulas, ~80% enriched.
+
+**ACTIONS (owner, after upload):**
+1. Upload the new `DEPLOY_PHASE3.zip` to Hostinger `public_html`
+   (overwrite). The extract creates `industries/` and `sitemap.xml`.
+2. Submit `https://jamilformula.com/sitemap.xml` to **Google Search
+   Console** (Property → Sitemaps → Add) so the 3,434 URLs get crawled.
+3. Follow `DATA_GROWTH_PLAYBOOK.md` over the next 6–10 weeks.
+
 ## 8. Files touched this phase
 
 ```
