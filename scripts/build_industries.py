@@ -258,22 +258,37 @@ def industry_page(slug: str, title_en: str, title_ar: str, cats: list[str],
         '<div style="color:var(--text-3); padding:30px; text-align:center;">No formulas indexed in this category yet. Check back soon.</div>'
     ld = {
         "@context": "https://schema.org",
-        "@type": "CollectionPage",
-        "name": title_en,
-        "description": desc,
-        "url": url,
-        "inLanguage": "en",
-        "isPartOf": {"@type": "WebSite", "name": "Formula AI Global", "url": SITE},
-        "mainEntity": {
-            "@type": "ItemList",
-            "numberOfItems": len(formulas),
-            "itemListElement": [
-                {"@type": "ListItem", "position": i+1,
-                 "url": f"{SITE}/formula.html?id={f.get('id')}",
-                 "name": f.get("name_en") or f.get("name") or ""}
-                for i, f in enumerate(formulas[:12])
-            ],
-        },
+        "@graph": [
+            {
+                "@type": "CollectionPage",
+                "name": title_en,
+                "description": desc,
+                "url": url,
+                "inLanguage": "en",
+                "isPartOf": {"@type": "WebSite", "name": "Formula AI Global", "url": SITE},
+                "mainEntity": {
+                    "@type": "ItemList",
+                    "numberOfItems": len(formulas),
+                    "itemListElement": [
+                        {"@type": "ListItem", "position": i+1,
+                         "url": f"{SITE}/formula.html?id={f.get('id')}",
+                         "name": f.get("name_en") or f.get("name") or ""}
+                        for i, f in enumerate(formulas[:12])
+                    ],
+                },
+            },
+            {
+                "@type": "BreadcrumbList",
+                "itemListElement": [
+                    {"@type": "ListItem", "position": 1, "name": "Home",
+                     "item": SITE + "/"},
+                    {"@type": "ListItem", "position": 2, "name": "Industries",
+                     "item": SITE + "/industries/index.html"},
+                    {"@type": "ListItem", "position": 3, "name": title_en,
+                     "item": url},
+                ],
+            },
+        ],
     }
     return f'''<!DOCTYPE html>
 <html lang="en" dir="ltr">

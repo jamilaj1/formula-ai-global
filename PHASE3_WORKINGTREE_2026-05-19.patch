@@ -1,10 +1,11 @@
-# Working-tree code snapshot — 2026-05-19 (final: chat md + clickable choices + mobile search bidi + Worker search relevance)
-# Scope: *.html + assets/*.js + sw.js + worker-src/handlers/search.js (CODE ONLY).
-# EXCLUDED: *.md, backend/, worker.js build artifact.
+# Working-tree code snapshot — refreshed 2026-05-20
+# Adds: index.html Organization/WebSite/WebApplication JSON-LD,
+#       pricing.html FAQPage, formula.html BreadcrumbList in updateSeo.
+# Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
 diff --git a/about.html b/about.html
-index 3cea245..406e1f2 100644
+index 3cea245..621e68b 100644
 --- a/about.html
 +++ b/about.html
 @@ -11,7 +11,7 @@
@@ -12,7 +13,7 @@ index 3cea245..406e1f2 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -29,11 +30,11 @@ index 3cea245..406e1f2 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/agent.html b/agent.html
-index 41a0106..6229e68 100644
+index 41a0106..5d75065 100644
 --- a/agent.html
 +++ b/agent.html
 @@ -11,7 +11,7 @@
@@ -41,7 +42,7 @@ index 41a0106..6229e68 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .agent-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1180px; margin: 0 auto; }
      @media (max-width: 980px) { .agent-grid { grid-template-columns: 1fr; } }
@@ -61,15 +62,15 @@ index 41a0106..6229e68 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chem-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
    <script>
    /* agent.html — multi-agent orchestrator page */
    (function () {
 diff --git a/assets/app.js b/assets/app.js
-index 6fb872a..f2c5f0c 100644
+index 6fb872a..bb46d48 100644
 --- a/assets/app.js
 +++ b/assets/app.js
 @@ -260,25 +260,19 @@ if (document.getElementById('compliance-result')) {
@@ -110,6 +111,40 @@ index 6fb872a..f2c5f0c 100644
  }
  
  // Year for footer
+@@ -690,6 +684,33 @@ function faiApplyLang(code) {
+   faiApplyLang(saved);
+   setActive(saved);
+ 
++  // Defensive UX: also expose an AR/EN switch INSIDE the mobile hamburger
++  // menu so the language is always discoverable on small screens even
++  // when the desktop lang-dropdown in nav-tools is squeezed/overlooked.
++  (function injectMobileLang() {
++    const navLinks = document.querySelector('.nav-links');
++    if (!navLinks || navLinks.querySelector('.mobile-lang')) return;
++    const li = document.createElement('li');
++    li.className = 'mobile-lang';
++    const renderLabel = () => {
++      const code = localStorage.getItem('fai_lang') || 'en';
++      li.innerHTML = code === 'ar'
++        ? '<a href="#" role="button"><span class="flag" aria-hidden="true">🇬🇧</span><span>Switch to English</span></a>'
++        : '<a href="#" role="button"><span class="flag" aria-hidden="true">🇸🇦</span><span>التبديل إلى العربية</span></a>';
++    };
++    renderLabel();
++    li.addEventListener('click', (e) => {
++      e.preventDefault();
++      const next = ((localStorage.getItem('fai_lang') || 'en') === 'ar') ? 'en' : 'ar';
++      localStorage.setItem('fai_lang', next);
++      setActive(next);
++      faiApplyLang(next);
++      renderLabel();
++      if (navLinks.classList.contains('open')) navLinks.classList.remove('open');
++    });
++    navLinks.appendChild(li);
++  })();
++
+   if (!trigger || !menu) return;
+ 
+   trigger.addEventListener('click', (e) => {
 diff --git a/assets/chat-live.js b/assets/chat-live.js
 index 65fd9c7..c878c13 100644
 Binary files a/assets/chat-live.js and b/assets/chat-live.js differ
@@ -616,7 +651,7 @@ index d412ad7..6820173 100644
 +window.FAI_DB = FAI_DB;
 \ No newline at end of file
 diff --git a/chat.html b/chat.html
-index f31e4e9..fd1fe75 100644
+index f31e4e9..cae9724 100644
 --- a/chat.html
 +++ b/chat.html
 @@ -11,7 +11,7 @@
@@ -624,7 +659,7 @@ index f31e4e9..fd1fe75 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=13" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .chat-page-shell {
        display: grid;
@@ -726,14 +761,14 @@ index f31e4e9..fd1fe75 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chat-live.js"></script>
-+  <script src="./assets/app.js?v=13"></script>
-+  <script type="module" src="./assets/auth.js?v=13"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=13"></script>
-+  <script src="./assets/chat-live.js?v=13"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chat-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/compliance.html b/compliance.html
-index 7b7f4cc..14243f3 100644
+index 7b7f4cc..13c20d7 100644
 --- a/compliance.html
 +++ b/compliance.html
 @@ -11,7 +11,7 @@
@@ -741,7 +776,7 @@ index 7b7f4cc..14243f3 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -758,11 +793,11 @@ index 7b7f4cc..14243f3 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/contact.html b/contact.html
-index a7f9407..377196d 100644
+index a7f9407..56f3bee 100644
 --- a/contact.html
 +++ b/contact.html
 @@ -11,7 +11,7 @@
@@ -770,7 +805,7 @@ index a7f9407..377196d 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -787,13 +822,13 @@ index a7f9407..377196d 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      // === Contact form: real submission via Formspree ===
      // SETUP: register a free account at https://formspree.io,
 diff --git a/contribute.html b/contribute.html
 new file mode 100644
-index 0000000..eb0a40a
+index 0000000..99c4600
 --- /dev/null
 +++ b/contribute.html
 @@ -0,0 +1,307 @@
@@ -810,7 +845,7 @@ index 0000000..eb0a40a
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
 +  <style>
 +    .cb-wrap { max-width: 760px; margin: 0 auto; }
 +    .cb-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
@@ -982,9 +1017,9 @@ index 0000000..eb0a40a
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
 +  <script>
 +  /* contribute.html — community formula upload (sign-in required).
 +     Pure addition. Inserts into user_submissions via the user's own
@@ -1105,7 +1140,7 @@ index 0000000..eb0a40a
 +</body>
 +</html>
 diff --git a/dashboard.html b/dashboard.html
-index dd6fc88..2e8c572 100644
+index dd6fc88..c27ca58 100644
 --- a/dashboard.html
 +++ b/dashboard.html
 @@ -11,7 +11,7 @@
@@ -1113,7 +1148,7 @@ index dd6fc88..2e8c572 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -1196,11 +1231,11 @@ index dd6fc88..2e8c572 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/discover.html b/discover.html
-index b057238..fad3e66 100644
+index b057238..5a12a4a 100644
 --- a/discover.html
 +++ b/discover.html
 @@ -11,7 +11,7 @@
@@ -1208,7 +1243,7 @@ index b057238..fad3e66 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .disc-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .source-grid {
@@ -1228,14 +1263,14 @@ index b057238..fad3e66 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/discover-live.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/discover-live.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/discover-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/docs.html b/docs.html
-index 0645ee2..5f5f15f 100644
+index 0645ee2..7d5a4c6 100644
 --- a/docs.html
 +++ b/docs.html
 @@ -11,7 +11,7 @@
@@ -1243,7 +1278,7 @@ index 0645ee2..5f5f15f 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .docs-layout {
        display: grid;
@@ -1260,12 +1295,12 @@ index 0645ee2..5f5f15f 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      // Smooth-scroll active section in sidebar
      const links = document.querySelectorAll('.docs-sidebar a');
 diff --git a/encyclopedia.html b/encyclopedia.html
-index 5e6dc39..fea5533 100644
+index 5e6dc39..5ea8a88 100644
 --- a/encyclopedia.html
 +++ b/encyclopedia.html
 @@ -3,15 +3,15 @@
@@ -1283,11 +1318,11 @@ index 5e6dc39..fea5533 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .enc-search-bar {
        max-width: 720px;
-@@ -152,8 +152,9 @@
+@@ -152,12 +152,26 @@
          <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
@@ -1298,7 +1333,24 @@ index 5e6dc39..fea5533 100644
          <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
          <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
          <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
-@@ -177,19 +178,19 @@
+       </ul>
++      <div class="nav-tools">
++        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
++          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
++          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
++        </button>
++        <div class="lang-dropdown">
++          <button class="icon-btn lang-trigger" aria-label="Language">
++            <span class="flag">🇸🇦</span><span class="label">AR</span>
++            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
++          </button>
++          <div class="lang-menu"></div>
++        </div>
++      </div>
+       <div class="nav-cta">
+         <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+         <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+@@ -177,19 +191,19 @@
  
      <div class="container" style="position: relative; z-index: 2;">
        <div style="text-align: center; max-width: 880px; margin: 0 auto 40px;">
@@ -1323,7 +1375,7 @@ index 5e6dc39..fea5533 100644
        </div>
  
        <!-- Search -->
-@@ -220,7 +221,7 @@
+@@ -220,7 +234,7 @@
      <div class="container">
        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
          <div>
@@ -1332,7 +1384,7 @@ index 5e6dc39..fea5533 100644
            <p style="color: var(--text-3); font-size: 0.92rem;">Sorted by trust score — highest verified first</p>
          </div>
          <div style="display: flex; gap: 8px;">
-@@ -228,10 +229,6 @@
+@@ -228,10 +242,6 @@
              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
              Filters
            </button>
@@ -1343,7 +1395,7 @@ index 5e6dc39..fea5533 100644
          </div>
        </div>
  
-@@ -252,47 +249,47 @@
+@@ -252,47 +262,47 @@
    <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
      <div class="container">
        <div class="section-header reveal">
@@ -1406,7 +1458,7 @@ index 5e6dc39..fea5533 100644
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
              </a>
            </div>
-@@ -304,8 +301,8 @@
+@@ -304,8 +314,8 @@
    <!-- CTA -->
    <section class="container" style="padding-bottom: 80px;">
      <div class="cta-banner reveal">
@@ -1417,23 +1469,24 @@ index 5e6dc39..fea5533 100644
        <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;">
          Contribute a formula
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-@@ -317,13 +314,13 @@
+@@ -317,13 +327,13 @@
    <footer class="footer">
      <div class="container">
        <div class="footer-bottom" style="padding-top: 0; border-top: none;">
 -        <div>© <span data-year>2026</span> Formula AI Global · Encyclopedia content licensed CC-BY-SA-4.0</div>
+-        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
 +        <div>© <span data-year>2026</span> Formula AI Global · Proprietary verified formulations</div>
-         <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
++        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
        </div>
      </div>
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      const ENCYCLOPEDIA = [
        { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
-@@ -371,11 +368,10 @@
+@@ -371,11 +381,10 @@
                ${f.cmp} components
              </span>
              <span>
@@ -1449,10 +1502,10 @@ index 5e6dc39..fea5533 100644
      }
 diff --git a/formula.html b/formula.html
 new file mode 100644
-index 0000000..5da554d
+index 0000000..f6166fc
 --- /dev/null
 +++ b/formula.html
-@@ -0,0 +1,464 @@
+@@ -0,0 +1,550 @@
 +<!DOCTYPE html>
 +<html lang="en" dir="ltr">
 +<head>
@@ -1463,10 +1516,14 @@ index 0000000..5da554d
 +  <meta name="theme-color" content="#00ff88" />
 +  <link rel="manifest" href="./manifest.json" />
 +  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
++  <link rel="canonical" href="https://jamilformula.com/formula.html" />
++  <meta property="og:type" content="product" />
++  <meta property="og:site_name" content="Formula AI Global" />
++  <meta name="twitter:card" content="summary" />
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=10" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
 +  <style>
 +    .fx-wrap { max-width: 1080px; margin: 0 auto; }
 +    .fx-head { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 26px 28px; margin-bottom: 20px; }
@@ -1701,10 +1758,10 @@ index 0000000..5da554d
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=10"></script>
-+  <script type="module" src="./assets/auth.js?v=10"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=10"></script>
-+  <script src="./assets/chem-client.js?v=10"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
 +  <script>
 +  /* formula.html — single-formula presentation page.
 +     Reached as formula.html?id=<uuid>  (or ?name=<text> fallback).
@@ -1794,6 +1851,87 @@ index 0000000..5da554d
 +      }
 +    }
 +
++    function updateSeo(f, name) {
++      const cs = (f.components || f.ingredients || []);
++      const cat = f.category || 'industrial';
++      const desc = (f.description ||
++        `Verified ${cat} formulation: ${name}. ${cs.length} ingredients. Members-only full breakdown, batch scaler and safety analysis on Formula AI Global.`
++      ).replace(/\s+/g, ' ').trim().slice(0, 160);
++      const url = location.origin + location.pathname + '?id=' + encodeURIComponent(f.id || '');
++
++      const setMeta = (sel, attr, val) => {
++        let el = document.querySelector(sel);
++        if (!el) {
++          el = document.createElement('meta');
++          const m = sel.match(/\[(name|property)="([^"]+)"\]/);
++          if (m) el.setAttribute(m[1], m[2]);
++          document.head.appendChild(el);
++        }
++        el.setAttribute(attr, val);
++      };
++      setMeta('meta[name="description"]', 'content', desc);
++      setMeta('meta[property="og:title"]', 'content', name);
++      setMeta('meta[property="og:description"]', 'content', desc);
++      setMeta('meta[property="og:url"]', 'content', url);
++      setMeta('meta[property="og:type"]', 'content', 'product');
++      setMeta('meta[name="twitter:title"]', 'content', name);
++      setMeta('meta[name="twitter:description"]', 'content', desc);
++
++      let canon = document.querySelector('link[rel="canonical"]');
++      if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; document.head.appendChild(canon); }
++      canon.href = url;
++
++      // Schema.org structured data — helps Google understand the page is
++      // a verified chemical product (indexed across 3,381 formulas).
++      const ld = {
++        '@context': 'https://schema.org',
++        '@type': ['Product', 'ChemicalSubstance'],
++        name: name,
++        description: desc,
++        url: url,
++        category: cat,
++        brand: { '@type': 'Brand', name: 'Formula AI Global' },
++        additionalProperty: cs.slice(0, 12).map((c) => ({
++          '@type': 'PropertyValue',
++          name: (c && (c.name_en || c.name)) || 'ingredient',
++          value: (c && c.percentage != null) ? (Number(c.percentage).toFixed(2) + '%') : undefined,
++        })).filter((x) => x.name && x.value),
++      };
++      if (f.trust_score != null) {
++        ld.aggregateRating = {
++          '@type': 'AggregateRating',
++          ratingValue: (Math.min(100, Number(f.trust_score)) / 20).toFixed(1),
++          ratingCount: 1, bestRating: 5, worstRating: 1,
++        };
++      }
++      document.querySelectorAll('script[data-ld="formula"]').forEach((n) => n.remove());
++      const s = document.createElement('script');
++      s.type = 'application/ld+json';
++      s.setAttribute('data-ld', 'formula');
++      s.textContent = JSON.stringify(ld);
++      document.head.appendChild(s);
++
++      // BreadcrumbList — gives Google a clean Home > Library > Name path
++      // in SERP instead of the raw ?id=… URL.
++      const bc = {
++        '@context': 'https://schema.org',
++        '@type': 'BreadcrumbList',
++        itemListElement: [
++          { '@type': 'ListItem', position: 1, name: 'Home',
++            item: location.origin + '/' },
++          { '@type': 'ListItem', position: 2, name: 'Formula Library',
++            item: location.origin + '/encyclopedia.html' },
++          { '@type': 'ListItem', position: 3, name: name, item: url },
++        ],
++      };
++      document.querySelectorAll('script[data-ld="bc"]').forEach((n) => n.remove());
++      const bs = document.createElement('script');
++      bs.type = 'application/ld+json';
++      bs.setAttribute('data-ld', 'bc');
++      bs.textContent = JSON.stringify(bc);
++      document.head.appendChild(bs);
++    }
++
 +    function comps(f) {
 +      const c = f.components || f.ingredients || [];
 +      return Array.isArray(c) ? c : [];
@@ -1805,6 +1943,7 @@ index 0000000..5da554d
 +      $('fx-name').textContent = name;
 +      $('fx-name-2').textContent = name2;
 +      document.title = name + ' — Formula AI Global';
++      updateSeo(f, name);
 +
 +      // Badges
 +      const cs = comps(f);
@@ -1918,7 +2057,7 @@ index 0000000..5da554d
 +</body>
 +</html>
 diff --git a/formulas.html b/formulas.html
-index 8e6ae0d..d4e32b4 100644
+index 8e6ae0d..ea6b2dd 100644
 --- a/formulas.html
 +++ b/formulas.html
 @@ -11,7 +11,7 @@
@@ -1926,7 +2065,7 @@ index 8e6ae0d..d4e32b4 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -1946,22 +2085,75 @@ index 8e6ae0d..d4e32b4 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/formula-detail-live.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/formula-detail-live.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/formula-detail-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/index.html b/index.html
-index 1d1dbf0..719626a 100644
+index 1d1dbf0..5fd14cc 100644
 --- a/index.html
 +++ b/index.html
-@@ -29,7 +29,101 @@
+@@ -23,13 +23,155 @@
+   <link rel="manifest" href="./manifest.json" />
+   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+   <link rel="apple-touch-icon" href="./assets/icon.svg" />
++  <link rel="canonical" href="https://jamilformula.com/" />
++
++  <!-- Brand entity for Google: Organization + WebSite (with sitelinks
++       search box) + WebApplication. Unlocks Knowledge Panel & sitelinks. -->
++  <script type="application/ld+json">
++  {
++    "@context": "https://schema.org",
++    "@graph": [
++      {
++        "@type": "Organization",
++        "@id": "https://jamilformula.com/#org",
++        "name": "Formula AI Global",
++        "url": "https://jamilformula.com/",
++        "logo": "https://jamilformula.com/assets/icon.svg",
++        "description": "AI-powered chemistry platform for industrial formulators across 40+ industries.",
++        "founder": { "@type": "Person", "name": "Jamil Abduljalil" },
++        "knowsAbout": ["industrial formulation", "cosmetics chemistry", "home care chemistry", "cleaning chemistry", "agrochemicals", "RDKit cheminformatics"]
++      },
++      {
++        "@type": "WebSite",
++        "@id": "https://jamilformula.com/#site",
++        "url": "https://jamilformula.com/",
++        "name": "Formula AI Global",
++        "inLanguage": "en",
++        "publisher": { "@id": "https://jamilformula.com/#org" },
++        "potentialAction": {
++          "@type": "SearchAction",
++          "target": { "@type": "EntryPoint", "urlTemplate": "https://jamilformula.com/search.html?q={search_term_string}" },
++          "query-input": "required name=search_term_string"
++        }
++      },
++      {
++        "@type": "WebApplication",
++        "name": "Formula AI Global",
++        "url": "https://jamilformula.com/",
++        "applicationCategory": "BusinessApplication",
++        "operatingSystem": "Any (web)",
++        "description": "Search, generate, validate and scale verified chemical formulations across 40+ industries — 3,381 owner-verified formulas, AI substitution, safety analysis and batch tools.",
++        "publisher": { "@id": "https://jamilformula.com/#org" },
++        "offers": {
++          "@type": "AggregateOffer",
++          "lowPrice": 0, "highPrice": 125, "priceCurrency": "USD", "offerCount": 4
++        }
++      }
++    ]
++  }
++  </script>
+ 
+   <!-- Fonts -->
+   <link rel="preconnect" href="https://fonts.googleapis.com" />
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
  
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
 +
 +  <!-- ── Homepage hero polish ─────────────────────────────────────────
 +       Scoped to index.html only (inline <style> never leaks to other
@@ -1972,7 +2164,8 @@ index 1d1dbf0..719626a 100644
 +    /* Clear the fixed solid navbar (~64px) so the eyebrow/h1 never sit
 +       under it. Generous top padding = premium, breathing hero. */
 +    .hero { position: relative; min-height: 100vh; display: flex;
-+            align-items: center; padding: 130px 0 60px; }
++            align-items: center; padding: 130px 0 60px;
++            overflow: hidden; }
 +    .hero-content { text-align: center; width: 100%; }
 +
 +    .hero .eyebrow {
@@ -2059,7 +2252,7 @@ index 1d1dbf0..719626a 100644
  </head>
  <body>
    <!-- Navigation -->
-@@ -44,6 +138,7 @@
+@@ -44,6 +186,7 @@
  
        <ul class="nav-links">
          <li><a href="./index.html" class="active" data-i18n-ar="الرئيسية">Home</a></li>
@@ -2067,7 +2260,7 @@ index 1d1dbf0..719626a 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./safety.html" data-i18n-ar="السلامة">Safety</a></li>
-@@ -120,20 +215,20 @@
+@@ -120,20 +263,20 @@
        <!-- Stats -->
        <div class="stats reveal delay-3">
          <div class="stat">
@@ -2096,7 +2289,7 @@ index 1d1dbf0..719626a 100644
          </div>
        </div>
      </div>
-@@ -299,45 +394,45 @@
+@@ -299,45 +442,45 @@
      </div>
    </section>
  
@@ -2160,7 +2353,7 @@ index 1d1dbf0..719626a 100644
          </a>
        </div>
      </div>
-@@ -678,7 +773,7 @@
+@@ -678,7 +821,7 @@
          <div class="footer-col">
            <h4 data-i18n-ar="الموارد">Resources</h4>
            <ul>
@@ -2169,16 +2362,16 @@ index 1d1dbf0..719626a 100644
              <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
              <li><a href="./docs.html" data-i18n-ar="التوثيق">Documentation</a></li>
              <li><a href="./docs.html#sdk" data-i18n-ar="واجهة API">API reference</a></li>
-@@ -699,6 +794,6 @@
+@@ -699,6 +842,6 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/industries.html b/industries.html
-index 3f61053..c62c158 100644
+index 3f61053..4a4c374 100644
 --- a/industries.html
 +++ b/industries.html
 @@ -11,7 +11,7 @@
@@ -2186,7 +2379,7 @@ index 3f61053..c62c158 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .ind-category { margin-bottom: 50px; }
      .ind-cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -2203,12 +2396,12 @@ index 3f61053..c62c158 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      document.querySelectorAll('.filter-btn').forEach(btn => {
        btn.addEventListener('click', () => {
 diff --git a/lab.html b/lab.html
-index 74bd743..73d2d12 100644
+index 74bd743..2a39e04 100644
 --- a/lab.html
 +++ b/lab.html
 @@ -11,7 +11,7 @@
@@ -2216,7 +2409,7 @@ index 74bd743..73d2d12 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .lab-grid {
        display: grid;
@@ -2233,12 +2426,12 @@ index 74bd743..73d2d12 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      // Ingredient catalog (mirrors VirtualLaboratory.properties keys)
      const CATALOG = [
 diff --git a/learn.html b/learn.html
-index 78be8a7..4949b99 100644
+index 78be8a7..2492480 100644
 --- a/learn.html
 +++ b/learn.html
 @@ -11,7 +11,7 @@
@@ -2246,7 +2439,7 @@ index 78be8a7..4949b99 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .learn-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .drop-zone {
@@ -2265,9 +2458,9 @@ index 78be8a7..4949b99 100644
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
    <script>
      if (window['pdfjsLib']) {
@@ -2276,11 +2469,11 @@ index 78be8a7..4949b99 100644
      }
    </script>
 -  <script src="./assets/learn-live.js"></script>
-+  <script src="./assets/learn-live.js?v=9"></script>
++  <script src="./assets/learn-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/library.html b/library.html
-index b3640bf..c9038a6 100644
+index b3640bf..5098f54 100644
 --- a/library.html
 +++ b/library.html
 @@ -11,7 +11,7 @@
@@ -2288,7 +2481,7 @@ index b3640bf..c9038a6 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .lib-shell { max-width: 1200px; margin: 0 auto; padding: 100px 16px 40px; }
      .lib-tabs {
@@ -2308,14 +2501,14 @@ index b3640bf..c9038a6 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/library-live.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/library-live.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/library-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/login.html b/login.html
-index 86f54a3..ab3735b 100644
+index 86f54a3..f0e0c94 100644
 --- a/login.html
 +++ b/login.html
 @@ -11,7 +11,7 @@
@@ -2323,7 +2516,7 @@ index 86f54a3..ab3735b 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -2341,13 +2534,13 @@ index 86f54a3..ab3735b 100644
  
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/predict.html b/predict.html
-index 9b5ffa1..687f0fe 100644
+index 9b5ffa1..697b290 100644
 --- a/predict.html
 +++ b/predict.html
 @@ -11,7 +11,7 @@
@@ -2355,7 +2548,7 @@ index 9b5ffa1..687f0fe 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .pred-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .pred-grid { grid-template-columns: 1fr; } }
@@ -2375,27 +2568,79 @@ index 9b5ffa1..687f0fe 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chem-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
    <script>
    /* predict.html — single-compound property calculator */
    (function () {
 diff --git a/pricing.html b/pricing.html
-index f08cc36..af085ee 100644
+index f08cc36..15c9ff5 100644
 --- a/pricing.html
 +++ b/pricing.html
-@@ -11,7 +11,7 @@
+@@ -11,7 +11,59 @@
    <link rel="preconnect" href="https://fonts.googleapis.com" />
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="canonical" href="https://jamilformula.com/pricing.html" />
++
++  <!-- FAQ schema — mirrors the visible "Pricing & billing questions"
++       section. Surfaces rich FAQ snippets in Google SERP. -->
++  <script type="application/ld+json">
++  {
++    "@context": "https://schema.org",
++    "@type": "FAQPage",
++    "mainEntity": [
++      {
++        "@type": "Question",
++        "name": "Can I upgrade or downgrade at any time?",
++        "acceptedAnswer": {
++          "@type": "Answer",
++          "text": "Yes, easily. Upgrades take effect immediately, and downgrades happen at the end of the current billing cycle. We calculate the difference automatically (proration) so you never pay extra."
++        }
++      },
++      {
++        "@type": "Question",
++        "name": "What payment methods are accepted?",
++        "acceptedAnswer": {
++          "@type": "Answer",
++          "text": "We accept all major credit cards (Visa, Mastercard, Amex), Apple Pay, Google Pay, and for Middle East customers we accept mada and STC Pay. For Enterprise plans we accept bank transfers and ACH invoices."
++        }
++      },
++      {
++        "@type": "Question",
++        "name": "Are there discounts for universities and educational institutions?",
++        "acceptedAnswer": {
++          "@type": "Answer",
++          "text": "Yes! We offer 50% off for universities and research centers on Professional and Business plans. Students get Professional free for the duration of their studies. Send us a university email to claim the discount."
++        }
++      },
++      {
++        "@type": "Question",
++        "name": "Do I need a credit card to sign up free?",
++        "acceptedAnswer": {
++          "@type": "Answer",
++          "text": "No. The Starter plan is completely free and requires no credit card. We will not ask for payment info unless you choose to upgrade to a paid plan."
++        }
++      },
++      {
++        "@type": "Question",
++        "name": "Do you offer refunds?",
++        "acceptedAnswer": {
++          "@type": "Answer",
++          "text": "Yes — we offer a 14-day money-back guarantee on all paid plans, no questions asked. We're confident in our product and don't want you to pay if it doesn't meet your expectations."
++        }
++      }
++    ]
++  }
++  </script>
  </head>
  <body>
    <nav class="navbar">
-@@ -24,6 +24,7 @@
+@@ -24,6 +76,7 @@
          <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
          <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
          <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
@@ -2403,7 +2648,7 @@ index f08cc36..af085ee 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -93,10 +94,9 @@
+@@ -93,10 +146,9 @@
            </div>
            <div class="plan-period" data-i18n-ar="إلى الأبد · مجاناً">Free forever</div>
            <ul class="plan-features">
@@ -2416,7 +2661,7 @@ index f08cc36..af085ee 100644
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 صناعات · 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>5 industries · 20 languages</li>
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم عبر البريد الإلكتروني'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Email support</li>
            </ul>
-@@ -114,7 +114,7 @@
+@@ -114,7 +166,7 @@
            <ul class="plan-features">
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 فورمولا شهرياً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>100 formulas/month</li>
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>ذاكرة دردشة أبدية + بدون إعلانات'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Persistent chat memory + ad-free</li>
@@ -2425,7 +2670,7 @@ index f08cc36..af085ee 100644
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>بحث متقدم بالذكاء الاصطناعي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Advanced AI search</li>
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تصدير Excel + PDF + MSDS'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Excel + PDF + MSDS export</li>
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تحليل تعارضات + محاكاة افتراضية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Conflict analysis + virtual simulation</li>
-@@ -163,7 +163,7 @@
+@@ -163,7 +215,7 @@
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>SLA 99.99% · SOC 2 + ISO 27001</li>
              <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم بـ 20 لغة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Support in 20 languages</li>
            </ul>
@@ -2434,7 +2679,7 @@ index f08cc36..af085ee 100644
          </div>
        </div>
      </div>
-@@ -191,7 +191,7 @@
+@@ -191,7 +243,7 @@
            <tbody>
              <tr>
                <td style="padding: 16px;" data-i18n-ar="عدد الفورمولات شهرياً">Formulas per month</td>
@@ -2443,7 +2688,7 @@ index f08cc36..af085ee 100644
                <td style="text-align: center; color: var(--primary); font-weight: 700;">100</td>
                <td style="text-align: center;">∞</td>
                <td style="text-align: center;">∞</td>
-@@ -327,9 +327,9 @@
+@@ -327,9 +379,9 @@
    <section class="container" style="padding-bottom: 60px;">
      <div class="cta-banner reveal">
        <h2 data-i18n-ar="جاهز لتجربة قوة Formula AI؟">Ready to experience the power of Formula AI?</h2>
@@ -2456,21 +2701,21 @@ index f08cc36..af085ee 100644
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
        </a>
      </div>
-@@ -357,9 +357,9 @@
+@@ -357,9 +409,9 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
    <script>
      // Wire pricing buttons to Stripe checkout (via the AI Worker)
      (function () {
 diff --git a/privacy.html b/privacy.html
-index be41446..fa367fe 100644
+index be41446..d12715b 100644
 --- a/privacy.html
 +++ b/privacy.html
 @@ -10,7 +10,7 @@
@@ -2478,7 +2723,7 @@ index be41446..fa367fe 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -2495,11 +2740,11 @@ index be41446..fa367fe 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/programs.html b/programs.html
-index 35b6fd0..bcd7df1 100644
+index 35b6fd0..c2f89d0 100644
 --- a/programs.html
 +++ b/programs.html
 @@ -11,7 +11,7 @@
@@ -2507,7 +2752,7 @@ index 35b6fd0..bcd7df1 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .program-hero {
        background: linear-gradient(135deg, var(--bg-card), transparent);
@@ -2524,11 +2769,11 @@ index 35b6fd0..bcd7df1 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
 diff --git a/register.html b/register.html
-index f7fa6b6..24b54ca 100644
+index f7fa6b6..27caa51 100644
 --- a/register.html
 +++ b/register.html
 @@ -11,7 +11,7 @@
@@ -2536,7 +2781,7 @@ index f7fa6b6..24b54ca 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
  </head>
  <body>
    <nav class="navbar">
@@ -2553,12 +2798,12 @@ index f7fa6b6..24b54ca 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/safety.html b/safety.html
-index 8cff19e..b12456d 100644
+index 8cff19e..517c9e8 100644
 --- a/safety.html
 +++ b/safety.html
 @@ -11,7 +11,7 @@
@@ -2566,7 +2811,7 @@ index 8cff19e..b12456d 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
      .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
@@ -2586,12 +2831,12 @@ index 8cff19e..b12456d 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
    <script>
      const SCENARIOS = {
        deadly: {
 diff --git a/scan.html b/scan.html
-index 434836b..1beb449 100644
+index 434836b..6718a77 100644
 --- a/scan.html
 +++ b/scan.html
 @@ -11,7 +11,7 @@
@@ -2599,7 +2844,7 @@ index 434836b..1beb449 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .scan-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .scan-grid { grid-template-columns: 1fr; } }
@@ -2619,15 +2864,15 @@ index 434836b..1beb449 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chem-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
    <script>
    /* scan.html — vision page logic */
    (function () {
 diff --git a/search.html b/search.html
-index b1a46b3..17cf308 100644
+index b1a46b3..3610cb2 100644
 --- a/search.html
 +++ b/search.html
 @@ -11,7 +11,36 @@
@@ -2635,7 +2880,7 @@ index b1a46b3..17cf308 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=12" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
 +  <style>
 +    /* Search result cards — mobile-first + bidi-safe (RTL/LTR mixed) */
 +    .fx-res { padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
@@ -2684,14 +2929,14 @@ index b1a46b3..17cf308 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/search-live.js"></script>
-+  <script src="./assets/app.js?v=12"></script>
-+  <script type="module" src="./assets/auth.js?v=12"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=12"></script>
-+  <script src="./assets/search-live.js?v=12"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/search-live.js?v=14"></script>
  </body>
  </html>
 diff --git a/similarity.html b/similarity.html
-index 4d09802..7c02f8f 100644
+index 4d09802..c79a3ed 100644
 --- a/similarity.html
 +++ b/similarity.html
 @@ -11,7 +11,7 @@
@@ -2699,7 +2944,7 @@ index 4d09802..7c02f8f 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .sim-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
@@ -2719,15 +2964,15 @@ index 4d09802..7c02f8f 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chem-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
    <script>
    /* similarity.html — page logic */
    (function () {
 diff --git a/substitute.html b/substitute.html
-index 9804d21..0505a32 100644
+index 9804d21..eaaaf09 100644
 --- a/substitute.html
 +++ b/substitute.html
 @@ -11,7 +11,7 @@
@@ -2735,7 +2980,7 @@ index 9804d21..0505a32 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .sub-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sub-grid { grid-template-columns: 1fr; } }
@@ -2755,10 +3000,10 @@ index 9804d21..0505a32 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=9"></script>
-+  <script type="module" src="./assets/auth.js?v=9"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=9"></script>
-+  <script src="./assets/chem-client.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
++  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/chem-client.js?v=14"></script>
    <script>
    /* substitute.html — page logic */
    (function () {
@@ -2899,7 +3144,7 @@ index 733200f..f401a5e 100644
 -});
 +// No fetch listener on purpose: requests go straight to the network.
 diff --git a/terms.html b/terms.html
-index a95b687..7ea5aa2 100644
+index a95b687..fd555d9 100644
 --- a/terms.html
 +++ b/terms.html
 @@ -10,7 +10,7 @@
@@ -2907,7 +3152,7 @@ index a95b687..7ea5aa2 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=9" />
++  <link rel="stylesheet" href="./assets/styles.css?v=14" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -2924,106 +3169,6 @@ index a95b687..7ea5aa2 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=9"></script>
++  <script src="./assets/app.js?v=14"></script>
  </body>
  </html>
-diff --git a/worker-src/handlers/search.js b/worker-src/handlers/search.js
-index 2075ff6..dfc82f7 100644
---- a/worker-src/handlers/search.js
-+++ b/worker-src/handlers/search.js
-@@ -60,13 +60,19 @@ export async function handleSearch(url, auth, env) {
-   if (!plan) return json({ rows: [], plan: null, error: 'claude_failed' }, 500);
-   if (!plan.must?.length) return json({ rows: [], plan, error: 'no_must_term' });
- 
--  // Step 2: Supabase
--  const must = String(plan.must[0] || '').replace(/[%_,()*\s]/g, '').trim();
--  if (!must) return json({ rows: [], plan, error: 'empty_must' });
-+  // Step 2: build a candidate pool, then rank by RELEVANCE (not trust).
-+  // Keep the primary product noun but DO NOT strip spaces — turn them
-+  // into ilike wildcards so "hand wash" matches "Hand Wash"/"Handwash".
-+  const nounRaw = String(plan.must[0] || '').trim();
-+  const noun = nounRaw.replace(/[%_(),"]/g, ' ').replace(/\s+/g, ' ').trim();
-+  if (!noun) return json({ rows: [], plan, error: 'empty_must' });
-+  const nounLike = noun.split(' ').filter(Boolean).join('*');
- 
-   const select =
-     'id,name,name_en,category,sub_category,form_type,components,trust_score';
--  let path = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
-+  const baseFilter =
-+    `or=(name.ilike.*${nounLike}*,name_en.ilike.*${nounLike}*,sub_category.ilike.*${nounLike}*)`;
-+  let path = `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`;
-   if (Array.isArray(plan.categories) && plan.categories.length) {
-     const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
-     path += `&category=in.(${cats})`;
-@@ -82,27 +88,57 @@ export async function handleSearch(url, auth, env) {
-   let rows = await sbRes.json();
-   if (!Array.isArray(rows)) rows = [];
- 
--  // Fallback: drop category filter
-+  // Fallback 1: same noun filter, drop category
-   if (rows.length === 0 && plan.categories?.length) {
--    const fbPath = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
--    const fb = await sb(env, fbPath);
--    if (fb.ok) {
--      const j = await fb.json();
--      if (Array.isArray(j)) rows = j;
--    }
-+    const fb = await sb(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`);
-+    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
-+  }
-+  // Fallback 2: category-only pool (stay on-topic instead of empty)
-+  if (rows.length === 0 && plan.categories?.length) {
-+    const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
-+    const fb = await sb(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&category=in.(${cats})`);
-+    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
-   }
- 
--  // Boost ranking
--  const boost = (plan.boost || []).map((b) => String(b).toLowerCase()).filter(Boolean);
--  const ranked = rows
-+  // ── Relevance ranking ──────────────────────────────────────────────
-+  // Topical match dominates; trust is only a small tiebreaker so generic
-+  // matches no longer outrank the formula the user actually asked for.
-+  const norm = (s) => String(s || '').toLowerCase();
-+  const STOP = new Set(['the', 'a', 'an', 'of', 'for', 'and', 'with', 'to',
-+    'مع', 'من', 'في', 'عن', 'على', 'الى', 'هل']);
-+  const qTokens = [...new Set(
-+    norm(query).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w))
-+  )];
-+  const mustTokens = (plan.must || []).flatMap((m) => norm(m).split(/\s+/)).filter(Boolean);
-+  const boost = (plan.boost || []).map(norm).filter(Boolean);
-+  const planCats = (plan.categories || []).map(norm);
-+  const nounLc = norm(noun);
-+
-+  let ranked = rows
-     .map((r) => {
--      const hay = `${r.name || ''} ${r.name_en || ''} ${r.sub_category || ''}`.toLowerCase();
-+      const name = `${norm(r.name)} ${norm(r.name_en)}`;
-+      const comps = Array.isArray(r.components)
-+        ? r.components.map((c) => norm(c && (c.name_en || c.name))).join(' ')
-+        : '';
-+      const hay = `${name} ${norm(r.sub_category)} ${norm(r.category)} ${comps}`;
-       let score = 0;
--      for (const b of boost) if (hay.includes(b)) score += 10;
--      score += (r.trust_score || 0) / 10;
-+      if (nounLc && name.includes(nounLc)) score += 40;
-+      for (const b of boost) if (b && hay.includes(b)) score += 12;
-+      for (const m of mustTokens) if (m && name.includes(m)) score += 8;
-+      for (const t of qTokens) if (hay.includes(t)) score += 5;
-+      if (planCats.includes(norm(r.category))) score += 6;
-+      score += Math.min(5, (r.trust_score || 0) * 0.05);
-       return { ...r, _score: score };
-     })
--    .sort((a, b) => b._score - a._score);
-+    .filter((r) => r._score > 5)
-+    .sort((a, b) => b._score - a._score || (b.trust_score || 0) - (a.trust_score || 0));
-+
-+  // Safety: never show "nothing" if we had candidate rows
-+  if (ranked.length === 0 && rows.length) {
-+    ranked = rows
-+      .map((r) => ({ ...r, _score: (r.trust_score || 0) * 0.05 }))
-+      .sort((a, b) => b._score - a._score);
-+  }
- 
-   await recordUsage(auth.id, '/search', env);
- 
