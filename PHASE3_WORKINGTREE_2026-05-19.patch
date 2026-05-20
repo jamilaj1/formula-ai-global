@@ -1,11 +1,11 @@
-# Working-tree code snapshot — refreshed 2026-05-20
-# Adds: index.html Organization/WebSite/WebApplication JSON-LD,
-#       pricing.html FAQPage, formula.html BreadcrumbList in updateSeo.
-# Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/.
+# Working-tree code snapshot — refreshed 2026-05-20 (contributor system)
+# Adds: pro_credits gate in 3 places, getContributor helper,
+#       formula.html contributor recognition line, site-wide ?v=15.
+# Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/, database/.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
 diff --git a/about.html b/about.html
-index 3cea245..621e68b 100644
+index 3cea245..39cf6d3 100644
 --- a/about.html
 +++ b/about.html
 @@ -11,7 +11,7 @@
@@ -13,7 +13,7 @@ index 3cea245..621e68b 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -30,11 +30,11 @@ index 3cea245..621e68b 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/agent.html b/agent.html
-index 41a0106..5d75065 100644
+index 41a0106..a6d7c25 100644
 --- a/agent.html
 +++ b/agent.html
 @@ -11,7 +11,7 @@
@@ -42,7 +42,7 @@ index 41a0106..5d75065 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .agent-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1180px; margin: 0 auto; }
      @media (max-width: 980px) { .agent-grid { grid-template-columns: 1fr; } }
@@ -62,10 +62,10 @@ index 41a0106..5d75065 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
    <script>
    /* agent.html — multi-agent orchestrator page */
    (function () {
@@ -149,10 +149,10 @@ diff --git a/assets/chat-live.js b/assets/chat-live.js
 index 65fd9c7..c878c13 100644
 Binary files a/assets/chat-live.js and b/assets/chat-live.js differ
 diff --git a/assets/chem-client.js b/assets/chem-client.js
-index 5eba21c..47f68a2 100644
+index 5eba21c..8d05da4 100644
 --- a/assets/chem-client.js
 +++ b/assets/chem-client.js
-@@ -107,5 +107,60 @@ const FAI_CHEM = {
+@@ -107,5 +107,62 @@ const FAI_CHEM = {
    health: () => callGet('/chem/health'),
  };
  
@@ -171,7 +171,9 @@ index 5eba21c..47f68a2 100644
 +    _paidCache = !!(profile && (
 +      profile.subscription_status === 'active' ||
 +      (profile.plan && profile.plan !== 'free') ||
-+      profile.subscription_plan_id
++      profile.subscription_plan_id ||
++      (Number(profile.pro_credits_months || 0)
++        > Number(profile.pro_credits_used || 0))
 +    ));
 +  } catch (_) { _paidCache = false; }
 +  return _paidCache;
@@ -216,7 +218,7 @@ index 5eba21c..47f68a2 100644
 +window.FAI_CHEM = FAI_CHEM_GATED;
 +console.info('[FAI_CHEM] loaded — chemistry API client ready (subscription-gated)');
 diff --git a/assets/formula-detail-live.js b/assets/formula-detail-live.js
-index f49951b..3723f12 100644
+index f49951b..d891629 100644
 --- a/assets/formula-detail-live.js
 +++ b/assets/formula-detail-live.js
 @@ -1,7 +1,7 @@
@@ -228,7 +230,7 @@ index f49951b..3723f12 100644
       • Components table: CAS, percentage, function, phase
       • Preparation steps (process_conditions)
       • Safety warnings panel (auto-derived from ingredient hazards)
-@@ -112,12 +112,23 @@
+@@ -112,12 +112,25 @@
      const id = params.get("id");
      if (!id) return; // No id → leave the static demo content untouched
  
@@ -250,13 +252,15 @@ index f49951b..3723f12 100644
 +      isPaid = !!(profile && (
 +        profile.subscription_status === "active" ||
 +        (profile.plan && profile.plan !== "free") ||
-+        profile.subscription_plan_id
++        profile.subscription_plan_id ||
++        (Number(profile.pro_credits_months || 0)
++          > Number(profile.pro_credits_used || 0))
 +      ));
 +    } catch (_) { isPaid = false; }
  
      injectPrintStyles();
  
-@@ -127,7 +138,7 @@
+@@ -127,7 +140,7 @@
      const hazards = detectHazards(components);
  
      const componentRows = components.map((c, i) => `
@@ -265,7 +269,7 @@ index f49951b..3723f12 100644
          <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--text-3); width:32px;">${i + 1}</td>
          <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
            <strong>${escapeHTML(c.name_en || "—")}</strong>
-@@ -164,9 +175,19 @@
+@@ -164,9 +177,19 @@
      const subCat = row.sub_category ? ` · ${escapeHTML(row.sub_category)}` : "";
      const formType = row.form_type ? `<span style="color:var(--text-3); font-size:0.92rem;">${escapeHTML(row.form_type)}</span>` : "";
      const trustScore = row.trust_score ?? 0;
@@ -286,7 +290,7 @@ index f49951b..3723f12 100644
        <section style="padding: 120px 0 60px;">
          <div class="container" style="max-width: 1100px;">
  
-@@ -200,11 +221,9 @@
+@@ -200,11 +223,9 @@
                </div>
              </div>
  
@@ -301,7 +305,7 @@ index f49951b..3723f12 100644
            </div>
  
            <!-- Action Bar -->
-@@ -248,14 +267,16 @@
+@@ -248,14 +269,16 @@
              </div>
            </div>
  
@@ -320,7 +324,7 @@ index f49951b..3723f12 100644
              <div class="card" style="padding:32px; margin-bottom:24px;">
                <h2 style="font-size:1.3rem; margin-bottom:6px;">⚠️ ${T("Safety Notes", "ملاحظات السلامة")}</h2>
                <p style="color:var(--text-3); font-size:0.88rem; margin-bottom:18px;">
-@@ -265,7 +286,7 @@
+@@ -265,7 +288,7 @@
              </div>
            ` : ""}
  
@@ -401,7 +405,7 @@ index 70714c1..179f5a4 100644
        });
        refreshUsageBadge();
 diff --git a/assets/supabase-client.js b/assets/supabase-client.js
-index d412ad7..6820173 100644
+index d412ad7..f0cbaff 100644
 --- a/assets/supabase-client.js
 +++ b/assets/supabase-client.js
 @@ -1,36 +1,16 @@
@@ -503,14 +507,14 @@ index d412ad7..6820173 100644
 -    } catch (err) {
 -      return { error: err.message };
 -    }
--  },
--
--  async getById(id) {
--    const { data, error } = await sb.from("formulas").select("*").eq("id", id).single();
--    return { row: data, error };
 +    } catch { return null; }
    },
  
+-  async getById(id) {
+-    const { data, error } = await sb.from("formulas").select("*").eq("id", id).single();
+-    return { row: data, error };
+-  },
+-
 -  async browse({ limit = 24, offset = 0, category = null } = {}) {
 -    let q = sb.from("formulas")
 -      .select("id,name,name_en,category,sub_category,form_type,components,trust_score", { count: "exact" })
@@ -582,7 +586,7 @@ index d412ad7..6820173 100644
    async startStripeCheckout(plan) {
      try {
        const r = await fetch(`${WORKER_URL}/stripe/checkout`, {
-@@ -158,23 +101,57 @@ const FAI_DB = {
+@@ -158,23 +101,67 @@ const FAI_DB = {
        const j = await r.json();
        if (j.url) window.location.href = j.url;
        return j;
@@ -643,6 +647,16 @@ index d412ad7..6820173 100644
 +    const { data, error } = await sb.from('profiles').select('*').eq('id', user.id).single();
 +    if (error) return null;
 +    return data;
++  },
++
++  /** Public contributor info (display_name, badge, count) — safe to read
++   *  anonymously via the public_profiles view (no email/credits exposed). */
++  async getContributor(id) {
++    if (!id) return null;
++    const { data, error } = await sb.from('public_profiles')
++      .select('*').eq('id', id).maybeSingle();
++    if (error) return null;
++    return data;
    },
  };
  
@@ -651,7 +665,7 @@ index d412ad7..6820173 100644
 +window.FAI_DB = FAI_DB;
 \ No newline at end of file
 diff --git a/chat.html b/chat.html
-index f31e4e9..cae9724 100644
+index f31e4e9..1ee30c4 100644
 --- a/chat.html
 +++ b/chat.html
 @@ -11,7 +11,7 @@
@@ -659,7 +673,7 @@ index f31e4e9..cae9724 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .chat-page-shell {
        display: grid;
@@ -761,14 +775,14 @@ index f31e4e9..cae9724 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chat-live.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chat-live.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chat-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/compliance.html b/compliance.html
-index 7b7f4cc..13c20d7 100644
+index 7b7f4cc..5d114a3 100644
 --- a/compliance.html
 +++ b/compliance.html
 @@ -11,7 +11,7 @@
@@ -776,7 +790,7 @@ index 7b7f4cc..13c20d7 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -793,11 +807,11 @@ index 7b7f4cc..13c20d7 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/contact.html b/contact.html
-index a7f9407..56f3bee 100644
+index a7f9407..2208c23 100644
 --- a/contact.html
 +++ b/contact.html
 @@ -11,7 +11,7 @@
@@ -805,7 +819,7 @@ index a7f9407..56f3bee 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -822,13 +836,13 @@ index a7f9407..56f3bee 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      // === Contact form: real submission via Formspree ===
      // SETUP: register a free account at https://formspree.io,
 diff --git a/contribute.html b/contribute.html
 new file mode 100644
-index 0000000..99c4600
+index 0000000..96f220f
 --- /dev/null
 +++ b/contribute.html
 @@ -0,0 +1,307 @@
@@ -845,7 +859,7 @@ index 0000000..99c4600
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
 +  <style>
 +    .cb-wrap { max-width: 760px; margin: 0 auto; }
 +    .cb-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
@@ -1017,9 +1031,9 @@ index 0000000..99c4600
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
 +  <script>
 +  /* contribute.html — community formula upload (sign-in required).
 +     Pure addition. Inserts into user_submissions via the user's own
@@ -1140,7 +1154,7 @@ index 0000000..99c4600
 +</body>
 +</html>
 diff --git a/dashboard.html b/dashboard.html
-index dd6fc88..c27ca58 100644
+index dd6fc88..20d71bb 100644
 --- a/dashboard.html
 +++ b/dashboard.html
 @@ -11,7 +11,7 @@
@@ -1148,7 +1162,7 @@ index dd6fc88..c27ca58 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -1231,11 +1245,11 @@ index dd6fc88..c27ca58 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/discover.html b/discover.html
-index b057238..5a12a4a 100644
+index b057238..0467023 100644
 --- a/discover.html
 +++ b/discover.html
 @@ -11,7 +11,7 @@
@@ -1243,7 +1257,7 @@ index b057238..5a12a4a 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .disc-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .source-grid {
@@ -1263,14 +1277,14 @@ index b057238..5a12a4a 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/discover-live.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/discover-live.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/discover-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/docs.html b/docs.html
-index 0645ee2..7d5a4c6 100644
+index 0645ee2..790fadf 100644
 --- a/docs.html
 +++ b/docs.html
 @@ -11,7 +11,7 @@
@@ -1278,7 +1292,7 @@ index 0645ee2..7d5a4c6 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .docs-layout {
        display: grid;
@@ -1295,12 +1309,12 @@ index 0645ee2..7d5a4c6 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      // Smooth-scroll active section in sidebar
      const links = document.querySelectorAll('.docs-sidebar a');
 diff --git a/encyclopedia.html b/encyclopedia.html
-index 5e6dc39..5ea8a88 100644
+index 5e6dc39..2b7cd3e 100644
 --- a/encyclopedia.html
 +++ b/encyclopedia.html
 @@ -3,15 +3,15 @@
@@ -1318,7 +1332,7 @@ index 5e6dc39..5ea8a88 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .enc-search-bar {
        max-width: 720px;
@@ -1482,7 +1496,7 @@ index 5e6dc39..5ea8a88 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      const ENCYCLOPEDIA = [
        { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
@@ -1502,10 +1516,10 @@ index 5e6dc39..5ea8a88 100644
      }
 diff --git a/formula.html b/formula.html
 new file mode 100644
-index 0000000..f6166fc
+index 0000000..f80cf71
 --- /dev/null
 +++ b/formula.html
-@@ -0,0 +1,550 @@
+@@ -0,0 +1,580 @@
 +<!DOCTYPE html>
 +<html lang="en" dir="ltr">
 +<head>
@@ -1523,7 +1537,7 @@ index 0000000..f6166fc
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
 +  <style>
 +    .fx-wrap { max-width: 1080px; margin: 0 auto; }
 +    .fx-head { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 26px 28px; margin-bottom: 20px; }
@@ -1758,10 +1772,10 @@ index 0000000..f6166fc
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
 +  <script>
 +  /* formula.html — single-formula presentation page.
 +     Reached as formula.html?id=<uuid>  (or ?name=<text> fallback).
@@ -1842,7 +1856,9 @@ index 0000000..f6166fc
 +          IS_PAID = !!(profile && (
 +            profile.subscription_status === 'active' ||
 +            (profile.plan && profile.plan !== 'free') ||
-+            profile.subscription_plan_id
++            profile.subscription_plan_id ||
++            (Number(profile.pro_credits_months || 0)
++              > Number(profile.pro_credits_used || 0))
 +          ));
 +        } catch (_) { IS_PAID = false; }
 +        render(f);
@@ -1959,6 +1975,34 @@ index 0000000..f6166fc
 +      }
 +      $('fx-badges').innerHTML = badges.join('');
 +
++      // Async: show contributor recognition badge if this formula was
++      // submitted by a verified chemist (reads the public_profiles view).
++      if (f.contributor_id && window.FAI_DB && window.FAI_DB.getContributor) {
++        window.FAI_DB.getContributor(f.contributor_id).then((c) => {
++          if (!c) return;
++          const host = document.querySelector('.fx-head');
++          if (!host) return;
++          const prev = document.getElementById('fx-contributor');
++          if (prev) prev.remove();
++          const labels = {
++            master: '🏆 Master Formulator',
++            verified_chemist: '✅ Verified Chemist',
++            newbie: '🌱 Contributor',
++          };
++          const label = labels[c.contributor_badge] || labels.newbie;
++          const el = document.createElement('div');
++          el.id = 'fx-contributor';
++          el.style.cssText = 'margin-top:14px; font-size:0.85rem; color:var(--text-3); display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
++          el.innerHTML =
++            '<span data-i18n-ar="ساهَم بها">Contributed by</span>' +
++            ' <strong style="color:var(--text-1);">' + esc(c.display_name || 'Contributor') + '</strong>' +
++            ' <span style="background:rgba(0,255,136,.12); color:var(--primary); padding:2px 9px; border-radius:999px; font-size:.72rem; font-weight:700;">' + label + '</span>' +
++            (c.verified_formulas_count ? ' <span style="color:var(--text-3); font-size:.78rem;">· ' + c.verified_formulas_count + ' verified formulas</span>' : '');
++          host.appendChild(el);
++          if (window.applyI18n) window.applyI18n();
++        });
++      }
++
 +      // Ingredients table
 +      const tot = cs.reduce((s, x) => s + (parseFloat(x.percentage) || 0), 0);
 +      const maxPct = Math.max(1, ...cs.map((x) => parseFloat(x.percentage) || 0));
@@ -2057,7 +2101,7 @@ index 0000000..f6166fc
 +</body>
 +</html>
 diff --git a/formulas.html b/formulas.html
-index 8e6ae0d..ea6b2dd 100644
+index 8e6ae0d..215a0f8 100644
 --- a/formulas.html
 +++ b/formulas.html
 @@ -11,7 +11,7 @@
@@ -2065,7 +2109,7 @@ index 8e6ae0d..ea6b2dd 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -2085,14 +2129,14 @@ index 8e6ae0d..ea6b2dd 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/formula-detail-live.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/formula-detail-live.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/formula-detail-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/index.html b/index.html
-index 1d1dbf0..5fd14cc 100644
+index 1d1dbf0..d272e82 100644
 --- a/index.html
 +++ b/index.html
 @@ -23,13 +23,155 @@
@@ -2153,7 +2197,7 @@ index 1d1dbf0..5fd14cc 100644
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
  
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
 +
 +  <!-- ── Homepage hero polish ─────────────────────────────────────────
 +       Scoped to index.html only (inline <style> never leaks to other
@@ -2367,11 +2411,11 @@ index 1d1dbf0..5fd14cc 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/industries.html b/industries.html
-index 3f61053..4a4c374 100644
+index 3f61053..bfc6c4a 100644
 --- a/industries.html
 +++ b/industries.html
 @@ -11,7 +11,7 @@
@@ -2379,7 +2423,7 @@ index 3f61053..4a4c374 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .ind-category { margin-bottom: 50px; }
      .ind-cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -2396,12 +2440,12 @@ index 3f61053..4a4c374 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      document.querySelectorAll('.filter-btn').forEach(btn => {
        btn.addEventListener('click', () => {
 diff --git a/lab.html b/lab.html
-index 74bd743..2a39e04 100644
+index 74bd743..a49d9fd 100644
 --- a/lab.html
 +++ b/lab.html
 @@ -11,7 +11,7 @@
@@ -2409,7 +2453,7 @@ index 74bd743..2a39e04 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .lab-grid {
        display: grid;
@@ -2426,12 +2470,12 @@ index 74bd743..2a39e04 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      // Ingredient catalog (mirrors VirtualLaboratory.properties keys)
      const CATALOG = [
 diff --git a/learn.html b/learn.html
-index 78be8a7..2492480 100644
+index 78be8a7..50bf2f5 100644
 --- a/learn.html
 +++ b/learn.html
 @@ -11,7 +11,7 @@
@@ -2439,7 +2483,7 @@ index 78be8a7..2492480 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .learn-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .drop-zone {
@@ -2458,9 +2502,9 @@ index 78be8a7..2492480 100644
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
    <script>
      if (window['pdfjsLib']) {
@@ -2469,11 +2513,11 @@ index 78be8a7..2492480 100644
      }
    </script>
 -  <script src="./assets/learn-live.js"></script>
-+  <script src="./assets/learn-live.js?v=14"></script>
++  <script src="./assets/learn-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/library.html b/library.html
-index b3640bf..5098f54 100644
+index b3640bf..33c7f09 100644
 --- a/library.html
 +++ b/library.html
 @@ -11,7 +11,7 @@
@@ -2481,7 +2525,7 @@ index b3640bf..5098f54 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .lib-shell { max-width: 1200px; margin: 0 auto; padding: 100px 16px 40px; }
      .lib-tabs {
@@ -2501,14 +2545,14 @@ index b3640bf..5098f54 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/library-live.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/library-live.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/library-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/login.html b/login.html
-index 86f54a3..f0e0c94 100644
+index 86f54a3..7520082 100644
 --- a/login.html
 +++ b/login.html
 @@ -11,7 +11,7 @@
@@ -2516,7 +2560,7 @@ index 86f54a3..f0e0c94 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -2534,13 +2578,13 @@ index 86f54a3..f0e0c94 100644
  
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/predict.html b/predict.html
-index 9b5ffa1..697b290 100644
+index 9b5ffa1..0982423 100644
 --- a/predict.html
 +++ b/predict.html
 @@ -11,7 +11,7 @@
@@ -2548,7 +2592,7 @@ index 9b5ffa1..697b290 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .pred-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .pred-grid { grid-template-columns: 1fr; } }
@@ -2568,15 +2612,15 @@ index 9b5ffa1..697b290 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
    <script>
    /* predict.html — single-compound property calculator */
    (function () {
 diff --git a/pricing.html b/pricing.html
-index f08cc36..15c9ff5 100644
+index f08cc36..c764635 100644
 --- a/pricing.html
 +++ b/pricing.html
 @@ -11,7 +11,59 @@
@@ -2584,7 +2628,7 @@ index f08cc36..15c9ff5 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
 +  <link rel="canonical" href="https://jamilformula.com/pricing.html" />
 +
 +  <!-- FAQ schema — mirrors the visible "Pricing & billing questions"
@@ -2708,14 +2752,14 @@ index f08cc36..15c9ff5 100644
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
    <script>
      // Wire pricing buttons to Stripe checkout (via the AI Worker)
      (function () {
 diff --git a/privacy.html b/privacy.html
-index be41446..d12715b 100644
+index be41446..a2c7451 100644
 --- a/privacy.html
 +++ b/privacy.html
 @@ -10,7 +10,7 @@
@@ -2723,7 +2767,7 @@ index be41446..d12715b 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -2740,11 +2784,11 @@ index be41446..d12715b 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/programs.html b/programs.html
-index 35b6fd0..c2f89d0 100644
+index 35b6fd0..b33fe9a 100644
 --- a/programs.html
 +++ b/programs.html
 @@ -11,7 +11,7 @@
@@ -2752,7 +2796,7 @@ index 35b6fd0..c2f89d0 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .program-hero {
        background: linear-gradient(135deg, var(--bg-card), transparent);
@@ -2769,11 +2813,11 @@ index 35b6fd0..c2f89d0 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>
 diff --git a/register.html b/register.html
-index f7fa6b6..27caa51 100644
+index f7fa6b6..bf4b244 100644
 --- a/register.html
 +++ b/register.html
 @@ -11,7 +11,7 @@
@@ -2781,7 +2825,7 @@ index f7fa6b6..27caa51 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
  </head>
  <body>
    <nav class="navbar">
@@ -2798,12 +2842,12 @@ index f7fa6b6..27caa51 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/safety.html b/safety.html
-index 8cff19e..517c9e8 100644
+index 8cff19e..2b2265c 100644
 --- a/safety.html
 +++ b/safety.html
 @@ -11,7 +11,7 @@
@@ -2811,7 +2855,7 @@ index 8cff19e..517c9e8 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
      .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
@@ -2831,12 +2875,12 @@ index 8cff19e..517c9e8 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
    <script>
      const SCENARIOS = {
        deadly: {
 diff --git a/scan.html b/scan.html
-index 434836b..6718a77 100644
+index 434836b..96221da 100644
 --- a/scan.html
 +++ b/scan.html
 @@ -11,7 +11,7 @@
@@ -2844,7 +2888,7 @@ index 434836b..6718a77 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .scan-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .scan-grid { grid-template-columns: 1fr; } }
@@ -2864,15 +2908,15 @@ index 434836b..6718a77 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
    <script>
    /* scan.html — vision page logic */
    (function () {
 diff --git a/search.html b/search.html
-index b1a46b3..3610cb2 100644
+index b1a46b3..43b0a51 100644
 --- a/search.html
 +++ b/search.html
 @@ -11,7 +11,36 @@
@@ -2880,7 +2924,7 @@ index b1a46b3..3610cb2 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
 +  <style>
 +    /* Search result cards — mobile-first + bidi-safe (RTL/LTR mixed) */
 +    .fx-res { padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
@@ -2929,14 +2973,14 @@ index b1a46b3..3610cb2 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/search-live.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/search-live.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/search-live.js?v=15"></script>
  </body>
  </html>
 diff --git a/similarity.html b/similarity.html
-index 4d09802..c79a3ed 100644
+index 4d09802..e946463 100644
 --- a/similarity.html
 +++ b/similarity.html
 @@ -11,7 +11,7 @@
@@ -2944,7 +2988,7 @@ index 4d09802..c79a3ed 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .sim-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
@@ -2964,15 +3008,15 @@ index 4d09802..c79a3ed 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
    <script>
    /* similarity.html — page logic */
    (function () {
 diff --git a/substitute.html b/substitute.html
-index 9804d21..eaaaf09 100644
+index 9804d21..45b29c4 100644
 --- a/substitute.html
 +++ b/substitute.html
 @@ -11,7 +11,7 @@
@@ -2980,7 +3024,7 @@ index 9804d21..eaaaf09 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .sub-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sub-grid { grid-template-columns: 1fr; } }
@@ -3000,10 +3044,10 @@ index 9804d21..eaaaf09 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=14"></script>
-+  <script type="module" src="./assets/auth.js?v=14"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=14"></script>
-+  <script src="./assets/chem-client.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
++  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/chem-client.js?v=15"></script>
    <script>
    /* substitute.html — page logic */
    (function () {
@@ -3144,7 +3188,7 @@ index 733200f..f401a5e 100644
 -});
 +// No fetch listener on purpose: requests go straight to the network.
 diff --git a/terms.html b/terms.html
-index a95b687..fd555d9 100644
+index a95b687..e56a815 100644
 --- a/terms.html
 +++ b/terms.html
 @@ -10,7 +10,7 @@
@@ -3152,7 +3196,7 @@ index a95b687..fd555d9 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=14" />
++  <link rel="stylesheet" href="./assets/styles.css?v=15" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -3169,6 +3213,6 @@ index a95b687..fd555d9 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=14"></script>
++  <script src="./assets/app.js?v=15"></script>
  </body>
  </html>

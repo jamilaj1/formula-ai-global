@@ -356,6 +356,42 @@ controlled test in a staging hostname.
 5. 4 blog posts over a month (long-tail SEO).
 6. Admin-key rotation (precaution; not urgent — key never reached git).
 
+## 6f. Contributor recognition + Pro-credits system (2026-05-20)
+
+Growth flywheel: every chemist whose formula gets verified earns
+visible credit + a free month of Pro for every 5 verified formulas.
+
+- **`database/migrations/2026-05-20_contributor_rewards.sql`** (NEW) —
+  adds `formulas.contributor_id` + `verified_at`, profile fields
+  (`display_name`, `verified_formulas_count`, `pro_credits_months`,
+  `pro_credits_used`, `contributor_badge`), trigger
+  `grant_contributor_rewards` that auto-grants on verification, public
+  view `public_profiles` (display_name + badge + count only — email,
+  plan and credits stay private), and convenience function
+  `approve_submission(uuid, trust)` that moves a row from
+  `user_submissions` to `formulas` and fires the reward chain.
+- **`assets/supabase-client.js`** — new `getContributor(id)` reads the
+  public_profiles view (anonymous-safe).
+- **`formula.html`** — in `render(f)` the page asynchronously fetches
+  the contributor and shows a small "Contributed by ‹name› · ‹badge› ·
+  N verified formulas" line under the title.
+- **Gate honors Pro credits in 3 places** (formula.html, chem-client.js,
+  formula-detail-live.js): `pro_credits_months > pro_credits_used` is
+  now treated as "paid". Contributors with credits get the full library
+  without paying — until their credits are exhausted, then the normal
+  paywall returns.
+- Cache-bust: site-wide `?v=15` (all 29 HTML).
+
+**ACTIONS (owner, one-time):**
+1. Upload the new `DEPLOY_PHASE3.zip` to Hostinger public_html.
+2. In **Supabase → SQL Editor**, paste & run
+   `database/migrations/2026-05-20_contributor_rewards.sql` once.
+3. To publish a user submission with credit:
+   `SELECT approve_submission('<submission-uuid>', 80);`
+4. To credit yourself (for owner-added formulas):
+   `UPDATE formulas SET contributor_id='<your-uuid>', verified_at=NOW()
+    WHERE id='<formula-uuid>';`
+
 ## 8. Files touched this phase
 
 ```
