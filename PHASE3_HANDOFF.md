@@ -392,6 +392,29 @@ visible credit + a free month of Pro for every 5 verified formulas.
    `UPDATE formulas SET contributor_id='<your-uuid>', verified_at=NOW()
     WHERE id='<formula-uuid>';`
 
+### Production verification — owner-tested across all 3 tiers (2026-05-21)
+
+Owner `jamilaj1@gmail.com` (uuid `01da3a9f-e5c7-42d1-85a6-f4e274547285`)
+ran the migration on production and incrementally tested the reward
+trigger at the three threshold transitions:
+
+| Stage | verified_formulas_count | pro_credits_months | contributor_badge |
+|---|---|---|---|
+| After 1st verification | 1 | 0 | newbie |
+| After 9 verifications | 9 | 1 (granted at 5th) | newbie |
+| **At 50** | 50 | **10** (granted at 5,10,15,…,50) | **verified_chemist** ✅ |
+| **At 200** | 200 | **40** (10 + 30 from 50→200) | **master** 🏆 |
+
+Math matches the spec exactly. Trigger atomicity verified.
+`display_name = 'Jamil Abduljalil'` set; formula pages now render
+"Contributed by Jamil Abduljalil · 🏆 Master Formulator · 200 verified
+formulas" under each contributed formula's title.
+
+Side effect (intended): the gate now honors
+`pro_credits_months > pro_credits_used`, so the owner account gets full
+Pro access via earned credits — no Paystack subscription needed for
+own QA / dogfooding.
+
 ## 8. Files touched this phase
 
 ```
@@ -405,9 +428,10 @@ NEW: scripts/build_phase3.py  PHASE3_HANDOFF.md  PHASE3_WORKINGTREE_2026-05-19.p
 ARTIFACT: DEPLOY_PHASE3.zip (37 entries, 0 backslash, ~238 KB)
 ```
 
-_Last updated: 2026-05-20 — Phase 3 complete + post-launch SEO push
-shipped & verified via Google Rich Results Test. 3,434 indexable
-pages with rich-result schema; sitemap submitted & accepted in Google
-Search Console (3,434 pages discovered). Score: ~9.55. Open
-(non-blocking): admin-key rotation, Better Stack/Sentry account,
-Resend transactional emails, SMILES backfill, CSP tightening._
+_Last updated: 2026-05-21 — Phase 3 + SEO + Industries + contributor
+reward system all live & owner-verified. Owner reached **🏆 Master
+Formulator** (200 verified, 40 Pro credit months); trigger validated
+across all 3 tiers. Sitemap accepted by Google Search Console (3,434
+pages discovered). Score: ~9.6. Open (non-blocking): admin-key rotation,
+Better Stack/Sentry account, Resend transactional emails, SMILES
+backfill, CSP tightening, Facebook launch campaign on 60K audience._
