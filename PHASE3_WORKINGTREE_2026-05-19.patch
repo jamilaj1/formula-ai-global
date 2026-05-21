@@ -1,11 +1,12 @@
-# Working-tree code snapshot — refreshed 2026-05-20 (contributor system)
-# Adds: pro_credits gate in 3 places, getContributor helper,
-#       formula.html contributor recognition line, site-wide ?v=15.
+# Working-tree code snapshot — refreshed 2026-05-21 (auth-session fix)
+# Includes: auth.js initialized flag, supabase-client.js v8 (shared client),
+#          dashboard.html dynamic welcome + auth scripts, auth.js added to
+#          all 12 navbar-bearing pages that were missing it.
 # Scope: *.html + assets/*.js + sw.js (CODE ONLY). EXCLUDED: *.md, backend/, database/.
 # Restore: git apply --3way PHASE3_WORKINGTREE_2026-05-19.patch
 # ----------------------------------------------------------------------
 diff --git a/about.html b/about.html
-index 3cea245..39cf6d3 100644
+index 3cea245..634c1b9 100644
 --- a/about.html
 +++ b/about.html
 @@ -11,7 +11,7 @@
@@ -13,7 +14,7 @@ index 3cea245..39cf6d3 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -25,16 +26,21 @@ index 3cea245..39cf6d3 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -262,6 +263,6 @@
+@@ -262,6 +263,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>
 diff --git a/agent.html b/agent.html
-index 41a0106..a6d7c25 100644
+index 41a0106..6a48b93 100644
 --- a/agent.html
 +++ b/agent.html
 @@ -11,7 +11,7 @@
@@ -42,7 +48,7 @@ index 41a0106..a6d7c25 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .agent-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1180px; margin: 0 auto; }
      @media (max-width: 980px) { .agent-grid { grid-template-columns: 1fr; } }
@@ -62,10 +68,10 @@ index 41a0106..a6d7c25 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
    <script>
    /* agent.html — multi-agent orchestrator page */
    (function () {
@@ -145,8 +151,44 @@ index 6fb872a..bb46d48 100644
    if (!trigger || !menu) return;
  
    trigger.addEventListener('click', (e) => {
+diff --git a/assets/auth.js b/assets/auth.js
+index 599818f..5ef69e9 100644
+--- a/assets/auth.js
++++ b/assets/auth.js
+@@ -13,9 +13,9 @@
+ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+ 
+ const SUPABASE_URL  = "https://ivabcssceeaqgqjzgmdx.supabase.co";
+-const SUPABASE_ANON = "PASTE_ANON_PUBLIC_KEY_HERE";
++const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2YWJjc3NjZWVhcWdxanpnbWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA5MjQsImV4cCI6MjA5MzExNjkyNH0.B925FvgcZVM4_QSj31Ed-8Fg5XQWUEx0VJMN9GMQfYk";
+ 
+-// Fail loudly if the anon key wasn't filled in before deploy.
++// Safety net (key now hard-coded above). Kept for accidental regressions.
+ if (!SUPABASE_ANON || SUPABASE_ANON.startsWith('PASTE_') || SUPABASE_ANON.length < 40) {
+   const msg = '[FAI auth] SUPABASE_ANON key is missing or still a placeholder. ' +
+     'Fill it in assets/auth.js before deploy.';
+@@ -41,6 +41,11 @@ const FAI_AUTH = {
+   /** Current session (null if guest). */
+   session: null,
+ 
++  /** True after the very first getSession() resolves. Other scripts
++   *  should wait for this before deciding "user is guest" — otherwise
++   *  they race the async module load and treat real users as guests. */
++  initialized: false,
++
+   /** Listeners for auth state changes. */
+   _listeners: [],
+   onChange(fn) {
+@@ -122,6 +127,7 @@ const FAI_AUTH = {
+   const { data: { session } } = await sb.auth.getSession();
+   FAI_AUTH.session = session;
+   FAI_AUTH.user    = session?.user || null;
++  FAI_AUTH.initialized = true;
+   FAI_AUTH._notify();
+   installNavbarUI();
+ 
 diff --git a/assets/chat-live.js b/assets/chat-live.js
-index 65fd9c7..c878c13 100644
+index 65fd9c7..0cacd3a 100644
 Binary files a/assets/chat-live.js and b/assets/chat-live.js differ
 diff --git a/assets/chem-client.js b/assets/chem-client.js
 index 5eba21c..8d05da4 100644
@@ -405,26 +447,34 @@ index 70714c1..179f5a4 100644
        });
        refreshUsageBadge();
 diff --git a/assets/supabase-client.js b/assets/supabase-client.js
-index d412ad7..f0cbaff 100644
+index d412ad7..bb492ee 100644
 --- a/assets/supabase-client.js
 +++ b/assets/supabase-client.js
-@@ -1,36 +1,16 @@
+@@ -1,39 +1,27 @@
  /**
 - * supabase-client.js v6 — frontend client
-+ * supabase-client.js v7 — frontend client (Paystack-enabled)
-  *   • search() → routes through Cloudflare AI Worker (with auth header if signed in)
-  *   • getById / browse → direct Supabase
-  *   • getUsage / startCheckout → Worker passthroughs
+- *   • search() → routes through Cloudflare AI Worker (with auth header if signed in)
+- *   • getById / browse → direct Supabase
+- *   • getUsage / startCheckout → Worker passthroughs
 - *   • Surfaces rate-limit info to callers
-+ *   • Paystack-first checkout (Ghana + global), Stripe legacy fallback
++ * supabase-client.js v8 — frontend data + checkout helpers.
++ *
++ * CRITICAL: shares the SAME Supabase client as assets/auth.js — creating
++ * a second GoTrueClient on the same page (which we did before v8) makes
++ * the two clients race for the auth-token storage key and randomly drops
++ * the user's session ("Multiple GoTrueClient instances detected" in the
++ * console). One client end-to-end fixes it.
++ *
++ *   • search()                → Cloudflare AI Worker (with JWT)
++ *   • getById / getProfile    → direct Supabase via the shared client
++ *   • getUsage / startCheckout → Worker passthroughs (Paystack/Stripe)
   */
- import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
- 
- const SUPABASE_URL  = "https://ivabcssceeaqgqjzgmdx.supabase.co";
+-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+-
+-const SUPABASE_URL  = "https://ivabcssceeaqgqjzgmdx.supabase.co";
 -const SUPABASE_ANON = "PASTE_ANON_PUBLIC_KEY_HERE";
-+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2YWJjc3NjZWVhcWdxanpnbWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA5MjQsImV4cCI6MjA5MzExNjkyNH0.B925FvgcZVM4_QSj31Ed-8Fg5XQWUEx0VJMN9GMQfYk";
- const WORKER_URL    = "https://formula-ai-brain.jamilaj1.workers.dev";
- 
+-const WORKER_URL    = "https://formula-ai-brain.jamilaj1.workers.dev";
+-
 -// Fail loudly during deploy if someone forgot to fill in the anon key.
 -// Without this, every auth + DB call silently 401s and the user sees a
 -// blank page they can't debug.
@@ -444,11 +494,24 @@ index d412ad7..f0cbaff 100644
 -  }
 -  throw new Error(msg);
 -}
--
- const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
-   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage },
- });
-@@ -44,91 +24,60 @@ async function authHeaders() {
++const WORKER_URL = "https://formula-ai-brain.jamilaj1.workers.dev";
+ 
+-const sb = createClient(SUPABASE_URL, SUPABASE_ANON, {
+-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, storage: window.localStorage },
+-});
++if (!window.FAI_AUTH || !window.FAI_AUTH.client) {
++  // auth.js MUST be loaded before this script (both are type="module" so
++  // we control order via the order of <script> tags in every HTML head).
++  throw new Error(
++    "[FAI_DB] assets/auth.js must be loaded before assets/supabase-client.js — " +
++    "add <script type=\"module\" src=\"./assets/auth.js\"></script> before this file."
++  );
++}
++const sb = window.FAI_AUTH.client;
+ 
+ async function authHeaders() {
+   const { data: { session } } = await sb.auth.getSession();
+@@ -44,91 +32,60 @@ async function authHeaders() {
  
  const FAI_DB = {
    async search(query, opts = {}) {
@@ -566,7 +629,7 @@ index d412ad7..f0cbaff 100644
      try {
        const r = await fetch(`${WORKER_URL}/paystack/checkout`, {
          method: 'POST',
-@@ -137,17 +86,11 @@ const FAI_DB = {
+@@ -137,17 +94,11 @@ const FAI_DB = {
        });
        const j = await r.json();
        if (j.url) { window.location.href = j.url; return j; }
@@ -586,7 +649,7 @@ index d412ad7..f0cbaff 100644
    async startStripeCheckout(plan) {
      try {
        const r = await fetch(`${WORKER_URL}/stripe/checkout`, {
-@@ -158,23 +101,67 @@ const FAI_DB = {
+@@ -158,23 +109,67 @@ const FAI_DB = {
        const j = await r.json();
        if (j.url) window.location.href = j.url;
        return j;
@@ -665,7 +728,7 @@ index d412ad7..f0cbaff 100644
 +window.FAI_DB = FAI_DB;
 \ No newline at end of file
 diff --git a/chat.html b/chat.html
-index f31e4e9..1ee30c4 100644
+index f31e4e9..1e894c7 100644
 --- a/chat.html
 +++ b/chat.html
 @@ -11,7 +11,7 @@
@@ -673,7 +736,7 @@ index f31e4e9..1ee30c4 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .chat-page-shell {
        display: grid;
@@ -775,14 +838,14 @@ index f31e4e9..1ee30c4 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chat-live.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chat-live.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chat-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/compliance.html b/compliance.html
-index 7b7f4cc..5d114a3 100644
+index 7b7f4cc..9851ebc 100644
 --- a/compliance.html
 +++ b/compliance.html
 @@ -11,7 +11,7 @@
@@ -790,7 +853,7 @@ index 7b7f4cc..5d114a3 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -802,16 +865,21 @@ index 7b7f4cc..5d114a3 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
-@@ -185,6 +186,6 @@
+@@ -185,6 +186,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>
 diff --git a/contact.html b/contact.html
-index a7f9407..2208c23 100644
+index a7f9407..b7a37fd 100644
 --- a/contact.html
 +++ b/contact.html
 @@ -11,7 +11,7 @@
@@ -819,7 +887,7 @@ index a7f9407..2208c23 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -831,18 +899,23 @@ index a7f9407..2208c23 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
-@@ -236,7 +237,7 @@
+@@ -236,7 +237,12 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      // === Contact form: real submission via Formspree ===
      // SETUP: register a free account at https://formspree.io,
 diff --git a/contribute.html b/contribute.html
 new file mode 100644
-index 0000000..96f220f
+index 0000000..20e5f9f
 --- /dev/null
 +++ b/contribute.html
 @@ -0,0 +1,307 @@
@@ -859,7 +932,7 @@ index 0000000..96f220f
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
 +  <style>
 +    .cb-wrap { max-width: 760px; margin: 0 auto; }
 +    .cb-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
@@ -1031,9 +1104,9 @@ index 0000000..96f220f
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
 +  <script>
 +  /* contribute.html — community formula upload (sign-in required).
 +     Pure addition. Inserts into user_submissions via the user's own
@@ -1154,7 +1227,7 @@ index 0000000..96f220f
 +</body>
 +</html>
 diff --git a/dashboard.html b/dashboard.html
-index dd6fc88..20d71bb 100644
+index dd6fc88..2137216 100644
 --- a/dashboard.html
 +++ b/dashboard.html
 @@ -11,7 +11,7 @@
@@ -1162,7 +1235,7 @@ index dd6fc88..20d71bb 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -1174,6 +1247,15 @@ index dd6fc88..20d71bb 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
+@@ -64,7 +65,7 @@
+       <!-- Header -->
+       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 18px;">
+         <div>
+-          <h1 style="font-size: 2rem; margin-bottom: 6px;" data-i18n-ar='مرحباً <span class="gradient-text">جميل</span> 👋'>Welcome back <span class="gradient-text">Jamil</span> 👋</h1>
++          <h1 id="dash-welcome" style="font-size: 2rem; margin-bottom: 6px;" data-i18n-ar='مرحباً <span class="gradient-text" id="dash-name-ar">صديقي</span> 👋'>Welcome back <span class="gradient-text" id="dash-name">friend</span> 👋</h1>
+           <p style="color: var(--text-3);" data-i18n-ar="إليك ملخص نشاطك وفورمولاتك اليوم">Here's a summary of your activity and formulas today</p>
+         </div>
+         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 @@ -110,9 +111,9 @@
              <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M9 11h6m-3-3v6"/><circle cx="12" cy="12" r="9"/></svg>
            </div>
@@ -1240,16 +1322,53 @@ index dd6fc88..20d71bb 100644
                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
                Upgrade to Business
              </a>
-@@ -271,6 +272,6 @@
+@@ -271,6 +272,43 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js MUST load on the dashboard because this is the OAuth
++       redirect target. Without it the #access_token in the URL is
++       never consumed, the session is never stored, and every other
++       page treats the user as a guest. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script>
++    // Personalize the welcome message once the auth module has loaded.
++    // If the visitor isn't signed in, bounce them to login.html.
++    (function () {
++      let tries = 0;
++      const t = setInterval(() => {
++        if (window.FAI_AUTH && window.FAI_AUTH.initialized) {
++          clearInterval(t);
++          const u = window.FAI_AUTH.user;
++          if (!u) {
++            location.replace('./login.html?redirect=' + encodeURIComponent(location.pathname));
++            return;
++          }
++          const name = u.user_metadata?.full_name
++                    || u.user_metadata?.name
++                    || u.email?.split('@')[0]
++                    || 'friend';
++          const safe = String(name).replace(/[<>&"']/g, '');
++          const el  = document.getElementById('dash-name');
++          if (el) el.textContent = safe;
++          // Also patch the AR data-i18n so the toggle keeps it right
++          const wrap = document.getElementById('dash-welcome');
++          if (wrap) wrap.setAttribute('data-i18n-ar',
++            'مرحباً <span class="gradient-text">' + safe + '</span> 👋');
++          if (window.applyI18n) window.applyI18n();
++        } else if (++tries > 80) {
++          clearInterval(t);
++        }
++      }, 50);
++    })();
++  </script>
  </body>
  </html>
 diff --git a/discover.html b/discover.html
-index b057238..0467023 100644
+index b057238..310b35d 100644
 --- a/discover.html
 +++ b/discover.html
 @@ -11,7 +11,7 @@
@@ -1257,7 +1376,7 @@ index b057238..0467023 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .disc-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .source-grid {
@@ -1277,14 +1396,14 @@ index b057238..0467023 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/discover-live.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/discover-live.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/discover-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/docs.html b/docs.html
-index 0645ee2..790fadf 100644
+index 0645ee2..626bac3 100644
 --- a/docs.html
 +++ b/docs.html
 @@ -11,7 +11,7 @@
@@ -1292,7 +1411,7 @@ index 0645ee2..790fadf 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .docs-layout {
        display: grid;
@@ -1304,17 +1423,22 @@ index 0645ee2..790fadf 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
-@@ -460,7 +461,7 @@ result = response.<span class="fn">json</span>()
+@@ -460,7 +461,12 @@ result = response.<span class="fn">json</span>()
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      // Smooth-scroll active section in sidebar
      const links = document.querySelectorAll('.docs-sidebar a');
 diff --git a/encyclopedia.html b/encyclopedia.html
-index 5e6dc39..2b7cd3e 100644
+index 5e6dc39..3d30442 100644
 --- a/encyclopedia.html
 +++ b/encyclopedia.html
 @@ -3,15 +3,15 @@
@@ -1332,7 +1456,7 @@ index 5e6dc39..2b7cd3e 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .enc-search-bar {
        max-width: 720px;
@@ -1483,7 +1607,7 @@ index 5e6dc39..2b7cd3e 100644
        <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;">
          Contribute a formula
          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
-@@ -317,13 +327,13 @@
+@@ -317,13 +327,18 @@
    <footer class="footer">
      <div class="container">
        <div class="footer-bottom" style="padding-top: 0; border-top: none;">
@@ -1496,11 +1620,16 @@ index 5e6dc39..2b7cd3e 100644
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      const ENCYCLOPEDIA = [
        { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
-@@ -371,11 +381,10 @@
+@@ -371,11 +386,10 @@
                ${f.cmp} components
              </span>
              <span>
@@ -1516,7 +1645,7 @@ index 5e6dc39..2b7cd3e 100644
      }
 diff --git a/formula.html b/formula.html
 new file mode 100644
-index 0000000..f80cf71
+index 0000000..92d7084
 --- /dev/null
 +++ b/formula.html
 @@ -0,0 +1,580 @@
@@ -1537,7 +1666,7 @@ index 0000000..f80cf71
 +  <link rel="preconnect" href="https://fonts.googleapis.com" />
 +  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 +  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
 +  <style>
 +    .fx-wrap { max-width: 1080px; margin: 0 auto; }
 +    .fx-head { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 26px 28px; margin-bottom: 20px; }
@@ -1772,10 +1901,10 @@ index 0000000..f80cf71
 +    </div>
 +  </footer>
 +
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
 +  <script>
 +  /* formula.html — single-formula presentation page.
 +     Reached as formula.html?id=<uuid>  (or ?name=<text> fallback).
@@ -2101,7 +2230,7 @@ index 0000000..f80cf71
 +</body>
 +</html>
 diff --git a/formulas.html b/formulas.html
-index 8e6ae0d..215a0f8 100644
+index 8e6ae0d..11f6ad4 100644
 --- a/formulas.html
 +++ b/formulas.html
 @@ -11,7 +11,7 @@
@@ -2109,7 +2238,7 @@ index 8e6ae0d..215a0f8 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -2129,14 +2258,14 @@ index 8e6ae0d..215a0f8 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/formula-detail-live.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/formula-detail-live.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/formula-detail-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/index.html b/index.html
-index 1d1dbf0..d272e82 100644
+index 1d1dbf0..786da39 100644
 --- a/index.html
 +++ b/index.html
 @@ -23,13 +23,155 @@
@@ -2197,7 +2326,7 @@ index 1d1dbf0..d272e82 100644
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
  
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
 +
 +  <!-- ── Homepage hero polish ─────────────────────────────────────────
 +       Scoped to index.html only (inline <style> never leaks to other
@@ -2406,16 +2535,21 @@ index 1d1dbf0..d272e82 100644
              <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
              <li><a href="./docs.html" data-i18n-ar="التوثيق">Documentation</a></li>
              <li><a href="./docs.html#sdk" data-i18n-ar="واجهة API">API reference</a></li>
-@@ -699,6 +842,6 @@
+@@ -699,6 +842,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>
 diff --git a/industries.html b/industries.html
-index 3f61053..bfc6c4a 100644
+index 3f61053..6f835e4 100644
 --- a/industries.html
 +++ b/industries.html
 @@ -11,7 +11,7 @@
@@ -2423,7 +2557,7 @@ index 3f61053..bfc6c4a 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .ind-category { margin-bottom: 50px; }
      .ind-cat-header { display: flex; align-items: center; gap: 14px; margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -2435,17 +2569,22 @@ index 3f61053..bfc6c4a 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
-@@ -275,7 +276,7 @@
+@@ -275,7 +276,12 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      document.querySelectorAll('.filter-btn').forEach(btn => {
        btn.addEventListener('click', () => {
 diff --git a/lab.html b/lab.html
-index 74bd743..a49d9fd 100644
+index 74bd743..f000867 100644
 --- a/lab.html
 +++ b/lab.html
 @@ -11,7 +11,7 @@
@@ -2453,7 +2592,7 @@ index 74bd743..a49d9fd 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .lab-grid {
        display: grid;
@@ -2465,17 +2604,22 @@ index 74bd743..a49d9fd 100644
          <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
          <li><a href="./lab.html" class="active" data-i18n-ar="المختبر الافتراضي">Virtual Lab</a></li>
          <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
-@@ -459,7 +460,7 @@
+@@ -459,7 +460,12 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      // Ingredient catalog (mirrors VirtualLaboratory.properties keys)
      const CATALOG = [
 diff --git a/learn.html b/learn.html
-index 78be8a7..50bf2f5 100644
+index 78be8a7..81797fd 100644
 --- a/learn.html
 +++ b/learn.html
 @@ -11,7 +11,7 @@
@@ -2483,7 +2627,7 @@ index 78be8a7..50bf2f5 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .learn-shell { max-width: 980px; margin: 0 auto; padding: 100px 16px 40px; }
      .drop-zone {
@@ -2502,9 +2646,9 @@ index 78be8a7..50bf2f5 100644
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
    <script>
      if (window['pdfjsLib']) {
@@ -2513,11 +2657,11 @@ index 78be8a7..50bf2f5 100644
      }
    </script>
 -  <script src="./assets/learn-live.js"></script>
-+  <script src="./assets/learn-live.js?v=15"></script>
++  <script src="./assets/learn-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/library.html b/library.html
-index b3640bf..33c7f09 100644
+index b3640bf..8fdaa9f 100644
 --- a/library.html
 +++ b/library.html
 @@ -11,7 +11,7 @@
@@ -2525,7 +2669,7 @@ index b3640bf..33c7f09 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .lib-shell { max-width: 1200px; margin: 0 auto; padding: 100px 16px 40px; }
      .lib-tabs {
@@ -2545,14 +2689,14 @@ index b3640bf..33c7f09 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/library-live.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/library-live.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/library-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/login.html b/login.html
-index 86f54a3..7520082 100644
+index 86f54a3..4573e7a 100644
 --- a/login.html
 +++ b/login.html
 @@ -11,7 +11,7 @@
@@ -2560,7 +2704,7 @@ index 86f54a3..7520082 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -2578,13 +2722,13 @@ index 86f54a3..7520082 100644
  
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/predict.html b/predict.html
-index 9b5ffa1..0982423 100644
+index 9b5ffa1..2e6ea2f 100644
 --- a/predict.html
 +++ b/predict.html
 @@ -11,7 +11,7 @@
@@ -2592,7 +2736,7 @@ index 9b5ffa1..0982423 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .pred-grid { display: grid; grid-template-columns: 1fr 1.2fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .pred-grid { grid-template-columns: 1fr; } }
@@ -2612,15 +2756,15 @@ index 9b5ffa1..0982423 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
    <script>
    /* predict.html — single-compound property calculator */
    (function () {
 diff --git a/pricing.html b/pricing.html
-index f08cc36..c764635 100644
+index f08cc36..b46a00c 100644
 --- a/pricing.html
 +++ b/pricing.html
 @@ -11,7 +11,59 @@
@@ -2628,7 +2772,7 @@ index f08cc36..c764635 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
 +  <link rel="canonical" href="https://jamilformula.com/pricing.html" />
 +
 +  <!-- FAQ schema — mirrors the visible "Pricing & billing questions"
@@ -2752,14 +2896,14 @@ index f08cc36..c764635 100644
 -  <script src="./assets/app.js?v=3"></script>
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      // Wire pricing buttons to Stripe checkout (via the AI Worker)
      (function () {
 diff --git a/privacy.html b/privacy.html
-index be41446..a2c7451 100644
+index be41446..7a70ba0 100644
 --- a/privacy.html
 +++ b/privacy.html
 @@ -10,7 +10,7 @@
@@ -2767,7 +2911,7 @@ index be41446..a2c7451 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -2779,16 +2923,21 @@ index be41446..a2c7451 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
-@@ -132,6 +133,6 @@
+@@ -132,6 +133,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>
 diff --git a/programs.html b/programs.html
-index 35b6fd0..b33fe9a 100644
+index 35b6fd0..1810cef 100644
 --- a/programs.html
 +++ b/programs.html
 @@ -11,7 +11,7 @@
@@ -2796,7 +2945,7 @@ index 35b6fd0..b33fe9a 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .program-hero {
        background: linear-gradient(135deg, var(--bg-card), transparent);
@@ -2808,16 +2957,21 @@ index 35b6fd0..b33fe9a 100644
          <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety</a></li>
          <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
          <li><a href="./programs.html" class="active" data-i18n-ar="البرامج">Programs</a></li>
-@@ -372,6 +373,6 @@
+@@ -372,6 +373,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>
 diff --git a/register.html b/register.html
-index f7fa6b6..bf4b244 100644
+index f7fa6b6..4763063 100644
 --- a/register.html
 +++ b/register.html
 @@ -11,7 +11,7 @@
@@ -2825,7 +2979,7 @@ index f7fa6b6..bf4b244 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
  </head>
  <body>
    <nav class="navbar">
@@ -2842,12 +2996,12 @@ index f7fa6b6..bf4b244 100644
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
    <script type="module">
      import "./assets/auth.js";
  
 diff --git a/safety.html b/safety.html
-index 8cff19e..2b2265c 100644
+index 8cff19e..1d38d45 100644
 --- a/safety.html
 +++ b/safety.html
 @@ -11,7 +11,7 @@
@@ -2855,7 +3009,7 @@ index 8cff19e..2b2265c 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
      .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
@@ -2870,17 +3024,22 @@ index 8cff19e..2b2265c 100644
          <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
          <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
          <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
-@@ -333,7 +334,7 @@
+@@ -333,7 +334,12 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
    <script>
      const SCENARIOS = {
        deadly: {
 diff --git a/scan.html b/scan.html
-index 434836b..96221da 100644
+index 434836b..1663b89 100644
 --- a/scan.html
 +++ b/scan.html
 @@ -11,7 +11,7 @@
@@ -2888,7 +3047,7 @@ index 434836b..96221da 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .scan-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .scan-grid { grid-template-columns: 1fr; } }
@@ -2908,15 +3067,15 @@ index 434836b..96221da 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
    <script>
    /* scan.html — vision page logic */
    (function () {
 diff --git a/search.html b/search.html
-index b1a46b3..43b0a51 100644
+index b1a46b3..e6ea31b 100644
 --- a/search.html
 +++ b/search.html
 @@ -11,7 +11,36 @@
@@ -2924,7 +3083,7 @@ index b1a46b3..43b0a51 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
 +  <style>
 +    /* Search result cards — mobile-first + bidi-safe (RTL/LTR mixed) */
 +    .fx-res { padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
@@ -2973,14 +3132,14 @@ index b1a46b3..43b0a51 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/search-live.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/search-live.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/search-live.js?v=18"></script>
  </body>
  </html>
 diff --git a/similarity.html b/similarity.html
-index 4d09802..e946463 100644
+index 4d09802..5a8675b 100644
 --- a/similarity.html
 +++ b/similarity.html
 @@ -11,7 +11,7 @@
@@ -2988,7 +3147,7 @@ index 4d09802..e946463 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .sim-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sim-grid { grid-template-columns: 1fr; } }
@@ -3008,15 +3167,15 @@ index 4d09802..e946463 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
    <script>
    /* similarity.html — page logic */
    (function () {
 diff --git a/substitute.html b/substitute.html
-index 9804d21..45b29c4 100644
+index 9804d21..a77fab0 100644
 --- a/substitute.html
 +++ b/substitute.html
 @@ -11,7 +11,7 @@
@@ -3024,7 +3183,7 @@ index 9804d21..45b29c4 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .sub-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 32px; max-width: 1100px; margin: 0 auto; }
      @media (max-width: 880px) { .sub-grid { grid-template-columns: 1fr; } }
@@ -3044,10 +3203,10 @@ index 9804d21..45b29c4 100644
 -  <script type="module" src="./assets/auth.js"></script>
 -  <script type="module" src="./assets/supabase-client.js"></script>
 -  <script src="./assets/chem-client.js"></script>
-+  <script src="./assets/app.js?v=15"></script>
-+  <script type="module" src="./assets/auth.js?v=15"></script>
-+  <script type="module" src="./assets/supabase-client.js?v=15"></script>
-+  <script src="./assets/chem-client.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
++  <script src="./assets/chem-client.js?v=18"></script>
    <script>
    /* substitute.html — page logic */
    (function () {
@@ -3188,7 +3347,7 @@ index 733200f..f401a5e 100644
 -});
 +// No fetch listener on purpose: requests go straight to the network.
 diff --git a/terms.html b/terms.html
-index a95b687..e56a815 100644
+index a95b687..183dd38 100644
 --- a/terms.html
 +++ b/terms.html
 @@ -10,7 +10,7 @@
@@ -3196,7 +3355,7 @@ index a95b687..e56a815 100644
    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
 -  <link rel="stylesheet" href="./assets/styles.css" />
-+  <link rel="stylesheet" href="./assets/styles.css?v=15" />
++  <link rel="stylesheet" href="./assets/styles.css?v=18" />
    <style>
      .legal-shell { max-width: 820px; margin: 0 auto; padding: 100px 20px 60px; line-height: 1.8; }
      .legal-shell h1 { margin-bottom: 8px; }
@@ -3208,11 +3367,16 @@ index a95b687..e56a815 100644
          <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
          <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
          <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
-@@ -129,6 +130,6 @@
+@@ -129,6 +130,11 @@
      </div>
    </footer>
  
 -  <script src="./assets/app.js?v=3"></script>
-+  <script src="./assets/app.js?v=15"></script>
++  <script src="./assets/app.js?v=18"></script>
++  <!-- auth.js + supabase-client.js — every public page must load
++       these so the navbar reflects sign-in state consistently.
++       Same shared GoTrueClient avoids "multiple instances" race. -->
++  <script type="module" src="./assets/auth.js?v=18"></script>
++  <script type="module" src="./assets/supabase-client.js?v=18"></script>
  </body>
  </html>

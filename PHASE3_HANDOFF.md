@@ -415,6 +415,52 @@ Side effect (intended): the gate now honors
 Pro access via earned credits — no Paystack subscription needed for
 own QA / dogfooding.
 
+## 6g. Session-persistence fix saga (2026-05-21)
+
+Symptom: user signed in via Google → dashboard greeted them by name →
+but every other page showed "Sign in" as if guest. Reproducible across
+fresh Incognito sessions.
+
+Four independent bugs compounded — each fix exposed the next:
+
+1. **`assets/auth.js` was missing from the deploy zip's asset list.**
+   Any update to it never reached production. Fixed by adding it to
+   `ASSETS` in `scripts/build_phase3.py`.
+
+2. **Two GoTrueClient instances on every page** (one created by
+   `auth.js`, another by `supabase-client.js`) raced for the same
+   `sb-…-auth-token` storage key. Console warning visible in DevTools:
+   `Multiple GoTrueClient instances detected in the same browser
+   context… undefined behavior when used concurrently under the same
+   storage key.` Fix: `supabase-client.js` v8 now reuses
+   `window.FAI_AUTH.client` instead of calling `createClient` again.
+   One client end-to-end; the warning disappears.
+
+3. **`dashboard.html` (the OAuth redirect target) did not load
+   auth.js OR supabase-client.js.** Greeting was hard-coded
+   "Welcome back Jamil" HTML — pure illusion, no real auth check. The
+   `#access_token=…` fragment was therefore never consumed and the
+   session never stored. Fix: dashboard now loads auth.js +
+   supabase-client.js, greeting is patched dynamically from
+   `FAI_AUTH.user`, and an unauthenticated visitor is bounced to
+   `login.html?redirect=…`.
+
+4. **12 other public pages also didn't load auth.js.** index, about,
+   encyclopedia, programs, industries, docs, contact, safety,
+   compliance, lab, privacy, terms — each was its own "sign-out
+   illusion" on navigation. Fix: a one-shot Python pass injected
+   `<script type="module" src="./assets/auth.js?v=18"></script>` +
+   `<script type="module" src="./assets/supabase-client.js?v=18"></script>`
+   into every navbar-bearing page that didn't already have them.
+
+Cache busted site-wide to `?v=18`. Owner-verified working across all
+pages in Incognito: session now persists end-to-end after a single
+Google sign-in.
+
+Lesson: when fixing auth bugs, always check (a) which pages load the
+auth module, (b) whether there's exactly one Supabase client per page,
+(c) whether the OAuth redirect target itself processes the URL fragment.
+
 ## 8. Files touched this phase
 
 ```

@@ -24,6 +24,7 @@ print(f"cache-bust: {bumped} html files bumped ?v=8 -> ?v=9")
 ASSETS = [
     "assets/styles.css",
     "assets/app.js",
+    "assets/auth.js",                 # auth module — loaded by every page
     "assets/supabase-client.js",
     "assets/search-live.js",
     "assets/chem-client.js",
