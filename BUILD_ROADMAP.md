@@ -8,7 +8,31 @@
 
 ## 🎯 Currently Working On
 
-**Phase 1 → Step 1.4 — One-command auto-deploy (GitHub Action CI).**
+**Phase 1 — HARDENING is DONE.** Moving on to **Phase 2 (First Revenue)**.
+
+Step 1.4 closed 2026-05-26 — push-to-deploy CI is live:
+- `.github/workflows/deploy.yml` runs on every push to main. Two parallel
+  jobs (worker / frontend), both soft-fail-isolated so an outage of one
+  deploy target can't block the other.
+- Worker job uses `cloudflare/wrangler-action@v3` + explicit
+  `accountId` + `--keep-vars` (plain `npx wrangler deploy` was failing
+  in CI from a remote-config diff prompt that can't be answered
+  non-interactively; the official action wraps that correctly).
+- Frontend job runs `sync_formula_count.py` (live row count → HTML),
+  then `build_phase3.py` (which now auto-increments `?v=N` from
+  `git rev-list --count HEAD` — no more manual OLD/NEW edits), unzips,
+  and FTPs via `SamKirkland/FTP-Deploy-Action@v4.3.5`.
+- FTP-chroot gotcha learned the hard way: account
+  `u680581922.githubdeploy` is chroot'd to the *domain root*
+  (/home/u.../domains/jamilformula.com/), NOT to public_html. So
+  `server-dir` MUST be `./public_html/`; first push uploaded to the
+  domain root and the live site quietly stayed on yesterday's manual
+  upload. Verified by `curl ftp://...` listing.
+- LiteSpeed cache caveat: Hostinger LSCache holds HTML for 1h
+  (max-age=3600) and ignores cache-bypass headers. After a deploy, the
+  new `?v=N` is on disk immediately but the live site shows it only
+  after the cache TTL or a manual purge in hPanel → Cache Manager.
+  Not blocking — just expected behavior to remember on hotfix days.
 
 Step 1.3 closed 2026-05-26 — Sentry (errors) + Better Stack (uptime) live:
 - Sentry project `node-cloudflare-workers` (region: `de`, ingest
@@ -390,6 +414,13 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `RATELIMIT_KV`; Worker version `421bde10`; frontend `DEPLOY_PHASE3.zip`
   extracted in `public_html`; all 3 verification queries (anon role) returned
   the expected results. Moving pointer to **1.2**.
+- 2026-05-26 — **Step 1.4 ✅ DONE.** Push-to-deploy CI live. Worker
+  version published from `cloudflare/wrangler-action@v3`; frontend
+  built + cache-bumped to ?v=24 by `build_phase3.py` and FTP-deployed
+  to Hostinger `/public_html/`. Four iterations to converge (first
+  three caught: FTP chroot misread, then over-correction, then npx
+  wrangler interactive prompt). Phase 1 — HARDENING — is now COMPLETE
+  end-to-end. Moving pointer to **Phase 2** (First Revenue).
 - 2026-05-26 — **Step 1.3 ✅ DONE.** Sentry + Better Stack stack
   observable end-to-end. Sentry envelope POST returns 200; 3 Better
   Stack uptime monitors green (`jamilformula.com`,
