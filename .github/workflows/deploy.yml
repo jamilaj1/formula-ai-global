@@ -69,7 +69,15 @@ jobs:
         if: steps.check_secret.outputs.skip != 'true'
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-        run: npx wrangler@latest deploy
+          # CLOUDFLARE_ACCOUNT_ID lets wrangler skip its "pick an account"
+          # prompt when the token has access to multiple accounts. We have
+          # only one, but setting this explicitly avoids any future ambiguity.
+          CLOUDFLARE_ACCOUNT_ID: bb2863bb7e4de6f2d44fc5ea7dbef5cc
+        # `--keep-vars` tells wrangler "trust the remote vars; don't replace
+        # them with whatever's in wrangler.toml unless I changed the file"
+        # — this avoids interactive "Deploy anyway? (y/n)" prompts that
+        # block in CI even when there's no real difference.
+        run: npx wrangler@latest deploy --keep-vars
 
   # ─────────────────────────── Frontend (Hostinger) ──────────────────────
   frontend:
@@ -136,7 +144,12 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./deploy_staging/
-          server-dir: ./public_html/
+          # Hostinger's FTP account `u680581922.githubdeploy` was created
+          # with its home directory chroot'd to /public_html, so after
+          # login the working dir is ALREADY public_html. Using `./`
+          # uploads to the right place; using `./public_html/` would
+          # nest the site one level deeper and the live site never updates.
+          server-dir: ./
           # Don't touch files the deploy bundle never owned —
           # .htaccess is uploaded manually + maintained separately.
           # Anything we DELETE on the server we never put there, so the
