@@ -144,12 +144,15 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./deploy_staging/
-          # Hostinger's FTP account `u680581922.githubdeploy` was created
-          # with its home directory chroot'd to /public_html, so after
-          # login the working dir is ALREADY public_html. Using `./`
-          # uploads to the right place; using `./public_html/` would
-          # nest the site one level deeper and the live site never updates.
-          server-dir: ./
+          # Hostinger's FTP account `u680581922.githubdeploy` is chroot'd
+          # to /home/u680581922/domains/jamilformula.com/ (the DOMAIN root,
+          # NOT public_html as the creation form's "Directory: /public_html"
+          # field implies). Verified by `curl ftp://...` listing — the FTP
+          # root contains `public_html/` as a subdir, plus mail/, logs/, etc.
+          # So we must upload into the public_html/ subdir, otherwise the
+          # files land next to public_html, where the live site can't see
+          # them. (Lost ~1h on this misreading; first push hit it.)
+          server-dir: ./public_html/
           # Don't touch files the deploy bundle never owned —
           # .htaccess is uploaded manually + maintained separately.
           # Anything we DELETE on the server we never put there, so the
