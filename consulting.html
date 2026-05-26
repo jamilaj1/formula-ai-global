@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Consulting — AI + Human chemistry reports | Formula AI Global</title>
+  <meta name="description" content="Get a working chemical formula and a written analysis report from Formula AI's 6 chemistry agents reviewed by a 25-year industrial chemist. Three packages from $1,000 to $5,000+." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=25" />
+  <link rel="canonical" href="https://jamilformula.com/consulting.html" />
+
+  <!-- FAQ schema — mirrors the visible FAQ section. Surfaces rich
+       snippets in Google for "chemistry consulting", "formulation
+       report", etc. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "What's the difference between consulting and the Pro subscription?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "The Pro subscription gives you on-demand access to the search, chat and library tools. Consulting gives you a written deliverable for one specific product: a working formula, a safety + cost + stability + regulatory analysis, and a 30-minute call to discuss it. Use Pro to explore; use Consulting when you need to ship a product."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "How long does a Full Formulation Report take?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "7 to 10 working days from intake. The AI orchestrator produces a draft within minutes; the rest of the time is human review by Jamil (25 years of industrial chemistry) plus iteration on your feedback."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Do you sign an NDA?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes. Every engagement begins with a mutual NDA. Your product spec, market, and any proprietary ingredients you share stay confidential and are never used to train any model or shared with other clients."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What happens if the AI gets something wrong?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "That's exactly why every report is reviewed by a human chemist before it leaves the building. The AI is the first draft; Jamil is the final word. If a regulatory or safety call needs a deeper look, we extend the timeline at no extra cost — we never ship a report we wouldn't put our own name on."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can you actually formulate a brand-new product, or just review existing ones?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Both. The Full Formulation Report covers a brand-new formula with target properties; the Quick Diagnostic is best for reviewing an existing formula. For deep R&D projects (new chemistry, lab trials, scale-up plans), pick the Custom Project package."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "What format do I receive the deliverable in?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "A signed PDF report (English or Arabic) plus an editable Markdown source, plus a private dashboard link where you can see the underlying AI agent runs. We also do a 30-minute video call to walk you through it."
+        }
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+        <li><a href="./consulting.html" class="active" data-i18n-ar="الاستشارات">Consulting</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span>
+            <span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+  <!-- ─── Hero ─────────────────────────────────────────────────────── -->
+  <section style="padding: 130px 0 60px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="opacity: 0.4;"></div>
+      <div class="hero-orb blue" style="opacity: 0.4;"></div>
+    </div>
+
+    <div class="container" style="text-align: center; position: relative; z-index: 2;">
+      <span class="eyebrow reveal" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg> ذكاء اصطناعي + كيميائي بشري بخبرة 25 سنة'>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        AI + 25-year human chemist
+      </span>
+      <h1 class="reveal" data-i18n-ar='من فكرة منتج إلى <span class="gradient-text">صيغة جاهزة للمصنع</span>'>From product idea to <span class="gradient-text">factory-ready formula</span></h1>
+      <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; max-width: 680px; margin: 18px auto 36px;" data-i18n-ar="ستة عملاء ذكاء اصطناعي للكيمياء (تركيب، سلامة، تكلفة، ثبات، توافق تنظيمي، مُنسِّق) يبنون لك المسوّدة في دقائق. كيميائي صناعي خبير يراجعها قبل التسليم. تحصل على تقرير PDF كامل + مكالمة 30 دقيقة لشرحه.">
+        Six chemistry AI agents (Formulator, Safety, Cost, Stability, Regulatory, Orchestrator) build the first draft in minutes. An experienced industrial chemist reviews it before delivery. You get a full PDF report and a 30-minute walk-through call.
+      </p>
+
+      <div class="reveal delay-2" style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <a href="#packages" class="btn btn-primary btn-lg" data-i18n-ar='شاهد الباقات <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>See packages
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </a>
+        <a href="#intake" class="btn btn-ghost btn-lg" data-i18n-ar="ابدأ مشروعك">Start your project</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── How it works (4 steps) ───────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="آلية العمل">How it works</span>
+        <h2 data-i18n-ar='أربع خطوات من <span class="gradient-text">الطلب إلى التسليم</span>'>Four steps from <span class="gradient-text">brief to delivery</span></h2>
+      </div>
+
+      <div class="pricing-grid">
+        <div class="card reveal">
+          <div style="font-size: 2rem; font-weight: 900; color: var(--primary); margin-bottom: 8px;">1</div>
+          <h3 style="margin: 0 0 8px;" data-i18n-ar="اشترك واملأ النموذج">Pick a package &amp; fill the brief</h3>
+          <p style="color: var(--text-2); margin: 0; line-height: 1.7;" data-i18n-ar="اختر الباقة المناسبة وأكمل نموذج موجز يصف منتجك (النوع، السوق، الميزانية، أي قيود).">
+            Choose a package and complete a short brief describing your product (type, market, budget, any constraints).
+          </p>
+        </div>
+        <div class="card reveal delay-1">
+          <div style="font-size: 2rem; font-weight: 900; color: var(--primary); margin-bottom: 8px;">2</div>
+          <h3 style="margin: 0 0 8px;" data-i18n-ar="AI ينتج المسوّدة">AI drafts the report</h3>
+          <p style="color: var(--text-2); margin: 0; line-height: 1.7;" data-i18n-ar="مُنسِّقنا الذكي يشغّل ستة عملاء كيميائيين بالتوازي: تركيب، سلامة، تكلفة، ثبات، توافق تنظيمي، تقييم نهائي. كل ذلك خلال دقائق.">
+            Our Orchestrator runs six chemistry agents in parallel — Formulator, Safety, Cost, Stability, Regulatory, Evaluator. The first draft is ready in minutes.
+          </p>
+        </div>
+        <div class="card reveal delay-2">
+          <div style="font-size: 2rem; font-weight: 900; color: var(--primary); margin-bottom: 8px;">3</div>
+          <h3 style="margin: 0 0 8px;" data-i18n-ar="كيميائي بشري يراجع">Human chemist reviews</h3>
+          <p style="color: var(--text-2); margin: 0; line-height: 1.7;" data-i18n-ar="جميل عبد الجليل (25+ سنة في الصناعة) يدقّق كل سطر — يصحّح، يضيف الخبرة العملية، يحذف ما هو خاطئ، يوقّع التقرير شخصياً.">
+            Jamil Abduljalil (25+ years in industrial chemistry) reviews every line — corrects, adds practical experience, removes what's wrong, signs the report personally.
+          </p>
+        </div>
+        <div class="card reveal delay-3">
+          <div style="font-size: 2rem; font-weight: 900; color: var(--primary); margin-bottom: 8px;">4</div>
+          <h3 style="margin: 0 0 8px;" data-i18n-ar="تسلّم + مكالمة">Delivery + walk-through call</h3>
+          <p style="color: var(--text-2); margin: 0; line-height: 1.7;" data-i18n-ar="نرسل لك PDF (عربي أو إنجليزي) + المصدر Markdown قابل للتعديل + رابط لوحة خاصة بنتائج عمل العملاء. ثم نتحدّث 30 دقيقة لشرح كل شيء.">
+            You get a PDF (Arabic or English), the editable Markdown source, and a private dashboard link showing the agent runs. Then we talk for 30 minutes to walk through it.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Packages ─────────────────────────────────────────────────── -->
+  <section id="packages" style="padding: 60px 0 80px;">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="الباقات">Packages</span>
+        <h2 data-i18n-ar='ثلاثة مستويات من <span class="gradient-text">الاستشارة</span>'>Three levels of <span class="gradient-text">consulting</span></h2>
+        <p style="color: var(--text-2); max-width: 580px; margin: 14px auto 0;" data-i18n-ar="سعر ثابت لكل باقة. لا اشتراك شهري. تدفع مرة واحدة وتستلم.">Fixed price per package. No subscription. One-time payment, one-time delivery.</p>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Package 1: Quick Diagnostic -->
+        <div class="plan reveal">
+          <div class="plan-name" data-i18n-ar="تشخيص سريع">Quick Diagnostic</div>
+          <div class="plan-price">
+            <span class="currency">$</span>1,000
+          </div>
+          <div class="plan-period" data-i18n-ar="دفعة واحدة · تسليم خلال 48 ساعة">One-time · delivered in 48 hours</div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>مراجعة تركيبة موجودة (حتى 30 مكوّن)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Review one existing formula (up to 30 ingredients)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تقرير 4-6 صفحات PDF'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>4–6 page PDF report</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>توصيات للسلامة + التكلفة + الامتثال'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Safety, cost &amp; compliance recommendations</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>قائمة 3-5 تحسينات عملية فورية'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>3–5 practical quick-wins you can apply now</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>اتفاقية عدم إفصاح (NDA) متبادلة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Mutual NDA included</li>
+          </ul>
+          <a href="#intake" class="btn btn-ghost btn-block btn-lg" data-consult-package="quick" data-i18n-ar="ابدأ الآن">Start now</a>
+        </div>
+
+        <!-- Package 2: Full Formulation Report (POPULAR) -->
+        <div class="plan popular reveal delay-1">
+          <span class="plan-badge" data-i18n-ar="★ الأكثر طلباً">★ Most requested</span>
+          <div class="plan-name" data-i18n-ar="تقرير صياغة كامل">Full Formulation Report</div>
+          <div class="plan-price">
+            <span class="currency">$</span>2,500
+          </div>
+          <div class="plan-period" data-i18n-ar="دفعة واحدة · 7-10 أيام عمل">One-time · 7–10 working days</div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>صياغة منتج جديد من الصفر'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>New formula built from scratch</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تقرير 10-15 صفحة PDF + Markdown'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>10–15 page PDF report + Markdown source</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تحليل كامل: سلامة + تكلفة + ثبات + امتثال (EU/US/GCC)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full analysis: safety, cost, stability, regulatory (EU/US/GCC)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>أرقام CAS لكل مكوّن + بدائل مقترحة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>CAS numbers per ingredient + substitute suggestions</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>خطوات التحضير المعمليّة + ضبط الجودة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Lab preparation steps + quality control</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>مكالمة 30 دقيقة لشرح التقرير'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>30-minute walk-through call</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>جولة واحدة من التعديلات مجاناً'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>One round of revisions included</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>اتفاقية عدم إفصاح + توقيع الكيميائي'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>NDA + chemist signature on the report</li>
+          </ul>
+          <a href="#intake" class="btn btn-primary btn-block btn-lg" data-consult-package="full" data-i18n-ar="ابدأ الآن">Start now</a>
+        </div>
+
+        <!-- Package 3: Custom Project -->
+        <div class="plan reveal delay-2">
+          <div class="plan-name" data-i18n-ar="مشروع مخصّص">Custom Project</div>
+          <div class="plan-price">
+            <span class="currency">$</span>5,000<span style="font-size: 1.5rem;">+</span>
+          </div>
+          <div class="plan-period" data-i18n-ar="السعر يُحدّد بعد المكالمة الأولى">Quoted after a discovery call</div>
+          <ul class="plan-features">
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>كل ما في "تقرير صياغة كامل" +'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Everything in the Full Report, plus:</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>مشاريع R&amp;D (كيمياء جديدة، خطط توسيع)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>R&amp;D projects (new chemistry, scale-up plans)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تجارب معملية مفصّلة (يُنفّذها فريقكم بإشرافنا)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Detailed lab trial plan (your team executes, we supervise)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>وثائق MSDS كاملة لكل منتج'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Full MSDS documents per product</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>تقدير تكلفة التصنيع بالحجم (1 طن، 10 طن، 100 طن)'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>Manufacturing cost estimate at scale (1 t, 10 t, 100 t)</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>3 مكالمات استشارة × 60 دقيقة'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>3 × 60-minute consultation calls</li>
+            <li data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>دعم بالبريد لمدة 30 يوم بعد التسليم'><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>30 days of post-delivery email support</li>
+          </ul>
+          <a href="#intake" class="btn btn-outline btn-block btn-lg" data-consult-package="custom" data-i18n-ar="احجز مكالمة استكشاف">Book a discovery call</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Deliverable preview ──────────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="ماذا ستحصل عليه">What you get</span>
+        <h2 data-i18n-ar='تقرير يمكنك <span class="gradient-text">تسليمه لمصنعك</span>'>A report you can <span class="gradient-text">hand to your factory</span></h2>
+      </div>
+
+      <div class="card reveal" style="padding: 32px;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 20px;">
+          <div>
+            <h3 style="margin: 0 0 12px; color: var(--primary);" data-i18n-ar="بنية التقرير النموذجية (تقرير الصياغة الكامل)">Typical report structure (Full Formulation Report)</h3>
+            <ol style="color: var(--text-2); line-height: 1.9; padding-left: 20px; margin: 0;">
+              <li data-i18n-ar="<strong>الملخّص التنفيذي</strong> — الحكم، الجدوى، التكلفة المتوقعة بنظرة واحدة">
+                <strong>Executive summary</strong> — verdict, feasibility, expected cost at a glance
+              </li>
+              <li data-i18n-ar="<strong>قائمة المكوّنات</strong> — اسم، نسبة، CAS، وظيفة، سعر/كجم، مورّد محتمل">
+                <strong>Ingredient list</strong> — name, percentage, CAS, function, $/kg, suggested supplier
+              </li>
+              <li data-i18n-ar="<strong>تحليل السلامة</strong> — تصنيف GHS، تعارضات معروفة، PPE المطلوب، شروط التخزين">
+                <strong>Safety analysis</strong> — GHS classification, known incompatibilities, required PPE, storage
+              </li>
+              <li data-i18n-ar="<strong>تحليل التكلفة</strong> — تكلفة الدفعة لـ 1 كجم / 100 كجم / 1 طن، أكبر بنود التكلفة، فرص الاستبدال الموفّر">
+                <strong>Cost analysis</strong> — batch cost at 1 kg / 100 kg / 1 t, biggest line items, money-saving substitutions
+              </li>
+              <li data-i18n-ar="<strong>توقّع الثبات</strong> — تقدير العمر الافتراضي، حساسية لـ pH/الحرارة/الضوء، اختبارات موصى بها">
+                <strong>Stability prediction</strong> — estimated shelf life, pH/temperature/light sensitivity, recommended tests
+              </li>
+              <li data-i18n-ar="<strong>الامتثال التنظيمي</strong> — حالة EU + US-FDA + GCC، علامات تحذير مطلوبة، أي قيود تصدير">
+                <strong>Regulatory status</strong> — EU + US-FDA + GCC status, required warning labels, any export restrictions
+              </li>
+              <li data-i18n-ar="<strong>خطوات التحضير</strong> — تسلسل الإضافة، السرعات، الحرارة، نقاط التحقق">
+                <strong>Preparation steps</strong> — order of addition, mixing speeds, temperatures, checkpoints
+              </li>
+              <li data-i18n-ar="<strong>ضبط الجودة</strong> — اختبارات يجب إجراؤها لكل دفعة + النطاقات المقبولة">
+                <strong>Quality control</strong> — per-batch tests + acceptable ranges
+              </li>
+              <li data-i18n-ar="<strong>توقيع الكيميائي</strong> — اسم، تاريخ، رقم سجل المراجعة">
+                <strong>Chemist signature</strong> — name, date, review-log reference number
+              </li>
+            </ol>
+          </div>
+          <div style="background: var(--bg-2); border-radius: 12px; padding: 20px; border: 1px solid var(--border);">
+            <p style="margin: 0 0 8px; color: var(--text-2); font-size: 0.92rem;" data-i18n-ar="💡 <strong>نموذج تقرير حقيقي:</strong> نرسل لك مثالاً مرتبط بصناعتك (تنظيف صناعي، مستحضرات تجميل، أغذية، إلخ) فور استلام نموذجك. لا توجد عيّنات جاهزة عامة لأن كل مشروع يختلف.">
+              💡 <strong>Real sample report:</strong> We send you an example matched to your industry (industrial cleaning, cosmetics, food, etc.) as soon as we receive your brief. We don't publish generic samples because every project is different.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Intake form ──────────────────────────────────────────────── -->
+  <section id="intake" class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="ابدأ مشروعك">Get started</span>
+        <h2 data-i18n-ar='أخبرنا عن <span class="gradient-text">مشروعك</span>'>Tell us about <span class="gradient-text">your project</span></h2>
+        <p style="color: var(--text-2); max-width: 580px; margin: 14px auto 0;" data-i18n-ar="موجز قصير (3 دقائق). نرد عليك خلال 24 ساعة برابط دفع آمن وتاريخ التسليم المتوقّع.">A short brief (3 minutes). We reply within 24 hours with a secure payment link and the expected delivery date.</p>
+      </div>
+
+      <div class="card reveal" style="max-width: 720px; margin: 0 auto; padding: 32px;">
+        <form id="consulting-intake" style="display: grid; gap: 18px;">
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="الباقة *">Package *</label>
+            <select name="package" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);">
+              <option value="">— Choose —</option>
+              <option value="quick" data-i18n-ar="تشخيص سريع - $1,000">Quick Diagnostic — $1,000</option>
+              <option value="full" data-i18n-ar="تقرير صياغة كامل - $2,500">Full Formulation Report — $2,500</option>
+              <option value="custom" data-i18n-ar="مشروع مخصّص - $5,000+">Custom Project — $5,000+</option>
+            </select>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="نوع المنتج *">Product type *</label>
+              <input name="product_type" required placeholder="e.g. liquid hand soap, lubricating grease, detergent…" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" />
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="السوق المستهدف *">Target market *</label>
+              <input name="market" required placeholder="e.g. KSA retail, Ghana factories, EU export…" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" />
+            </div>
+          </div>
+
+          <div>
+            <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="موجز المشروع *">Project brief *</label>
+            <textarea name="brief" required rows="5" placeholder="What are you trying to make? What constraints (budget, ingredients to avoid, target margin, certifications)? Any existing formula you'd like reviewed?" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); resize: vertical; font-family: inherit;"></textarea>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div>
+              <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="بريد التواصل *">Contact email *</label>
+              <input type="email" name="email" required placeholder="you@company.com" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" />
+            </div>
+            <div>
+              <label style="display: block; margin-bottom: 6px; font-weight: 600;" data-i18n-ar="اسم الشركة (اختياري)">Company (optional)</label>
+              <input name="company" placeholder="Acme Industries" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text);" />
+            </div>
+          </div>
+
+          <div id="intake-status" style="display: none; padding: 12px; border-radius: 8px;"></div>
+
+          <button type="submit" class="btn btn-primary btn-lg" style="justify-self: end;" data-i18n-ar='أرسل الموجز <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
+            Send brief
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── FAQ ──────────────────────────────────────────────────────── -->
+  <section class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="أسئلة شائعة">Common questions</span>
+        <h2 data-i18n-ar='ما يسأله العملاء <span class="gradient-text">قبل البدء</span>'>What clients ask <span class="gradient-text">before starting</span></h2>
+      </div>
+
+      <div class="faq-list reveal">
+        <div class="faq-item open">
+          <button class="faq-q">
+            <span data-i18n-ar="ما الفرق بين الاستشارة واشتراك Pro؟">What's the difference between consulting and the Pro subscription?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="اشتراك Pro يعطيك وصولاً غير محدود لأدوات البحث والدردشة والمكتبة عند الطلب. الاستشارة تعطيك مخرجاً مكتوباً لمنتج محدّد: صيغة جاهزة + تحليل سلامة وتكلفة وثبات وامتثال + مكالمة 30 دقيقة لشرحها. استخدم Pro للاستكشاف، واستخدم الاستشارة عندما تحتاج لشحن منتج.">
+            The Pro subscription gives you on-demand access to the search, chat and library tools. Consulting gives you a written deliverable for one specific product: a working formula, a safety + cost + stability + regulatory analysis, and a 30-minute call to discuss it. Use Pro to explore; use Consulting when you need to ship a product.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="كم تستغرق تقرير الصياغة الكامل؟">How long does a Full Formulation Report take?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="من 7 إلى 10 أيام عمل من تاريخ استلام الموجز. مُنسِّق الذكاء الاصطناعي ينتج المسوّدة في دقائق، وبقيّة الوقت مراجعة بشرية من جميل (25 سنة كيمياء صناعية) وتعديلات بناءً على ملاحظاتك.">
+            7 to 10 working days from intake. The AI orchestrator produces a draft within minutes; the rest of the time is human review by Jamil (25 years of industrial chemistry) plus iteration on your feedback.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل توقّعون اتفاقية عدم إفصاح؟">Do you sign an NDA?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="نعم. كل تعاقد يبدأ بـ NDA متبادل. مواصفات منتجك، السوق، أي مكوّنات خاصة تشاركها معنا تبقى سريّة تماماً ولا تُستخدم لتدريب أي نموذج ولا تُشارك مع أي عميل آخر.">
+            Yes. Every engagement begins with a mutual NDA. Your product spec, market, and any proprietary ingredients you share stay confidential and are never used to train any model or shared with other clients.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="ماذا لو أخطأ الذكاء الاصطناعي في شيء؟">What happens if the AI gets something wrong?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="لهذا بالضبط نراجع كل تقرير بكيميائي بشري قبل التسليم. الذكاء الاصطناعي هو المسوّدة الأولى، وجميل هو الكلمة الأخيرة. إذا احتاج قرار تنظيمي أو سلامة دراسة أعمق، نمدّد الموعد بدون رسوم إضافية - لا نشحن تقريراً لا نضع اسمنا عليه.">
+            That's exactly why every report is reviewed by a human chemist before it leaves the building. The AI is the first draft; Jamil is the final word. If a regulatory or safety call needs a deeper look, we extend the timeline at no extra cost — we never ship a report we wouldn't put our own name on.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="هل يمكنكم صياغة منتج جديد كلياً أم فقط مراجعة الموجودة؟">Can you actually formulate a brand-new product, or just review existing ones?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="كلاهما. تقرير الصياغة الكامل يبني فورمولا جديدة بمواصفات تحدّدها. التشخيص السريع أفضل لمراجعة فورمولا موجودة. لمشاريع R&D عميقة (كيمياء جديدة، تجارب معملية، خطط توسيع)، اختر باقة المشروع المخصّص.">
+            Both. The Full Formulation Report covers a brand-new formula with target properties; the Quick Diagnostic is best for reviewing an existing formula. For deep R&amp;D projects (new chemistry, lab trials, scale-up plans), pick the Custom Project package.
+          </div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">
+            <span data-i18n-ar="بأي صيغة أستلم التقرير؟">What format do I receive the deliverable in?</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="faq-a" data-i18n-ar="تقرير PDF موقَّع (عربي أو إنجليزي) + المصدر Markdown قابل للتعديل + رابط للوحة خاصّة تعرض شغل عملاء الذكاء الاصطناعي. كذلك مكالمة فيديو 30 دقيقة لشرح التقرير معك.">
+            A signed PDF report (English or Arabic) plus an editable Markdown source, plus a private dashboard link where you can see the underlying AI agent runs. We also do a 30-minute video call to walk you through it.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── CTA ──────────────────────────────────────────────────────── -->
+  <section class="container" style="padding-bottom: 60px;">
+    <div class="cta-banner reveal">
+      <h2 data-i18n-ar="جاهز لتقرير صياغة محترف؟">Ready for a professional formulation report?</h2>
+      <p data-i18n-ar="أرسل الموجز الآن - نرد خلال 24 ساعة">Send your brief now — we reply within 24 hours</p>
+      <a href="#intake" class="btn btn-primary btn-lg" data-i18n-ar='ابدأ مشروعك <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>'>
+        Start your project
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="أول منصة ذكاء اصطناعي كيميائي عالمية">The world's first global AI chemical platform</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./similarity.html" data-i18n-ar="تشابه جزيئي">Similarity</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li><li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li><li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li><li><a href="./consulting.html" data-i18n-ar="الاستشارات">Consulting</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="#" data-i18n-ar="المدوّنة">Blog</a></li><li><a href="#" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="#" data-i18n-ar="التوثيق">Docs</a></li><li><a href="#">API</a></li><li><a href="#" data-i18n-ar="المساعدة">Help</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global. كل الحقوق محفوظة.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=25"></script>
+  <script type="module" src="./assets/auth.js?v=25"></script>
+  <script type="module" src="./assets/supabase-client.js?v=25"></script>
+  <script>
+    // Phase 2.1: intake form posts to a placeholder endpoint until 2.2
+    // wires the consultation_requests table + Worker handler. For now,
+    // we collect the brief and tell the visitor we'll be in touch. The
+    // payload structure already matches the planned table schema so the
+    // Phase 2.2 swap is one URL change.
+    (function () {
+      const form = document.getElementById('consulting-intake');
+      const status = document.getElementById('intake-status');
+      if (!form) return;
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(form).entries());
+        if (!data.package || !data.product_type || !data.market || !data.brief || !data.email) {
+          status.style.display = 'block';
+          status.style.background = '#fee';
+          status.style.color = '#900';
+          status.textContent = 'Please fill all required fields.';
+          return;
+        }
+
+        const btn = form.querySelector('button[type="submit"]');
+        const oldHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.textContent = 'Sending…';
+
+        // Pre-fill clicked package if visitor used a "Start now" button.
+        try {
+          const intent = sessionStorage.getItem('fai_consult_intent');
+          if (intent && !data.package) data.package = intent;
+        } catch (_) { /* ignore */ }
+
+        // Phase 2.2 will replace this with a real Worker POST.
+        // For now, log + email-via-mailto fallback so brave testers
+        // can still reach us today.
+        console.log('[consulting-intake] payload', data);
+
+        // Compose a mailto fallback so the brief is never lost while
+        // the Worker endpoint is in flight.
+        const body =
+          `New consulting inquiry\n\n` +
+          `Package: ${data.package}\n` +
+          `Product type: ${data.product_type}\n` +
+          `Market: ${data.market}\n` +
+          `Company: ${data.company || '(not provided)'}\n` +
+          `Email: ${data.email}\n\n` +
+          `Brief:\n${data.brief}`;
+        const subject = `[Consulting] ${data.package} — ${data.product_type}`;
+        const mailto = `mailto:jamilaj1@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+        setTimeout(() => {
+          status.style.display = 'block';
+          status.style.background = 'rgba(0, 255, 136, 0.1)';
+          status.style.color = 'var(--primary)';
+          status.innerHTML =
+            '✓ Brief received. We\'ll reply within 24 hours with a secure payment link and timeline. ' +
+            `If you don\'t hear back, <a href="${mailto}" style="color: var(--primary); text-decoration: underline;">click here to email us directly</a>.`;
+          btn.disabled = false;
+          btn.innerHTML = oldHtml;
+          form.reset();
+        }, 600);
+      });
+
+      // When a visitor clicks "Start now" on a package, scroll to form +
+      // remember which package they picked so the dropdown can be pre-filled.
+      document.querySelectorAll('[data-consult-package]').forEach((a) => {
+        a.addEventListener('click', () => {
+          try { sessionStorage.setItem('fai_consult_intent', a.dataset.consultPackage); } catch (_) {}
+          const sel = form.querySelector('[name="package"]');
+          if (sel) sel.value = a.dataset.consultPackage;
+        });
+      });
+    })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
+</body>
+</html>
