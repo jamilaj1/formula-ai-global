@@ -5,10 +5,17 @@
  * (2) we hit Supabase, fall back if no results, and re-rank by boost terms.
  */
 import { json } from '../lib/responses.js';
-import { sb } from '../lib/supabase.js';
-import { claudeMessages, extractClaudeJson, CLAUDE_MODEL } from '../lib/claude.js';
+// Phase 1.1 enabled RLS on `formulas` which denies anon SELECT, so the
+// Worker now reads `formulas` via the service-role helper (sbService).
+// service_role bypasses RLS by Supabase design — appropriate here because
+// the Worker is server-side, never exposes the raw key to the client, and
+// we still rate-limit + quota-cap the endpoint at the top.
+import { sbService } from '../lib/supabase.js';
+import { claudeCall, extractClaudeJson } from '../lib/claude.js';
+import { buildCacheKey, cacheGet, cachePut } from '../lib/cache.js';
 import { dailyLimitFor } from '../config.js';
 import { getDailyUsage, recordUsage } from '../auth.js';
+import { rateLimit, rateLimitResponse, clientIP } from '../lib/ratelimit.js';
 
 const SEARCH_PLAN_SYSTEM = `You are a chemical-formula search planner. Output ONLY valid JSON with this exact shape:
 {"must":["..."],"categories":["..."],"boost":["..."]}
@@ -22,21 +29,83 @@ EXAMPLES:
 "صابون معقم" -> {"must":["soap"],"categories":["personal_hygiene","disinfectants"],"boost":["antibacterial","antiseptic","sanitizer","disinfectant"]}
 "معجون أسنان للأطفال" -> {"must":["toothpaste"],"categories":["oral_care"],"boost":["children","kids","baby"]}`;
 
-/** Ask Claude for a search plan. Returns null on failure. */
-async function claudePlan(query, env) {
-  const res = await claudeMessages(env, {
-    model: CLAUDE_MODEL,
-    max_tokens: 250,
+/**
+ * Ask Claude for a search plan.
+ *
+ * Cached per (system, query) for 24h — search plans are deterministic and
+ * the same query from any user produces the same plan, so caching is
+ * always safe here. Returns:
+ *   - plan object on success (cached or fresh)
+ *   - null on failure (caller treats as 'claude_failed')
+ * Also returns the `meta` object the caller needs for recordUsage().
+ *
+ * @param {string} query
+ * @param {object} env
+ * @param {string} plan  user plan (for model selection on cache miss)
+ * @returns {Promise<{plan: object|null, meta: object}>}
+ */
+async function claudePlan(query, env, plan) {
+  const messages = [{ role: 'user', content: query }];
+  const cacheKey = await buildCacheKey({
+    model: '/search-plan',
     system: SEARCH_PLAN_SYSTEM,
-    messages: [{ role: 'user', content: query }],
+    messages,
   });
-  if (!res.ok) return null;
-  return extractClaudeJson(res.data);
+
+  const cached = await cacheGet(env, cacheKey);
+  if (cached) {
+    return {
+      plan: extractClaudeJson(cached),
+      meta: {
+        model: cached._model || null,
+        input_tokens: 0,
+        output_tokens: 0,
+        est_cost_usd: 0,
+        cache_hit: true,
+      },
+    };
+  }
+
+  const cr = await claudeCall(
+    env,
+    {
+      max_tokens: 250,
+      system: SEARCH_PLAN_SYSTEM,
+      messages,
+    },
+    { plan }
+  );
+  if (!cr.ok) {
+    return {
+      plan: null,
+      meta: { model: cr.model_used || null, status_code: cr.status || 500 },
+    };
+  }
+  await cachePut(env, cacheKey, { ...cr.data, _model: cr.model_used });
+  return {
+    plan: extractClaudeJson(cr.data),
+    meta: {
+      model: cr.model_used,
+      input_tokens:  cr.usage?.input_tokens  || 0,
+      output_tokens: cr.usage?.output_tokens || 0,
+      est_cost_usd:  cr.cost_usd             || 0,
+      cache_hit:     false,
+    },
+  };
 }
 
-export async function handleSearch(url, auth, env) {
+export async function handleSearch(url, auth, env, request) {
   const query = (url.searchParams.get('q') || '').trim();
   if (!query) return json({ rows: [], error: 'empty' });
+
+  // ── Anti-scraping gate ───────────────────────────────────────────
+  // 30 requests / 60 seconds, keyed by user-id when signed in or by IP
+  // otherwise. Burst this and you get a clean 429 with Retry-After.
+  const rlKey = auth?.id
+    ? `search:user:${auth.id}`
+    : `search:ip:${clientIP(request || { headers: new Headers() })}`;
+  const rl = await rateLimit(env, { bucket: rlKey, limit: 30, window: 60 });
+  if (!rl.ok) return rateLimitResponse(rl);
 
   const limit = dailyLimitFor(auth.plan);
   const used = await getDailyUsage(auth.id, env);
@@ -55,24 +124,37 @@ export async function handleSearch(url, auth, env) {
     );
   }
 
-  // Step 1: Claude → search plan
-  const plan = await claudePlan(query, env);
-  if (!plan) return json({ rows: [], plan: null, error: 'claude_failed' }, 500);
-  if (!plan.must?.length) return json({ rows: [], plan, error: 'no_must_term' });
+  // Step 1: Claude → search plan (cached 24h per (system, query))
+  const { plan, meta: planMeta } = await claudePlan(query, env, auth.plan);
+  if (!plan) {
+    // Record the failed call so we still see it in the cost report.
+    await recordUsage(auth.id, '/search', env, planMeta);
+    return json({ rows: [], plan: null, error: 'claude_failed' }, 500);
+  }
+  if (!plan.must?.length) {
+    await recordUsage(auth.id, '/search', env, planMeta);
+    return json({ rows: [], plan, error: 'no_must_term' });
+  }
 
-  // Step 2: Supabase
-  const must = String(plan.must[0] || '').replace(/[%_,()*\s]/g, '').trim();
-  if (!must) return json({ rows: [], plan, error: 'empty_must' });
+  // Step 2: build a candidate pool, then rank by RELEVANCE (not trust).
+  // Keep the primary product noun but DO NOT strip spaces — turn them
+  // into ilike wildcards so "hand wash" matches "Hand Wash"/"Handwash".
+  const nounRaw = String(plan.must[0] || '').trim();
+  const noun = nounRaw.replace(/[%_(),"]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!noun) return json({ rows: [], plan, error: 'empty_must' });
+  const nounLike = noun.split(' ').filter(Boolean).join('*');
 
   const select =
     'id,name,name_en,category,sub_category,form_type,components,trust_score';
-  let path = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
+  const baseFilter =
+    `or=(name.ilike.*${nounLike}*,name_en.ilike.*${nounLike}*,sub_category.ilike.*${nounLike}*)`;
+  let path = `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`;
   if (Array.isArray(plan.categories) && plan.categories.length) {
     const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
     path += `&category=in.(${cats})`;
   }
 
-  const sbRes = await sb(env, path);
+  const sbRes = await sbService(env, path);
   if (!sbRes.ok) {
     return json(
       { error: 'supabase_error', plan, detail: (await sbRes.text()).slice(0, 300) },
@@ -82,29 +164,60 @@ export async function handleSearch(url, auth, env) {
   let rows = await sbRes.json();
   if (!Array.isArray(rows)) rows = [];
 
-  // Fallback: drop category filter
+  // Fallback 1: same noun filter, drop category
   if (rows.length === 0 && plan.categories?.length) {
-    const fbPath = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
-    const fb = await sb(env, fbPath);
-    if (fb.ok) {
-      const j = await fb.json();
-      if (Array.isArray(j)) rows = j;
-    }
+    const fb = await sbService(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`);
+    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
+  }
+  // Fallback 2: category-only pool (stay on-topic instead of empty)
+  if (rows.length === 0 && plan.categories?.length) {
+    const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, '')}"`).join(',');
+    const fb = await sbService(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&category=in.(${cats})`);
+    if (fb.ok) { const j = await fb.json(); if (Array.isArray(j)) rows = j; }
   }
 
-  // Boost ranking
-  const boost = (plan.boost || []).map((b) => String(b).toLowerCase()).filter(Boolean);
-  const ranked = rows
+  // ── Relevance ranking ──────────────────────────────────────────────
+  // Topical match dominates; trust is only a small tiebreaker so generic
+  // matches no longer outrank the formula the user actually asked for.
+  const norm = (s) => String(s || '').toLowerCase();
+  const STOP = new Set(['the', 'a', 'an', 'of', 'for', 'and', 'with', 'to',
+    'مع', 'من', 'في', 'عن', 'على', 'الى', 'هل']);
+  const qTokens = [...new Set(
+    norm(query).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w))
+  )];
+  const mustTokens = (plan.must || []).flatMap((m) => norm(m).split(/\s+/)).filter(Boolean);
+  const boost = (plan.boost || []).map(norm).filter(Boolean);
+  const planCats = (plan.categories || []).map(norm);
+  const nounLc = norm(noun);
+
+  let ranked = rows
     .map((r) => {
-      const hay = `${r.name || ''} ${r.name_en || ''} ${r.sub_category || ''}`.toLowerCase();
+      const name = `${norm(r.name)} ${norm(r.name_en)}`;
+      const comps = Array.isArray(r.components)
+        ? r.components.map((c) => norm(c && (c.name_en || c.name))).join(' ')
+        : '';
+      const hay = `${name} ${norm(r.sub_category)} ${norm(r.category)} ${comps}`;
       let score = 0;
-      for (const b of boost) if (hay.includes(b)) score += 10;
-      score += (r.trust_score || 0) / 10;
+      if (nounLc && name.includes(nounLc)) score += 40;
+      for (const b of boost) if (b && hay.includes(b)) score += 12;
+      for (const m of mustTokens) if (m && name.includes(m)) score += 8;
+      for (const t of qTokens) if (hay.includes(t)) score += 5;
+      if (planCats.includes(norm(r.category))) score += 6;
+      score += Math.min(5, (r.trust_score || 0) * 0.05);
       return { ...r, _score: score };
     })
-    .sort((a, b) => b._score - a._score);
+    .filter((r) => r._score > 5)
+    .sort((a, b) => b._score - a._score || (b.trust_score || 0) - (a.trust_score || 0));
 
-  await recordUsage(auth.id, '/search', env);
+  // Safety: never show "nothing" if we had candidate rows
+  if (ranked.length === 0 && rows.length) {
+    ranked = rows
+      .map((r) => ({ ...r, _score: (r.trust_score || 0) * 0.05 }))
+      .sort((a, b) => b._score - a._score);
+  }
+
+  // Record with the cost meta from the planning call (cache hit or live).
+  await recordUsage(auth.id, '/search', env, planMeta);
 
   return json({
     query,

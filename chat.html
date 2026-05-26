@@ -10,8 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
   <style>
     .chat-page-shell {
       display: grid;
@@ -211,6 +212,81 @@
       background: var(--bg-glass);
       border-radius: 999px;
     }
+
+    /* ── Rendered AI markdown ─────────────────────────────────────── */
+    .chat-msg .bubble .md { white-space: normal; }
+    .chat-msg .bubble .md > :first-child { margin-top: 0; }
+    .chat-msg .bubble .md > :last-child { margin-bottom: 0; }
+    .chat-msg .bubble .md p { margin: 0 0 0.6em; }
+    .chat-msg .bubble .md h4,
+    .chat-msg .bubble .md h5 {
+      margin: 1em 0 0.5em; line-height: 1.35; color: var(--primary);
+      font-weight: 800;
+    }
+    .chat-msg .bubble .md h4 { font-size: 1.02rem; }
+    .chat-msg .bubble .md h5 {
+      font-size: 0.92rem; color: var(--text-1);
+      border-inline-start: 3px solid var(--primary);
+      padding-inline-start: 9px;
+    }
+    .chat-msg .bubble .md ul,
+    .chat-msg .bubble .md ol { margin: 0.4em 0 0.7em; padding-inline-start: 1.5em; }
+    .chat-msg .bubble .md li { margin: 0.25em 0; }
+    .chat-msg .bubble .md code {
+      background: rgba(255,255,255,0.08); padding: 1px 6px;
+      border-radius: 5px; font-size: 0.88em;
+      font-family: ui-monospace, "Courier New", monospace;
+      direction: ltr; unicode-bidi: embed;
+    }
+    .chat-msg .bubble .md pre.md-pre {
+      background: rgba(0,0,0,0.32); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; margin: 0.6em 0;
+      overflow-x: auto; direction: ltr;
+    }
+    .chat-msg .bubble .md pre.md-pre code {
+      background: none; padding: 0; font-size: 0.86rem;
+      color: var(--text-1); white-space: pre;
+    }
+    .chat-msg .bubble .md a { color: var(--secondary); text-decoration: underline; }
+    .chat-msg .bubble .md .md-tablewrap { overflow-x: auto; margin: 0.7em 0; }
+    .chat-msg .bubble .md table.md-table {
+      border-collapse: collapse; width: 100%; min-width: 320px;
+      font-size: 0.9rem; background: var(--bg-glass);
+      border-radius: 10px; overflow: hidden;
+    }
+    .chat-msg .bubble .md table.md-table th,
+    .chat-msg .bubble .md table.md-table td {
+      border: 1px solid var(--border); padding: 8px 12px;
+      text-align: start; vertical-align: top;
+    }
+    .chat-msg .bubble .md table.md-table th {
+      background: rgba(0,255,136,0.12); color: var(--primary);
+      font-weight: 800; white-space: nowrap;
+    }
+    .chat-msg .bubble .md table.md-table tbody tr:nth-child(even) td {
+      background: rgba(255,255,255,0.03);
+    }
+    /* Clickable disambiguation choices → open formula directly */
+    .chat-msg .bubble .md ul.md-choices,
+    .chat-msg .bubble .md ol.md-choices {
+      list-style: none; padding-inline-start: 0; margin: 0.5em 0;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .chat-msg .bubble .md .md-choices li { margin: 0; }
+    .chat-msg .bubble .md a.fx-choice {
+      display: block; text-decoration: none; color: var(--text-1);
+      background: rgba(0,255,136,0.10);
+      border: 1px solid rgba(0,255,136,0.35);
+      padding: 10px 14px; border-radius: 10px; font-weight: 600;
+      line-height: 1.5; transition: background .15s ease, transform .15s ease;
+    }
+    .chat-msg .bubble .md a.fx-choice:hover {
+      background: rgba(0,255,136,0.20); transform: translateY(-1px);
+    }
+    .chat-msg .bubble .md a.fx-choice::after {
+      content: " ↗"; color: var(--primary); font-weight: 800;
+    }
+    .chat-msg .bubble .md a.fx-choice strong { color: inherit; }
   </style>
 </head>
 <body>
@@ -224,6 +300,7 @@
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./chat.html" class="active" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
@@ -254,6 +331,7 @@
     </div>
   </nav>
 
+  <main>
   <section style="padding: 100px 16px 24px;">
     <div class="chat-page-shell">
 
@@ -309,6 +387,8 @@
     </div>
   </section>
 
+  
+  </main>
   <footer class="footer" style="margin-top: 24px;">
     <div class="container">
       <div class="footer-bottom" style="padding-top: 0; border-top: none;">
@@ -318,9 +398,10 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
-  <script type="module" src="./assets/auth.js"></script>
-  <script type="module" src="./assets/supabase-client.js"></script>
-  <script src="./assets/chat-live.js"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script src="./assets/chat-live.js?v=22"></script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

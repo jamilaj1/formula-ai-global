@@ -1,0 +1,408 @@
+# Formula AI Global — Build Roadmap to $50K/month
+
+> **Single source of truth** for "what do we work on next?"
+> Update the **Currently Working On** pointer when a step is completed.
+> Steps inside a phase are **sequential** — do not skip.
+
+---
+
+## 🎯 Currently Working On
+
+**Phase 1 → Step 1.4 — One-command auto-deploy (GitHub Action CI).**
+
+Step 1.3 closed 2026-05-26 — Sentry (errors) + Better Stack (uptime) live:
+- Sentry project `node-cloudflare-workers` (region: `de`, ingest
+  `o4511451032387584.ingest.de.sentry.io`). DSN stored as Worker secret
+  `SENTRY_DSN`. Hand-rolled envelope POST (no SDK — keeps the bundle
+  ~30 kB lighter and avoids nodejs_compat). Verified: 4× `/debug/throw`
+  produced `status 200` from Sentry's envelope endpoint; events appeared
+  in the Issues feed.
+- Better Stack source `formula-ai-worker` on Cloudflare HTTP integration
+  (cluster `eu-fsn-3`). Token + ingest host stored as `BETTER_STACK_TOKEN`
+  + `BETTER_STACK_HOST` Worker secrets. `withObservability` ships every
+  non-2xx and every >3s request, plus the `cf_country`, `cf_colo`,
+  anonymized IP prefix, and user_agent.
+- 3 uptime monitors live (3-min interval, email alerts):
+    Frontend         → https://jamilformula.com
+    Worker           → https://formula-ai-brain.jamilaj1.workers.dev/health
+    Chem backend     → https://formula-ai-chem.onrender.com/health
+- Cost: $0/month (Sentry free 5k errors/mo + Better Stack free 10
+  monitors + 3 GB logs + 100k exceptions). Upgrade path is open if/when
+  traffic outgrows free tiers.
+- Cleanup: stripped the temporary `[sentry]` console.log noise from
+  `shipSentry`; `console.error` remains only for failed envelope POSTs.
+- BOM hazard learned: `wrangler secret put` from a piped PowerShell
+  string injected a UTF-8 BOM (`﻿`) at the start of the secret.
+  Hardened `cleanSecret()` in `observability.js` strips it; future
+  secret-handling code should treat secrets as potentially BOM-tainted.
+
+To finish 1.4 (see PHASE 1 §1.4 below for full spec):
+1. `.github/workflows/deploy.yml` — on push to main, run
+   `sync_formula_count.py` + `build_phase3.py` + FTP upload to Hostinger.
+2. Same action runs `wrangler deploy` for the Worker.
+3. Done when `git push origin main` is the only command for a release.
+
+Step 1.2 closed 2026-05-25 — verified end-to-end:
+- `api_usage` now has `model`, `input_tokens`, `output_tokens`,
+  `est_cost_usd`, `cache_hit` columns; `claude_cost_today` view + RPC
+  `claude_cost_report(DATE)` + `send_daily_cost_report()` (uses pg_net
+  + Resend via the existing `_owner_email_config()`).
+- Worker model selection: `claude-sonnet-4-5` for paid plans
+  (professional/business/enterprise), `claude-haiku-4-5` for guest/starter,
+  one-shot fallback Sonnet→Haiku on 429/529.
+- KV cache (24h TTL, SHA-256 keys) in `RATELIMIT_KV` namespace with
+  `cache:` prefix — wired into `/search`, `/safety`, `/lab` (chat tool-use
+  loop intentionally NOT cached because tool_result blocks vary every call).
+- `recordUsage()` now accepts an optional meta object (model + tokens
+  + cost + cache_hit) so all 6 Claude-aware handlers report accurately.
+- Hotfix: `search.js` + `chat.js` switched from `sb()` (anon) to
+  `sbService()` for direct `formulas` reads — Phase 1.1 RLS had blocked
+  the Worker's own reads (caught only after deploy when /search 500'd).
+- Cloudflare Cron Trigger `0 9 * * *` registered (Version ID
+  `526a93de-c5bc-485d-b264-abd134efea48`); first daily email fires
+  tomorrow 09:00 UTC.
+- Verification: 2 identical /search?q=… calls → first burns 444 in / 42 out
+  tokens ($0.000523), second returns `cache_hit=true` with 0 tokens / 0 cost.
+  `claude_cost_today` view aggregates correctly; manual
+  `SELECT send_daily_cost_report()` returns the email subject string.
+
+To finish 1.3 (see PHASE 1 §1.3 below for full spec):
+1. Sentry account ($26/mo); SDK in Worker + FastAPI backend.
+2. Better Stack account ($25/mo); uptime monitors on the 3 endpoints.
+3. Slack/email alerting wired to owner.
+
+---
+
+## 🏁 North Star
+
+**$50,000/month recurring revenue within 9-12 months**, from a 4-stream mix:
+
+| Stream | Target | First $ |
+|---|---|---|
+| AI+Human consulting reports | $15K/month | Month 2 |
+| Enterprise SaaS (40 factories × $500) | $20K/month | Month 4-9 |
+| Procurement commissions | $8K/month | Month 4-6 |
+| Pro subscriptions | $7K/month | Month 1-6 |
+
+---
+
+## 📌 Status legend
+
+- ⬜ Pending
+- 🔄 In progress
+- ✅ Done
+- ⏸️ Blocked (note why on the step)
+- ⏭️ Deferred to later phase (note new phase)
+
+---
+
+## PHASE 1 — HARDENING
+
+> Goal: protect what we have **before** any growth push.
+> Estimated: 1 week.
+
+### 1.1 — Data scraping defense + server-side subscription gate ⬜
+- **Why**: today anyone with the anon key can dump 3,381 formulas in seconds; the gate is JS-only and can be bypassed in DevTools. This kills B2B credibility.
+- **What to build**:
+  - SQL migration: new RPC `public.get_formula(formula_id UUID)` `SECURITY DEFINER` that returns the row WITH `ingredients` only if `is_paid_or_credits(auth.uid())` is TRUE; returns the row WITHOUT `ingredients` otherwise.
+  - SQL migration: tighten RLS on `formulas` so direct `SELECT ingredients FROM formulas` is denied for anon/authenticated; only the RPC can read it.
+  - Rate-limit in `worker-src/handlers/search.js` and any other public formulas endpoints: max 50 rows per request, 30 requests/min per IP (KV-backed counter).
+  - Update `assets/supabase-client.js` `getById()` to call the RPC.
+- **Files**: `database/migrations/2026-05-XX_server_gate.sql`, `worker-src/handlers/search.js`, `worker-src/lib/ratelimit.js` (new), `assets/supabase-client.js`.
+- **Done when**:
+  - Incognito browser hitting `/rest/v1/formulas?select=ingredients` returns `{}` or RLS error.
+  - The RPC returns full ingredients only when called by a paid/credits user.
+  - 31st request in a minute from the same IP returns HTTP 429.
+  - `formula.html` still works for both paid and unpaid users.
+- **Estimate**: 4-6 hours.
+
+### 1.2 — Claude cost guards ⬜
+- **Why**: a viral spike or abuse can run the Anthropic bill into the thousands overnight.
+- **What to build**:
+  - Per-user daily quota in `usage_log` (Pro = 100 Claude calls/day, free = 10).
+  - Response cache in Worker KV keyed by hash(prompt) → 24-hour TTL.
+  - Fallback to `claude-haiku-4-5` when `claude-sonnet-4-5` is rate-limited or when user is free-tier.
+  - Daily cost report → owner email via Resend (re-use `pg_net` pipeline).
+- **Files**: `worker-src/handlers/chat.js`, `worker-src/lib/claude.js`, new `worker-src/lib/cache.js`, new SQL function `record_claude_call(user_id, tokens, model)`.
+- **Done when**:
+  - Repeating the same chat question within 24h returns the cached answer (visible in Worker logs).
+  - 101st chat in a day from a Pro user returns "Daily quota reached".
+  - Daily 9 AM email lists cost per model.
+- **Estimate**: 1 day.
+
+### 1.3 — Sentry + Better Stack ⬜
+- **Why**: we discover bugs from user complaints today. Need to discover them from logs.
+- **What to build**:
+  - Sentry account ($26/mo); SDK in Worker + FastAPI backend.
+  - Better Stack account ($25/mo); uptime monitor on `jamilformula.com`, `formula-ai-brain.jamilaj1.workers.dev`, and the Render backend health endpoint.
+  - Slack/email alerting wired to Jamil.
+- **Files**: `worker-src/observability.js`, `backend/services/observability.py`.
+- **Done when**:
+  - A deliberately thrown error in chat appears in Sentry within 30 s.
+  - Stopping the Render service triggers a Better Stack alert within 2 minutes.
+- **Estimate**: 45 min + $51/month committed.
+
+### 1.4 — One-command auto-deploy (CI) ⬜
+- **Why**: manual `build_phase3.py` → FTP upload is error-prone. Need push-to-deploy.
+- **What to build**:
+  - GitHub Action: on push to `main`, run `sync_formula_count.py` + `build_phase3.py` + FTP-upload to Hostinger.
+  - Worker deploy via Wrangler from same action.
+- **Files**: `.github/workflows/deploy.yml`.
+- **Done when**: `git push origin main` is the only command needed for a release.
+- **Estimate**: 1 day.
+
+---
+
+## PHASE 2 — FIRST REVENUE (AI+Human Consulting)
+
+> Goal: turn the 6 Claude agents we already have into a paid service.
+> First $5-10K/month. Estimated: 1 week.
+
+### 2.1 — `consulting.html` page ⬜
+- **What to build**:
+  - 3 packages: **Quick Diagnostic $1,000** / **Full Formulation Report $2,500** / **Custom Project $5,000+**.
+  - Clear deliverable per package, sample report screenshots, FAQ.
+  - Bilingual (AR/EN) via `data-i18n-ar`.
+- **Done when**: page renders, mobile-friendly, links from navbar + pricing.html.
+- **Estimate**: 1 day.
+
+### 2.2 — Intake form + `consultation_requests` table ⬜
+- **What to build**:
+  - SQL migration: `consultation_requests(id, user_id, package, product_type, market, budget, brief TEXT, status, created_at, ai_draft_url, owner_decision)`.
+  - Form on `consulting.html` writes to it.
+  - On INSERT trigger fires Resend email to Jamil ("New consulting request: $package from $user").
+- **Files**: `database/migrations/2026-05-XX_consulting.sql`, `consulting.html`.
+- **Done when**: a submitted form creates a row, owner inbox gets the email.
+- **Estimate**: 1 day.
+
+### 2.3 — AI draft workflow (orchestrator → draft → owner review) ⬜
+- **What to build**:
+  - Worker endpoint `/be/consulting/draft` that calls `backend/agents/orchestrator.py` with the intake form data.
+  - Output saved as Markdown in `consultation_requests.ai_draft_url`.
+  - PDF generated server-side (existing tooling or `weasyprint`).
+- **Files**: `worker-src/handlers/backend_proxy.js`, `backend/api/v2/consulting.py` (new).
+- **Done when**: a request can produce a 3-5 page draft PDF within 60 seconds.
+- **Estimate**: 2-3 days.
+
+### 2.4 — Owner review UI in admin.html ⬜
+- **What to build**:
+  - Add a "Consulting requests" tab to `admin.html`.
+  - List requests with status, brief, draft preview, Approve/Reject buttons.
+  - On Approve → email PDF to customer via Resend (re-uses `_owner_email_config()`).
+  - On Reject → form to add revision notes; orchestrator re-runs.
+- **Files**: `admin.html`, new RPCs `admin_list_consulting()`, `admin_approve_consultation(id)`.
+- **Done when**: owner can approve a request and the customer receives the PDF.
+- **Estimate**: 1-2 days.
+
+### 2.5 — Payment integration for consulting ⬜
+- **What to build**: Paystack one-time payment link per package + webhook updates `consultation_requests.status='paid'` before draft is generated.
+- **Done when**: payment must succeed before AI draft fires.
+- **Estimate**: 1 day.
+
+---
+
+## PHASE 3 — ENTERPRISE B2B FOUNDATION
+
+> Goal: open the channel that funds the $20K/month enterprise stream.
+> Estimated: 3-4 days.
+
+### 3.1 — Enterprise plan + `enterprise_details` table ⬜
+- **What to build**:
+  - Add `'enterprise'` as a valid value in `profiles.plan` (no enum — `plan` is TEXT).
+  - New 1:1 child table `enterprise_details(user_id PK FK profiles(id), company_name, factory_location, industry_sector, monthly_quota, api_access_enabled, created_at, updated_at)` with RLS so only owner + the company itself can read.
+  - Update `isPaid()` in `supabase-client.js` to treat `plan='enterprise'` as paid.
+- **Files**: `database/migrations/2026-05-XX_enterprise.sql`, `assets/supabase-client.js`.
+- **Done when**: an enterprise-tier user has unlocked formulas + full ingredients + higher Claude quota.
+- **Estimate**: ½ day.
+
+### 3.2 — `enterprise.html` sales page ⬜
+- **What to build**:
+  - Hero: "Built for chemical manufacturers and industrial labs."
+  - 6 value bullets (private vault, team accounts, compliance docs, AI assistant, supplier intelligence, batch calculators).
+  - Pricing: "From $500/month — Contact sales for custom quote."
+  - "Schedule a 30-min consultation" form (writes to `enterprise_leads` table; pings Jamil's email).
+- **Files**: new `enterprise.html`, new `enterprise_leads` table.
+- **Done when**: published, linked from `pricing.html` and the navbar.
+- **Estimate**: 1 day.
+
+### 3.3 — Founder authority on `about.html` ⬜
+- **What to build**:
+  - Add a long-form story section: Jamil's 25-year career, factories run, products formulated, photos, brief case studies, why this platform exists.
+  - LinkedIn link prominent.
+- **Done when**: about.html reads like a founder's brand page, not a project page.
+- **Estimate**: 1 day (mostly content gathering).
+
+---
+
+## PHASE 4 — RETENTION (Formula Workspace)
+
+> Goal: fix the "post-purchase churn" problem — chemist gets the formula, never returns.
+> Estimated: 2 weeks.
+
+### 4.1 — `my_formulas` table + save/edit ⬜
+- Users can save any formula to their own workspace, edit it, add notes.
+- Files: SQL migration, new `workspace.html`, `assets/workspace-live.js`.
+
+### 4.2 — Projects + tags ⬜
+- Group saved formulas into projects with tags.
+
+### 4.3 — Side-by-side compare ⬜
+- Pick 2 formulas, diff ingredients/cost/properties.
+
+### 4.4 — Formula PDF export ⬜
+- One-click printable spec sheet.
+
+### 4.5 — Email alert on raw-material price change (Phase 8 dependency) ⏭️
+- Defer to Phase 8 (needs supplier data).
+
+---
+
+## PHASE 5 — LEAD GEN + EMAIL
+
+> Goal: build the email list, the long-term acquisition asset.
+> Estimated: 1-2 weeks.
+
+### 5.1 — Lead magnet template + first PDF ⬜
+- Pick 1 industry (e.g. detergents). Produce a 6-page "10 Common Detergent Formulation Mistakes" PDF.
+
+### 5.2 — Email-gated download flow ⬜
+- New page `resources.html`; visitor enters email → PDF emailed via Resend.
+- Email saved to `leads` table.
+
+### 5.3 — Nurture sequence ⬜
+- 7-email drip over 30 days (welcome → tip 1 → case study → tip 2 → soft pitch → free demo → upgrade).
+
+### 5.4 — Industry magnet expansion (rolling) ⬜
+- 4 more PDFs, one industry per week.
+
+### 5.5 — A/B pricing test ⬜
+- Split pricing.html between $29 and $49 Pro; track 14-day conversion.
+
+---
+
+## PHASE 6 — DISTRIBUTION
+
+> Goal: get factories & chemists to know we exist.
+> Estimated: ongoing (starts week 3-4 in parallel).
+
+### 6.1 — LinkedIn daily post framework ⬜
+- 30 post templates: "Industrial mistake of the week", "Why your shampoo separates", "EU bans next…", "Cost-cut tip".
+- Owner posts 5/week in English.
+
+### 6.2 — Per-chemical SEO pages (7,000 pages) ⬜
+- One template, one Python script, query `chemicals` table, render to `chemicals/<slug>.html`.
+- Sitemap regenerated.
+
+### 6.3 — Homepage social proof ⬜
+- Testimonials section, factory logos, "trusted by N chemists in N countries".
+
+### 6.4 — Wall of Contributors page ⬜
+- Public page showcasing top contributors (`public_profiles` view).
+
+### 6.5 — Founder LinkedIn / YouTube setup ⬜
+- Owner identity hardened on LinkedIn; first 3 YouTube Shorts published.
+
+---
+
+## PHASE 7 — DAILY TOOLS (CALCULATORS)
+
+> Goal: make the site a daily tool, not just an encyclopedia.
+> Estimated: 2-3 weeks.
+
+### 7.1 — Cost-per-batch calculator ⬜
+### 7.2 — Lab-to-production scale-up calculator (100g → 1,000kg) ⬜
+### 7.3 — Surfactant blend ratio calculator ⬜
+### 7.4 — pH correction calculator ⬜
+### 7.5 — SDS (Safety Data Sheet) auto-generator ⬜
+- HUGE enterprise unlock — compliance doc required by every customer.
+
+---
+
+## PHASE 8 — PROCUREMENT MARKETPLACE (manual MVP first)
+
+> Goal: launch the $8K/month commission stream.
+> Estimated: 2 weeks for manual flow; automation later.
+
+### 8.1 — "Request quote" form on every chemical page ⬜
+- Visitor fills product / quantity / destination port.
+- Form writes to `procurement_requests`; pings Jamil.
+
+### 8.2 — Manual matchmaking workflow ⬜
+- Jamil contacts supplier; gets quote; emails buyer with margin built in.
+- Track every request in admin.html with status + commission earned.
+
+### 8.3 — Supplier directory page ⬜
+- Public-facing list of vetted suppliers (begins with Jamil's Ghana network).
+
+### 8.4 — Commission tracking dashboard ⬜
+- MRR/commission breakdown in admin.html.
+
+---
+
+## PHASE 9 — ADVANCED MOAT (Month 4+)
+
+> Goal: defensibility for the long run.
+
+### 9.1 — Vector DB + RAG over the formulas + chemicals + chat history ⬜
+- Reduces Claude dependency, makes the AI proprietary.
+
+### 9.2 — Team accounts (multi-seat under one enterprise) ⬜
+### 9.3 — CSV/Excel formula import for enterprise onboarding ⬜
+### 9.4 — Chat history exportable as Markdown/PDF ⬜
+### 9.5 — MRR / CAC / LTV dashboard ⬜
+### 9.6 — Tighten CSP — remove `'unsafe-eval'` ⬜
+### 9.7 — Vitest coverage for the Worker + pytest coverage for the backend ⬜
+
+---
+
+## 🚫 What we explicitly DO NOT do (from the AI-evaluation pass)
+
+| Tempted by | Why we refuse |
+|---|---|
+| 100,000 thin AI-generated SEO pages | Google penalises in 2024+; quality > quantity. |
+| Replacing Paystack with Stripe | Paystack is the right choice for our target markets (Africa, Middle East, emerging). |
+| Removing `lab.html` / `predict.html` / `similarity.html` / `agent.html` etc. | These are depth signals to B2B buyers. Do not delete without explicit owner approval. |
+| Brand rebrand to "industrial blue" | Owner's design choices stay. |
+| Planning a BASF acquisition | Fantasy at current scale. |
+| Freezing all feature work for 30 days | Phase 1 hardening IS feature work and is essential. |
+| Pasting the Gemini SQL with `ALTER TYPE user_tier` | No such enum exists — would fail on first line. |
+
+---
+
+## 📜 Provenance
+
+The plan was synthesised from:
+- `CONTEXT.md` (everything already built)
+- External-AI analyses by DeepSeek (mostly low-value), ChatGPT (strategic), and Gemini (sharpest tactical insight).
+
+The good ideas were taken, the bad / inflated / wrong claims were
+dropped. Nothing from the existing project will be deleted without
+explicit owner permission (per `feedback-evaluate-other-ai.md`).
+
+---
+
+## ⏱️ Owner update log (append below as steps complete)
+
+- 2026-05-22 — Roadmap created. Currently on **1.1**.
+- 2026-05-25 — **Step 1.1 ✅ DONE.** Server-side gate + RLS + anti-scraping
+  rate limit deployed end-to-end. SQL migration ran clean; KV namespace
+  `formula_ai_ratelimit` (id `d4fd954875414eb39cda8ec53fed3c9f`) bound as
+  `RATELIMIT_KV`; Worker version `421bde10`; frontend `DEPLOY_PHASE3.zip`
+  extracted in `public_html`; all 3 verification queries (anon role) returned
+  the expected results. Moving pointer to **1.2**.
+- 2026-05-26 — **Step 1.3 ✅ DONE.** Sentry + Better Stack stack
+  observable end-to-end. Sentry envelope POST returns 200; 3 Better
+  Stack uptime monitors green (`jamilformula.com`,
+  `formula-ai-brain.jamilaj1.workers.dev/health`,
+  `formula-ai-chem.onrender.com/health`); Worker version
+  `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
+  committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-25 — **Step 1.2 ✅ DONE.** Claude cost guards live. Migration
+  `2026-05-25_claude_cost_guards.sql` adds tokens/cost columns + view + RPCs;
+  `lib/claude.js` does plan-aware Sonnet/Haiku selection + auto-fallback;
+  `lib/cache.js` gives SHA-256 KV cache with 24h TTL; `recordUsage` accepts
+  cost meta; `chat.js` `search.js` `insights.js` all wired; hotfix switched
+  Worker `formulas` reads from anon `sb()` to `sbService()` (RLS from 1.1
+  had silently broken them). Cron `0 9 * * *` registered (Version
+  `526a93de`). Smoke test: 2× /search → second was `cache_hit=true` with
+  zero tokens. Moving pointer to **1.3** (Sentry + Better Stack).

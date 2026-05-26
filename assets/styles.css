@@ -67,14 +67,25 @@ html {
 }
 
 body {
-  font-family: 'Cairo', 'Tajawal', 'Inter', system-ui, -apple-system, sans-serif;
+  /* Inter leads for Latin (crisp, modern — the world-class look); Cairo
+     automatically picks up Arabic glyphs Inter doesn't cover. */
+  font-family: 'Inter', 'Cairo', 'Tajawal', system-ui, -apple-system, sans-serif;
   background: var(--bg-1);
   color: var(--text-1);
-  line-height: 1.7;
+  line-height: 1.65;
   font-size: 16px;
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   overflow-x: hidden;
   min-height: 100vh;
   position: relative;
+}
+/* Arabic should stay Cairo-led for proper shaping/readability. */
+html[lang="ar"] body, [dir="rtl"] body {
+  font-family: 'Cairo', 'Tajawal', 'Inter', system-ui, sans-serif;
+  letter-spacing: 0;
 }
 
 /* Animated background mesh */
@@ -109,11 +120,58 @@ button {
   color: inherit;
 }
 
+/* ── Global dark-theme hardening for native controls ──────────────
+   Fixes the whole class of "white/ugly/invisible" bugs at once:
+   selects, date/number pickers, autofill, placeholders, focus rings,
+   spinners — so no single page needs a one-off patch again. */
+:root { color-scheme: dark; }
+input::placeholder, textarea::placeholder { color: var(--text-3, #8b93a7); opacity: 1; }
+input, select, textarea { color-scheme: dark; }
+/* Chrome autofill no longer paints a white/yellow box */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--text-1, #e8edf6);
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-card, #0b1020) inset;
+  caret-color: var(--text-1, #e8edf6);
+  transition: background-color 9999s ease-in-out 0s;
+}
+/* Native date/time/number pickers + spinners stay dark */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.9); cursor: pointer; }
+input[type="number"]::-webkit-inner-spin-button { filter: invert(0.85); }
+/* Accent (checkboxes, radios, range, progress) uses the brand colour */
+input[type="checkbox"], input[type="radio"], input[type="range"], progress {
+  accent-color: var(--primary, #00ff88);
+}
+/* Any element that visually fails the dark theme can opt in */
+.force-dark, .force-dark * { color-scheme: dark; }
+
 input,
 select,
 textarea {
   font-family: inherit;
   font-size: inherit;
+}
+
+/* Dark-theme <select> dropdown fix: native <option> popups render with
+   a white OS background; our light option text was white-on-white and
+   only visible when highlighted. Force readable dark options site-wide
+   + a colour-scheme hint so the browser draws the popup dark. */
+select {
+  color-scheme: dark;
+}
+select option,
+select optgroup {
+  background: #0b1020;
+  color: #e8edf6;
+}
+select option:checked,
+select option:hover {
+  background: var(--primary, #00ff88);
+  color: #02110a;
 }
 
 ::selection {
@@ -216,24 +274,46 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   left: 0;
   right: 0;
   z-index: 100;
-  padding: 16px 0;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(0);
+  padding: 14px 0;
+  transition: padding 0.25s ease, background 0.25s ease;
+  /* Solid-glass from the start: content never bleeds into it, and it
+     reads as a real product header — not a cheap transparent bar. */
+  background: rgba(5, 8, 24, 0.72);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .navbar.scrolled {
-  background: rgba(5, 8, 24, 0.85);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 0;
+  background: rgba(5, 8, 24, 0.9);
+  border-bottom-color: var(--border);
+  padding: 10px 0;
 }
 
 .nav-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: clamp(12px, 1.6vw, 22px);
+  flex-wrap: nowrap;
 }
+
+/* ROOT CAUSE FIX: the shared .container caps width (~1240px) so the
+   10-item nav overlapped even on a 1900px screen (viewport media
+   queries couldn't help — the constraint was the container, not the
+   viewport). The navbar gets its own WIDE container so every item +
+   the CTAs fit on real desktops; narrow screens get the hamburger. */
+.navbar > .container,
+.navbar .nav-inner {
+  max-width: min(1680px, 96vw);
+}
+.nav-links { flex-shrink: 1; }
+.nav-tools, .nav-cta { flex-shrink: 0; }
+/* Guarantee clear separation between the link row and the tools/CTA so
+   the last item ("About") can never touch the language selector. */
+.nav-links { margin-right: 18px; }
+[dir="rtl"] .nav-links { margin-right: 0; margin-left: 18px; }
+.nav-tools { margin-left: 6px; }
 
 .logo {
   display: flex;
@@ -352,15 +432,20 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: clamp(10px, 1.5vw, 22px);
   list-style: none;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .nav-links a {
   color: var(--text-2);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 600;
+  letter-spacing: -0.01em;
   position: relative;
+  white-space: nowrap;
+  transition: color 0.15s ease;
 }
 
 .nav-links a:hover {
@@ -369,6 +454,56 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
 
 .nav-links a.active {
   color: var(--primary);
+}
+/* Premium underline on the active item */
+.nav-links a.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--grad-primary, linear-gradient(135deg, #00ff88, #00d4ff));
+}
+
+/* The full nav (up to 10 items + 2 CTAs) only fits on wide screens.
+   Anything narrower → clean hamburger menu instead of an overlapping
+   cheap mess. This is the premium behaviour (one tidy row OR a tidy
+   menu — never collision). */
+@media (min-width: 1367px) and (max-width: 1560px) {
+  .nav-links { gap: 13px; }
+  .nav-links a { font-size: 0.82rem; }
+  .logo { font-size: 1.2rem; }
+  .nav-cta .btn { padding: 9px 14px; font-size: 0.85rem; }
+}
+@media (max-width: 1366px) {
+  .nav-links {
+    display: none;
+    position: fixed;
+    top: 64px;
+    left: 16px;
+    right: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    background: rgba(5, 8, 24, 0.97);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  }
+  .nav-links.open { display: flex; }
+  .nav-links a {
+    font-size: 0.95rem;
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+  .nav-links a:hover { background: var(--bg-card); }
+  .nav-links a.active::after { display: none; }
+  .nav-toggle { display: flex !important; }
+  .nav-cta { display: none; }
 }
 
 .nav-cta {
@@ -551,6 +686,10 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   inset: 0;
   pointer-events: none;
   z-index: 0;
+  /* Defensive: orbs are positioned with negative offsets — clip them
+     here so they cannot push the page's horizontal scroll on mobile
+     even when the parent section doesn't itself set overflow:hidden. */
+  overflow: hidden;
 }
 
 .hero-orb {
@@ -2235,4 +2374,29 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   background: rgba(0, 255, 136, 0.10);
   border-color: var(--border-primary);
   color: var(--primary);
+}
+
+/* ============================================
+   Mobile language switch (inside hamburger menu)
+   Visible only when the navbar collapses into the
+   hamburger so language is always discoverable.
+   ============================================ */
+.mobile-lang { display: none; }
+@media (max-width: 1366px) {
+  .nav-links .mobile-lang {
+    display: list-item; list-style: none;
+    margin-top: 8px; padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .nav-links .mobile-lang a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px; border-radius: 10px;
+    color: var(--primary); font-weight: 700;
+    border: 1px solid rgba(0,255,136,0.30);
+    background: rgba(0,255,136,0.06);
+    text-decoration: none;
+  }
+  .nav-links .mobile-lang a:hover,
+  .nav-links .mobile-lang a:active { background: rgba(0,255,136,0.14); }
+  .nav-links .mobile-lang .flag { font-size: 1.15rem; }
 }

@@ -47,3 +47,11 @@ _archive/
 .wrangler/
 .dev.vars
 
+# --- Build / state files ---
+# scripts/formula_count.txt holds the last live-counted row count; it's
+# refreshed every CI run from Supabase, so tracking it would force a
+# push-back loop. Same for deploy_staging/ which is the unzipped frontend
+# bundle the deploy.yml workflow creates on the runner.
+scripts/formula_count.txt
+deploy_staging/
+

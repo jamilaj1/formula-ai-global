@@ -10,8 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
 </head>
 <body>
   <nav class="navbar">
@@ -23,6 +24,7 @@
       <ul class="nav-links">
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./formulas.html" data-i18n-ar="الفورمولات">Formulas</a></li>
@@ -59,12 +61,13 @@
     </div>
   </nav>
 
+  <main>
   <section style="padding: 110px 0 40px;">
     <div class="container">
       <!-- Header -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 18px;">
         <div>
-          <h1 style="font-size: 2rem; margin-bottom: 6px;" data-i18n-ar='مرحباً <span class="gradient-text">جميل</span> 👋'>Welcome back <span class="gradient-text">Jamil</span> 👋</h1>
+          <h1 id="dash-welcome" style="font-size: 2rem; margin-bottom: 6px;" data-i18n-ar='مرحباً <span class="gradient-text" id="dash-name-ar">صديقي</span> 👋'>Welcome back <span class="gradient-text" id="dash-name">friend</span> 👋</h1>
           <p style="color: var(--text-3);" data-i18n-ar="إليك ملخص نشاطك وفورمولاتك اليوم">Here's a summary of your activity and formulas today</p>
         </div>
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -76,6 +79,70 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
             <span data-i18n-ar="تصدير الكل">Export all</span>
           </button>
+        </div>
+      </div>
+
+      <!-- Onboarding completion card — shown only when the profile is
+           missing education_field OR profession (typical for Google OAuth
+           users who didn't go through register.html).  Hidden by default;
+           the inline script below reveals it after FAI_AUTH initialises. -->
+      <div id="onboarding-card" class="reveal" style="margin-bottom: 28px; display: none;">
+        <div class="card" style="padding: 28px; border: 1px solid var(--border-primary); background: linear-gradient(135deg, rgba(255,215,0,0.06), rgba(0,212,255,0.04));">
+          <div style="display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap;">
+            <div style="font-size: 2.4rem;">🎓</div>
+            <div style="flex: 1; min-width: 240px;">
+              <h2 style="font-size: 1.25rem; margin: 0 0 6px;" data-i18n-ar="أكمل ملفّك الشخصي">Complete your profile</h2>
+              <p style="color: var(--text-2); margin: 0 0 16px; line-height: 1.7; font-size: 0.95rem;" data-i18n-ar="سؤالان قصيران يساعداننا نعرض لك الأدوات الصحيحة ونعرّفك على شبكة الكيميائيين على المنصّة.">Two quick questions help us surface the right tools for you and connect you to the right peers on the platform.</p>
+              <form id="onboarding-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end;">
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" data-i18n-ar="التعليم / التخصّص">Education / field of study</label>
+                  <select id="onb-education-field" class="form-input" dir="auto">
+                    <option value="" data-i18n-ar="— اختر —">— Select —</option>
+                    <option value="chemistry"               data-i18n-ar="كيمياء">Chemistry</option>
+                    <option value="chemical-engineering"    data-i18n-ar="هندسة كيميائية">Chemical engineering</option>
+                    <option value="manufacturing-engineering" data-i18n-ar="هندسة تصنيع / صناعية">Manufacturing / industrial engineering</option>
+                    <option value="pharmacy"                data-i18n-ar="صيدلة">Pharmacy</option>
+                    <option value="biochemistry"            data-i18n-ar="كيمياء حيوية">Biochemistry</option>
+                    <option value="environmental-science"   data-i18n-ar="علوم بيئية">Environmental science</option>
+                    <option value="food-technology"         data-i18n-ar="تكنولوجيا أغذية">Food technology</option>
+                    <option value="materials-engineering"   data-i18n-ar="هندسة مواد">Materials engineering</option>
+                    <option value="petroleum-engineering"   data-i18n-ar="هندسة بترول">Petroleum engineering</option>
+                    <option value="cosmetic-science"        data-i18n-ar="علوم تجميل">Cosmetic science</option>
+                    <option value="textile-science"         data-i18n-ar="علوم نسيج">Textile science</option>
+                    <option value="sciences-general"        data-i18n-ar="علوم عامة">Sciences (general)</option>
+                    <option value="medicine"                data-i18n-ar="طب">Medicine</option>
+                    <option value="other"                   data-i18n-ar="أخرى">Other</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin: 0;">
+                  <label class="form-label" data-i18n-ar="المهنة">Profession</label>
+                  <select id="onb-profession" class="form-input" dir="auto">
+                    <option value="" data-i18n-ar="— اختر —">— Select —</option>
+                    <option value="factory-owner"         data-i18n-ar="صاحب معمل / مالك">Factory owner</option>
+                    <option value="production-manager"    data-i18n-ar="مدير إنتاج">Production manager</option>
+                    <option value="lab-supervisor"        data-i18n-ar="مسؤول مخبر">Lab supervisor</option>
+                    <option value="lab-technician"        data-i18n-ar="فنّي مخبر">Lab technician</option>
+                    <option value="qc-manager"            data-i18n-ar="مدير جودة (QC)">Quality control manager</option>
+                    <option value="rd-chemist"            data-i18n-ar="كيميائي بحث وتطوير">R&amp;D chemist</option>
+                    <option value="researcher"            data-i18n-ar="باحث">Researcher</option>
+                    <option value="consultant"            data-i18n-ar="استشاري">Consultant</option>
+                    <option value="professor"             data-i18n-ar="أستاذ / مدرّس">Professor / teacher</option>
+                    <option value="student"               data-i18n-ar="طالب">Student</option>
+                    <option value="sales-manager"         data-i18n-ar="مدير مبيعات">Sales manager</option>
+                    <option value="general-manager"       data-i18n-ar="مدير عام">General manager</option>
+                    <option value="maintenance-engineer"  data-i18n-ar="مهندس صيانة">Maintenance engineer</option>
+                    <option value="freelance"             data-i18n-ar="مستقل / فريلانس">Freelance</option>
+                    <option value="other"                 data-i18n-ar="أخرى">Other</option>
+                  </select>
+                </div>
+                <div style="grid-column: 1 / -1; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                  <button type="submit" class="btn btn-primary" id="onb-save" data-i18n-ar="حفظ">Save</button>
+                  <button type="button" class="btn btn-ghost" id="onb-skip" data-i18n-ar="لاحقاً">Later</button>
+                  <span id="onb-msg" style="font-size: 0.88rem; color: var(--text-3);"></span>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -110,9 +177,9 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M9 11h6m-3-3v6"/><circle cx="12" cy="12" r="9"/></svg>
           </div>
           <div class="label" data-i18n-ar="الفورمولات المستخدمة">Formulas used</div>
-          <div class="value">42<span style="color: var(--text-3); font-size: 1rem; font-weight: 600;">/100</span></div>
-          <div class="progress-bar"><div class="progress-bar-fill" style="width: 42%;"></div></div>
-          <div class="delta" data-i18n-ar="+8 هذا الأسبوع">+8 this week</div>
+          <div class="value">0<span style="color: var(--text-3); font-size: 1rem; font-weight: 600;">/100</span></div>
+          <div class="progress-bar"><div class="progress-bar-fill" style="width: 0%;"></div></div>
+          <div class="delta" data-i18n-ar="ابدأ بأول بحث">Start with your first search</div>
         </div>
 
         <div class="dash-stat reveal delay-1">
@@ -120,8 +187,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--secondary)" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           </div>
           <div class="label" data-i18n-ar="عمليات البحث">Searches</div>
-          <div class="value">387</div>
-          <div class="delta" data-i18n-ar="+24% عن الشهر الماضي">+24% vs. last month</div>
+          <div class="value">0</div>
+          <div class="delta" data-i18n-ar="لا عمليات بحث بعد">No searches yet</div>
         </div>
 
         <div class="dash-stat reveal delay-2">
@@ -129,8 +196,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="#c084fc" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2zM22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
           </div>
           <div class="label" data-i18n-ar="الكتب المرفوعة">Books uploaded</div>
-          <div class="value">12</div>
-          <div class="delta" data-i18n-ar="3,420 فورمولا مستخرجة">3,420 formulas extracted</div>
+          <div class="value">0</div>
+          <div class="delta" data-i18n-ar="ارفع كتابك الأول للاستخراج">Upload your first book</div>
         </div>
 
         <div class="dash-stat reveal delay-3">
@@ -138,8 +205,8 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
           </div>
           <div class="label" data-i18n-ar="معدل النجاح">Success rate</div>
-          <div class="value">96%</div>
-          <div class="delta" data-i18n-ar="↑ 2.3% عن الأسبوع الماضي">↑ 2.3% vs. last week</div>
+          <div class="value">—</div>
+          <div class="delta" data-i18n-ar="يظهر بعد أول نتائجك">Shows after your first results</div>
         </div>
       </div>
 
@@ -225,14 +292,14 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg>
               </div>
               <div>
-                <div style="font-weight: 800;" data-i18n-ar="خطة Professional">Professional plan</div>
-                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="تجدد في 14 ديسمبر">Renews on December 14</div>
+                <div style="font-weight: 800;" data-i18n-ar="الخطة المجانية">Free plan</div>
+                <div style="color: var(--text-3); font-size: 0.85rem;" data-i18n-ar="بلا التزام · لا بطاقة مطلوبة">No commitment · no card required</div>
               </div>
             </div>
-            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7;" data-i18n-ar="لقد استخدمت 42 فورمولا من أصل 100 المتاحة هذا الشهر.">
-              You've used 42 of 100 formulas available this month.
+            <p style="color: var(--text-2); font-size: 0.9rem; margin-bottom: 16px; line-height: 1.7;" data-i18n-ar="لقد استخدمت 0 من 100 فورمولا متاحة هذا الشهر.">
+              You've used 0 of 100 formulas available this month.
             </p>
-            <a href="./pricing.html" class="btn btn-primary btn-block" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg> ترقية للخطة Business'>
+            <a href="./pricing.html" class="btn btn-primary btn-block" data-i18n-ar='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg> شاهد خطط الاشتراك'>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-7"/></svg>
               Upgrade to Business
             </a>
@@ -262,6 +329,8 @@
   </section>
 
   <!-- Footer -->
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-bottom" style="padding-top: 0; border-top: none;">
@@ -271,6 +340,139 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <!-- auth.js MUST load on the dashboard because this is the OAuth
+       redirect target. Without it the #access_token in the URL is
+       never consumed, the session is never stored, and every other
+       page treats the user as a guest. -->
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script>
+    // Personalize the welcome message once the auth module has loaded.
+    // If the visitor isn't signed in, bounce them to login.html.
+    // Also: if their profile is missing education_field/profession,
+    // reveal the onboarding completion card.
+    (function () {
+      let tries = 0;
+      const t = setInterval(() => {
+        if (window.FAI_AUTH && window.FAI_AUTH.initialized) {
+          clearInterval(t);
+          const u = window.FAI_AUTH.user;
+          if (!u) {
+            location.replace('./login.html?redirect=' + encodeURIComponent(location.pathname));
+            return;
+          }
+          const name = u.user_metadata?.full_name
+                    || u.user_metadata?.name
+                    || u.email?.split('@')[0]
+                    || 'friend';
+          const safe = String(name).replace(/[<>&"']/g, '');
+          const el  = document.getElementById('dash-name');
+          if (el) el.textContent = safe;
+          // Also patch the AR data-i18n so the toggle keeps it right
+          const wrap = document.getElementById('dash-welcome');
+          if (wrap) wrap.setAttribute('data-i18n-ar',
+            'مرحباً <span class="gradient-text">' + safe + '</span> 👋');
+          if (window.applyI18n) window.applyI18n();
+
+          // Reveal the onboarding card when education/profession are blank.
+          maybeShowOnboarding();
+        } else if (++tries > 80) {
+          clearInterval(t);
+        }
+      }, 50);
+
+      async function maybeShowOnboarding() {
+        try {
+          const sb = window.FAI_AUTH.client;
+          const uid = window.FAI_AUTH.user.id;
+          const { data: profile } = await sb.from('profiles')
+            .select('education_field, profession')
+            .eq('id', uid).single();
+
+          // Apply any answers that were stashed by register.html before
+          // the Google OAuth round-trip.
+          let pending = null;
+          try { pending = JSON.parse(localStorage.getItem('fai_pending_onboarding') || 'null'); } catch (_) {}
+          if (pending && (pending.education_field || pending.profession)) {
+            const patch = {};
+            if (pending.education_field && !profile?.education_field) patch.education_field = pending.education_field;
+            if (pending.profession      && !profile?.profession)      patch.profession      = pending.profession;
+            if (Object.keys(patch).length) {
+              await sb.from('profiles').update(patch).eq('id', uid);
+              if (patch.education_field) profile.education_field = patch.education_field;
+              if (patch.profession)      profile.profession      = patch.profession;
+            }
+            try { localStorage.removeItem('fai_pending_onboarding'); } catch (_) {}
+          }
+
+          // If the user has dismissed the banner in this browser, don't
+          // re-show it for 30 days (they can fill in from their profile
+          // page later).
+          const snoozeUntil = parseInt(localStorage.getItem('fai_onb_snooze') || '0', 10);
+          if (Date.now() < snoozeUntil) return;
+
+          if (profile && (!profile.education_field || !profile.profession)) {
+            const card = document.getElementById('onboarding-card');
+            if (card) card.style.display = 'block';
+            // Pre-fill whatever is already saved so the user only fills the gap.
+            if (profile.education_field) {
+              const sel = document.getElementById('onb-education-field');
+              if (sel) sel.value = profile.education_field;
+            }
+            if (profile.profession) {
+              const sel = document.getElementById('onb-profession');
+              if (sel) sel.value = profile.profession;
+            }
+          }
+        } catch (e) {
+          console.warn('[onboarding] check failed:', e);
+        }
+      }
+
+      // Wire up the onboarding card buttons.
+      document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('onboarding-form');
+        if (!form) return;
+        const msg  = document.getElementById('onb-msg');
+        const card = document.getElementById('onboarding-card');
+
+        document.getElementById('onb-skip').addEventListener('click', () => {
+          // Snooze for 30 days.
+          try { localStorage.setItem('fai_onb_snooze', String(Date.now() + 30 * 24 * 3600 * 1000)); } catch (_) {}
+          if (card) card.style.display = 'none';
+        });
+
+        form.addEventListener('submit', async e => {
+          e.preventDefault();
+          msg.textContent = '';
+          msg.style.color = '';
+          const edu  = document.getElementById('onb-education-field').value;
+          const prof = document.getElementById('onb-profession').value;
+          if (!edu && !prof) {
+            msg.style.color = '#f87171';
+            msg.textContent = 'Please choose at least one field.';
+            return;
+          }
+          try {
+            const sb  = window.FAI_AUTH.client;
+            const uid = window.FAI_AUTH.user.id;
+            const patch = {};
+            if (edu)  patch.education_field = edu;
+            if (prof) patch.profession      = prof;
+            const { error } = await sb.from('profiles').update(patch).eq('id', uid);
+            if (error) throw error;
+            msg.style.color = '#00ff88';
+            msg.textContent = 'Saved — thanks!';
+            setTimeout(() => { if (card) card.style.display = 'none'; }, 900);
+          } catch (err) {
+            msg.style.color = '#f87171';
+            msg.textContent = err?.message || 'Could not save — please try again.';
+          }
+        });
+      });
+    })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

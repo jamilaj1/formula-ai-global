@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Formula — Formula AI Global</title>
+  <meta name="description" content="A complete, professionally presented chemical formulation: ingredients, percentages, functions, chemistry, batch scaling, safety and compliance — in one page." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="canonical" href="https://jamilformula.com/formula.html" />
+  <meta property="og:type" content="product" />
+  <meta property="og:site_name" content="Formula AI Global" />
+  <meta name="twitter:card" content="summary" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
+  <style>
+    .fx-wrap { max-width: 1080px; margin: 0 auto; }
+    .fx-head { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 26px 28px; margin-bottom: 20px; }
+    .fx-title { font-size: 1.8rem; font-weight: 900; line-height: 1.15; margin: 0 0 6px; }
+    .fx-sub { color: var(--text-2); font-size: 1rem; }
+    .fx-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .fx-badge { font-size: 0.76rem; font-weight: 700; padding: 4px 11px; border-radius: 999px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-2); }
+    .fx-badge.ok { background: rgba(0,255,136,.16); color: #00ff88; border-color: transparent; }
+    .fx-badge.warn { background: rgba(255,170,0,.16); color: #ffb74a; border-color: transparent; }
+
+    .fx-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .fx-grid { grid-template-columns: 1fr; } }
+    .fx-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 22px 24px; margin-bottom: 20px; }
+    .fx-panel h3 { margin: 0 0 14px; font-size: 1.05rem; display: flex; align-items: center; gap: 8px; }
+    .fx-panel h3 svg { width: 18px; height: 18px; color: var(--primary); }
+
+    table.fx-ing { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+    table.fx-ing th { text-align: left; color: var(--text-3); font-size: 0.74rem; text-transform: uppercase; letter-spacing: .5px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    table.fx-ing td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    table.fx-ing tr:last-child td { border-bottom: 0; }
+    .pct-cell { white-space: nowrap; font-weight: 700; }
+    .pct-bar { height: 5px; background: var(--bg-card); border-radius: 999px; overflow: hidden; margin-top: 4px; min-width: 70px; }
+    .pct-bar > div { height: 100%; background: var(--grad-primary); }
+    .chem-chip { display: inline-block; font-size: 0.7rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; margin: 2px 3px 0 0; color: var(--text-3); }
+    .fn-tag { font-size: 0.74rem; color: var(--text-3); }
+
+    .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+    .stat-box .l { font-size: 0.72rem; color: var(--text-3); text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+    .stat-box .v { font-size: 1.4rem; font-weight: 900; margin-top: 3px; }
+
+    .scale-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+    .scale-row input { width: 110px; padding: 9px 11px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text-1); font-family: inherit; }
+    .scale-row input:focus { outline: none; border-color: var(--primary); }
+
+    .act-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+    .fx-state { text-align: center; color: var(--text-3); padding: 60px 20px; }
+    .fx-state svg { width: 54px; height: 54px; opacity: .35; margin: 0 auto 14px; display: block; }
+
+    .lock-note { background: rgba(0,255,136,.07); border: 1px solid rgba(0,255,136,.3); border-radius: var(--radius); padding: 12px 16px; font-size: 0.88rem; color: var(--text-2); margin-top: 14px; }
+
+    tr.fx-locked-row td { filter: blur(5px); user-select: none; pointer-events: none; }
+    .fx-upgrade { background: linear-gradient(180deg, rgba(0,255,136,.10), rgba(0,212,255,.06)); border: 1px solid rgba(0,255,136,.35); border-radius: var(--radius); padding: 20px 22px; margin-top: 16px; text-align: center; }
+    .fx-upgrade h4 { margin: 0 0 6px; font-size: 1.02rem; }
+    .fx-upgrade p { margin: 0 0 14px; color: var(--text-2); font-size: 0.9rem; }
+    .fx-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.7); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+    .fx-modal { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 30px 32px; max-width: 420px; text-align: center; }
+    .fx-modal h3 { margin: 0 0 10px; }
+    .fx-modal p { color: var(--text-2); margin: 0 0 20px; font-size: 0.92rem; line-height: 1.6; }
+    .fx-modal .btn { margin: 4px; }
+
+    @media print {
+      .navbar, .footer, .nav-cta, .nav-tools, .act-btns, .fx-scale-tool, .lock-note, .hero-bg { display: none !important; }
+      body { background: #fff; color: #000; }
+      .fx-panel, .fx-head { border-color: #ccc; background: #fff; box-shadow: none; }
+      a { color: #000; text-decoration: none; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+        <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+        <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <main>
+  <section style="padding: 120px 0 50px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.25;"></div>
+      <div class="hero-orb purple" style="opacity: 0.25;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div class="fx-wrap">
+
+        <div id="fx-loading" class="fx-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <div data-i18n-ar="جاري تحميل الفورمولا…">Loading the formula…</div>
+        </div>
+
+        <div id="fx-error" class="fx-state" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v5M12 16h.01"/></svg>
+          <div id="fx-error-msg" data-i18n-ar="تعذّر تحميل الفورمولا. تأكّد من الرابط.">Could not load this formula. Check the link.</div>
+          <a href="./search.html" class="btn btn-primary" style="margin-top:16px;" data-i18n-ar="ابحث عن فورمولا">Browse formulas</a>
+        </div>
+
+        <div id="fx-content" style="display:none;">
+          <!-- Header -->
+          <div class="fx-head">
+            <h1 class="fx-title" id="fx-name">—</h1>
+            <div class="fx-sub" id="fx-name-2"></div>
+            <div class="fx-badges" id="fx-badges"></div>
+          </div>
+
+          <div class="fx-grid">
+            <!-- LEFT: ingredients -->
+            <div>
+              <div class="fx-panel">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v4H3zM3 10h18v11H3z"/><path d="M8 14h8M8 17h5"/></svg>
+                  <span data-i18n-ar="المكوّنات والنِّسب">Ingredients &amp; percentages</span>
+                </h3>
+                <div style="overflow-x:auto;">
+                  <table class="fx-ing">
+                    <thead><tr>
+                      <th>#</th>
+                      <th data-i18n-ar="المكوّن">Ingredient</th>
+                      <th data-i18n-ar="الوظيفة">Function</th>
+                      <th data-i18n-ar="النسبة">%</th>
+                    </tr></thead>
+                    <tbody id="fx-ing-body"></tbody>
+                  </table>
+                </div>
+                <div class="lock-note" id="fx-lock" style="display:none;" data-i18n-ar="بعض التفاصيل (البنية الجزيئية، التحليل الكامل) متاحة للمشتركين. <a href='./pricing.html' style='color:var(--primary);font-weight:700;'>اعرف المزيد</a>">
+                  Some details (molecular structure, full analysis) are available to subscribers. <a href="./pricing.html" style="color:var(--primary);font-weight:700;">Learn more</a>
+                </div>
+              </div>
+
+              <div class="fx-panel" id="fx-procedure-panel" style="display:none;">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h9"/></svg>
+                  <span data-i18n-ar="طريقة التحضير">Procedure</span>
+                </h3>
+                <div id="fx-procedure" style="font-size:0.93rem; line-height:1.7; color:var(--text-2); white-space:pre-wrap;"></div>
+              </div>
+            </div>
+
+            <!-- RIGHT: analysis -->
+            <div>
+              <div class="fx-panel">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 4-6"/></svg>
+                  <span data-i18n-ar="ملخّص التركيب">Composition</span>
+                </h3>
+                <div class="stat-row">
+                  <div class="stat-box"><div class="l" data-i18n-ar="عدد المكوّنات">Ingredients</div><div class="v" id="fx-st-count">—</div></div>
+                  <div class="stat-box"><div class="l" data-i18n-ar="مجموع %">Total %</div><div class="v" id="fx-st-total">—</div></div>
+                  <div class="stat-box"><div class="l" data-i18n-ar="مُثرى كيميائياً">Chem-enriched</div><div class="v" id="fx-st-chem">—</div></div>
+                  <div class="stat-box"><div class="l" data-i18n-ar="مؤشّر الثقة">Trust</div><div class="v" id="fx-st-trust">—</div></div>
+                </div>
+              </div>
+
+              <div class="fx-panel fx-scale-tool">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+                  <span data-i18n-ar="حاسبة حجم الدفعة">Batch scaler</span>
+                </h3>
+                <div class="scale-row">
+                  <input id="fx-batch" type="number" min="0.1" step="0.1" value="100" />
+                  <span style="color:var(--text-3);font-size:0.9rem;" data-i18n-ar="كجم → الكميات تُحسب تلقائياً">kg → amounts auto-calc</span>
+                </div>
+                <div id="fx-scale-out" style="font-size:0.88rem;color:var(--text-2);line-height:1.7;"></div>
+              </div>
+
+              <div class="fx-panel">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6z"/></svg>
+                  <span data-i18n-ar="السلامة والامتثال">Safety &amp; compliance</span>
+                </h3>
+                <div id="fx-safety-out" style="font-size:0.9rem;color:var(--text-2);line-height:1.6;">
+                  <button id="fx-safety-btn" class="btn btn-ghost btn-sm" data-i18n-ar="حلّل السلامة">Analyse safety</button>
+                </div>
+              </div>
+
+              <div class="fx-panel">
+                <h3>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9z"/></svg>
+                  <span data-i18n-ar="إجراءات">Actions</span>
+                </h3>
+                <div class="act-btns">
+                  <button onclick="window.print()" class="btn btn-ghost btn-sm" data-i18n-ar="طباعة / PDF">Print / PDF</button>
+                  <a id="fx-sub-link" href="./substitute.html" class="btn btn-ghost btn-sm" data-i18n-ar="إيجاد بدائل">Find substitutes</a>
+                  <a href="./predict.html" class="btn btn-ghost btn-sm" data-i18n-ar="تنبّؤ خواص">Predict properties</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  
+  </main>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li><li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=22"></script>
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script src="./assets/chem-client.js?v=22"></script>
+  <script>
+  /* formula.html — single-formula presentation page.
+     Reached as formula.html?id=<uuid>  (or ?name=<text> fallback).
+     Pure addition: reads existing formulas table via window.FAI_DB. */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const qs = new URLSearchParams(location.search);
+    const fid = qs.get('id');
+    const fname = qs.get('name');
+
+    let FORMULA = null;
+    let IS_PAID = false;
+
+    function upgradeModal() {
+      if (document.getElementById('fx-modal-bg')) return;
+      const bg = document.createElement('div');
+      bg.className = 'fx-modal-bg';
+      bg.id = 'fx-modal-bg';
+      bg.innerHTML = `
+        <div class="fx-modal">
+          <div style="font-size:2.4rem;margin-bottom:8px;">🔒</div>
+          <h3 data-i18n-ar="ميزة للأعضاء فقط">Members-only feature</h3>
+          <p data-i18n-ar="هذه التركيبة الكاملة والأدوات متاحة للمشتركين فقط. اختر خطة لفتح كل شيء.">This full formulation and its tools are available to members only. Choose a plan to unlock everything.</p>
+          <a href="./pricing.html" class="btn btn-primary" data-i18n-ar="افتح الفورمولا الكاملة">Unlock full formula</a>
+          <button class="btn btn-ghost" id="fx-modal-close" data-i18n-ar="لاحقاً">Maybe later</button>
+        </div>`;
+      bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); });
+      document.body.appendChild(bg);
+      const c = document.getElementById('fx-modal-close');
+      if (c) c.addEventListener('click', () => bg.remove());
+      if (window.applyI18n) window.applyI18n();
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function show(el) { $(el).style.display = ''; }
+    function hide(el) { $(el).style.display = 'none'; }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+
+    function fail(msg) {
+      hide('fx-loading'); hide('fx-content'); show('fx-error');
+      if (msg) $('fx-error-msg').textContent = msg;
+    }
+
+    // supabase-client.js loads as type="module" (deferred) so window.FAI_DB
+    // is NOT set when this classic script first runs. Poll for it (same
+    // pattern as search-live.js) instead of failing instantly.
+    function whenDbReady(fn) {
+      if (window.FAI_DB) return fn();
+      let tries = 0;
+      const t = setInterval(() => {
+        if (window.FAI_DB) { clearInterval(t); fn(); }
+        else if (++tries > 120) {            // ~6s grace, then honest fail
+          clearInterval(t);
+          fail('Data client not available.');
+        }
+      }, 50);
+    }
+
+    async function load() {
+      if (!window.FAI_DB) return fail('Data client not available.');
+      try {
+        let f = null;
+        if (fid) {
+          f = await window.FAI_DB.getById(fid);
+        } else if (fname) {
+          const res = await window.FAI_DB.search(fname, { limit: 1 });
+          f = (res && (res.results || res.data || res))?.[0] || null;
+        } else {
+          return fail('No formula specified. Open a formula from search.');
+        }
+        if (!f || f.error || (!f.id && !f.name && !f.name_en)) return fail();
+        FORMULA = f;
+        try {
+          const profile = await window.FAI_DB.getProfile();
+          IS_PAID = !!(profile && (
+            profile.subscription_status === 'active' ||
+            (profile.plan && profile.plan !== 'free') ||
+            profile.subscription_plan_id ||
+            (Number(profile.pro_credits_months || 0)
+              > Number(profile.pro_credits_used || 0))
+          ));
+        } catch (_) { IS_PAID = false; }
+        render(f);
+      } catch (e) {
+        fail((e && e.message) || 'Load error.');
+      }
+    }
+
+    function updateSeo(f, name) {
+      const cs = (f.components || f.ingredients || []);
+      const cat = f.category || 'industrial';
+      const desc = (f.description ||
+        `Verified ${cat} formulation: ${name}. ${cs.length} ingredients. Members-only full breakdown, batch scaler and safety analysis on Formula AI Global.`
+      ).replace(/\s+/g, ' ').trim().slice(0, 160);
+      const url = location.origin + location.pathname + '?id=' + encodeURIComponent(f.id || '');
+
+      const setMeta = (sel, attr, val) => {
+        let el = document.querySelector(sel);
+        if (!el) {
+          el = document.createElement('meta');
+          const m = sel.match(/\[(name|property)="([^"]+)"\]/);
+          if (m) el.setAttribute(m[1], m[2]);
+          document.head.appendChild(el);
+        }
+        el.setAttribute(attr, val);
+      };
+      setMeta('meta[name="description"]', 'content', desc);
+      setMeta('meta[property="og:title"]', 'content', name);
+      setMeta('meta[property="og:description"]', 'content', desc);
+      setMeta('meta[property="og:url"]', 'content', url);
+      setMeta('meta[property="og:type"]', 'content', 'product');
+      setMeta('meta[name="twitter:title"]', 'content', name);
+      setMeta('meta[name="twitter:description"]', 'content', desc);
+
+      let canon = document.querySelector('link[rel="canonical"]');
+      if (!canon) { canon = document.createElement('link'); canon.rel = 'canonical'; document.head.appendChild(canon); }
+      canon.href = url;
+
+      // Schema.org structured data — helps Google understand the page is
+      // a verified chemical product (indexed across 3,381 formulas).
+      const ld = {
+        '@context': 'https://schema.org',
+        '@type': ['Product', 'ChemicalSubstance'],
+        name: name,
+        description: desc,
+        url: url,
+        category: cat,
+        brand: { '@type': 'Brand', name: 'Formula AI Global' },
+        additionalProperty: cs.slice(0, 12).map((c) => ({
+          '@type': 'PropertyValue',
+          name: (c && (c.name_en || c.name)) || 'ingredient',
+          value: (c && c.percentage != null) ? (Number(c.percentage).toFixed(2) + '%') : undefined,
+        })).filter((x) => x.name && x.value),
+      };
+      if (f.trust_score != null) {
+        ld.aggregateRating = {
+          '@type': 'AggregateRating',
+          ratingValue: (Math.min(100, Number(f.trust_score)) / 20).toFixed(1),
+          ratingCount: 1, bestRating: 5, worstRating: 1,
+        };
+      }
+      document.querySelectorAll('script[data-ld="formula"]').forEach((n) => n.remove());
+      const s = document.createElement('script');
+      s.type = 'application/ld+json';
+      s.setAttribute('data-ld', 'formula');
+      s.textContent = JSON.stringify(ld);
+      document.head.appendChild(s);
+
+      // BreadcrumbList — gives Google a clean Home > Library > Name path
+      // in SERP instead of the raw ?id=… URL.
+      const bc = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: 'Home',
+            item: location.origin + '/' },
+          { '@type': 'ListItem', position: 2, name: 'Formula Library',
+            item: location.origin + '/encyclopedia.html' },
+          { '@type': 'ListItem', position: 3, name: name, item: url },
+        ],
+      };
+      document.querySelectorAll('script[data-ld="bc"]').forEach((n) => n.remove());
+      const bs = document.createElement('script');
+      bs.type = 'application/ld+json';
+      bs.setAttribute('data-ld', 'bc');
+      bs.textContent = JSON.stringify(bc);
+      document.head.appendChild(bs);
+    }
+
+    function comps(f) {
+      const c = f.components || f.ingredients || [];
+      return Array.isArray(c) ? c : [];
+    }
+
+    function render(f) {
+      const name = f.name_en || f.name || 'Untitled formula';
+      const name2 = (f.name && f.name !== name) ? f.name : '';
+      $('fx-name').textContent = name;
+      $('fx-name-2').textContent = name2;
+      document.title = name + ' — Formula AI Global';
+      updateSeo(f, name);
+
+      // Badges
+      const cs = comps(f);
+      const enriched = cs.filter((x) => x && x.chem && x.chem.smiles).length;
+      const badges = [];
+      if (f.category) badges.push(`<span class="fx-badge">${esc(f.category)}</span>`);
+      if (f.form_type) badges.push(`<span class="fx-badge">${esc(f.form_type)}</span>`);
+      if (f.country) badges.push(`<span class="fx-badge">${esc(f.country)}</span>`);
+      if (enriched > 0) badges.push(`<span class="fx-badge ok">${enriched}/${cs.length} chem-enriched</span>`);
+      if (f.trust_score != null) {
+        const t = Number(f.trust_score);
+        badges.push(`<span class="fx-badge ${t >= 70 ? 'ok' : 'warn'}">trust ${t}</span>`);
+      }
+      $('fx-badges').innerHTML = badges.join('');
+
+      // Async: show contributor recognition badge if this formula was
+      // submitted by a verified chemist (reads the public_profiles view).
+      if (f.contributor_id && window.FAI_DB && window.FAI_DB.getContributor) {
+        window.FAI_DB.getContributor(f.contributor_id).then((c) => {
+          if (!c) return;
+          const host = document.querySelector('.fx-head');
+          if (!host) return;
+          const prev = document.getElementById('fx-contributor');
+          if (prev) prev.remove();
+          const labels = {
+            master: '🏆 Master Formulator',
+            verified_chemist: '✅ Verified Chemist',
+            newbie: '🌱 Contributor',
+          };
+          const label = labels[c.contributor_badge] || labels.newbie;
+          const el = document.createElement('div');
+          el.id = 'fx-contributor';
+          el.style.cssText = 'margin-top:14px; font-size:0.85rem; color:var(--text-3); display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
+          el.innerHTML =
+            '<span data-i18n-ar="ساهَم بها">Contributed by</span>' +
+            ' <strong style="color:var(--text-1);">' + esc(c.display_name || 'Contributor') + '</strong>' +
+            ' <span style="background:rgba(0,255,136,.12); color:var(--primary); padding:2px 9px; border-radius:999px; font-size:.72rem; font-weight:700;">' + label + '</span>' +
+            (c.verified_formulas_count ? ' <span style="color:var(--text-3); font-size:.78rem;">· ' + c.verified_formulas_count + ' verified formulas</span>' : '');
+          host.appendChild(el);
+          if (window.applyI18n) window.applyI18n();
+        });
+      }
+
+      // Ingredients table
+      const tot = cs.reduce((s, x) => s + (parseFloat(x.percentage) || 0), 0);
+      const maxPct = Math.max(1, ...cs.map((x) => parseFloat(x.percentage) || 0));
+      $('fx-ing-body').innerHTML = cs.map((x, i) => {
+        const nm = esc(x.name_en || x.name || '?');
+        const ar = (x.name && x.name !== (x.name_en || x.name)) ? `<div style="font-size:0.78rem;color:var(--text-3);">${esc(x.name)}</div>` : '';
+        const pct = parseFloat(x.percentage);
+        const ch = x.chem || {};
+        const chips = [];
+        if (ch.molecular_weight) chips.push(`<span class="chem-chip">MW ${Number(ch.molecular_weight).toFixed(1)}</span>`);
+        if (ch.logp != null) chips.push(`<span class="chem-chip">logP ${Number(ch.logp).toFixed(2)}</span>`);
+        if (x.cas_number) chips.push(`<span class="chem-chip">CAS ${esc(x.cas_number)}</span>`);
+        const locked = !IS_PAID && i >= 3;
+        return `<tr${locked ? ' class="fx-locked-row"' : ''}>
+          <td style="color:var(--text-3);">${i + 1}</td>
+          <td><strong>${nm}</strong>${ar}<div>${chips.join('')}</div></td>
+          <td><span class="fn-tag">${esc(x.function || '—')}</span></td>
+          <td class="pct-cell">${isNaN(pct) ? '—' : pct + '%'}
+            ${isNaN(pct) ? '' : `<div class="pct-bar"><div style="width:${Math.min(100, pct / maxPct * 100)}%"></div></div>`}</td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="4" style="color:var(--text-3);padding:20px;text-align:center;" data-i18n-ar="لا توجد مكوّنات مُسجَّلة لهذه الفورمولا.">No components recorded for this formula.</td></tr>`;
+
+      const lockNote = $('fx-lock');
+      if (!IS_PAID && cs.length > 0) {
+        lockNote.innerHTML = 'This is a members-only formula. ' + (cs.length > 3 ? (cs.length - 3) + ' of ' + cs.length + ' ingredients, the full procedure, batch scaler and safety analysis are locked. ' : 'The full procedure, batch scaler and safety analysis are locked. ') +
+          '<a href="./pricing.html" style="color:var(--primary);font-weight:700;">Unlock full formula</a>';
+        lockNote.setAttribute('data-i18n-ar', 'هذه فورمولا للأعضاء فقط. ' + (cs.length > 3 ? (cs.length - 3) + ' من ' + cs.length + ' مكوّن، وطريقة التحضير الكاملة، وحاسبة الدفعة، وتحليل السلامة مقفلة. ' : 'طريقة التحضير الكاملة، وحاسبة الدفعة، وتحليل السلامة مقفلة. ') + "<a href='./pricing.html' style='color:var(--primary);font-weight:700;'>افتح الفورمولا الكاملة</a>");
+        show('fx-lock');
+      } else if (enriched === 0 && cs.length > 0) {
+        show('fx-lock');
+      }
+
+      // Procedure
+      const proc = f.procedure || f.instructions || f.method;
+      if (proc && IS_PAID) { $('fx-procedure').textContent = proc; show('fx-procedure-panel'); }
+
+      // Stats
+      $('fx-st-count').textContent = cs.length;
+      $('fx-st-total').textContent = tot ? tot.toFixed(1) + '%' : '—';
+      $('fx-st-chem').textContent = cs.length ? `${enriched}/${cs.length}` : '—';
+      $('fx-st-trust').textContent = f.trust_score != null ? f.trust_score : '—';
+
+      // Substitute deep-link (first ingredient name prefilled)
+      if (cs[0] && (cs[0].name_en || cs[0].name)) {
+        $('fx-sub-link').href = './substitute.html?ingredient=' +
+          encodeURIComponent(cs[0].name_en || cs[0].name);
+      }
+
+      scale();
+      hide('fx-loading'); show('fx-content');
+      applyLang();
+    }
+
+    // Batch scaler — pure client-side, instant value, no backend needed.
+    function scale() {
+      if (!FORMULA) return;
+      if (!IS_PAID) {
+        $('fx-batch').disabled = true;
+        $('fx-scale-out').innerHTML = '<div class="fx-upgrade"><h4 data-i18n-ar="حاسبة الدفعة للأعضاء">Batch scaler is members-only</h4><p data-i18n-ar="افتح حساب كميات الدفعة الفوري مع العضوية.">Unlock instant batch-amount calculation with a membership.</p><a href="./pricing.html" class="btn btn-primary btn-sm" data-i18n-ar="افتح الفورمولا الكاملة">Unlock full formula</a></div>';
+        if (window.applyI18n) window.applyI18n();
+        return;
+      }
+      const kg = parseFloat($('fx-batch').value) || 0;
+      const cs = comps(FORMULA);
+      const rows = cs
+        .filter((x) => !isNaN(parseFloat(x.percentage)))
+        .map((x) => {
+          const amt = (parseFloat(x.percentage) / 100) * kg;
+          return `<div>• ${esc(x.name_en || x.name)}: <strong>${amt.toFixed(3)} kg</strong></div>`;
+        });
+      $('fx-scale-out').innerHTML = rows.length
+        ? rows.join('')
+        : '<span style="color:var(--text-3)" data-i18n-ar="لا نِسب مئوية متاحة للحساب.">No percentages available to scale.</span>';
+    }
+    $('fx-batch').addEventListener('input', scale);
+
+    // Safety analysis via existing endpoint
+    $('fx-safety-btn') && $('fx-safety-btn').addEventListener('click', async function () {
+      if (!IS_PAID) { upgradeModal(); return; }
+      const out = $('fx-safety-out');
+      out.innerHTML = '<span style="color:var(--text-3)" data-i18n-ar="جاري التحليل…">Analysing…</span>';
+      applyLang();
+      try {
+        const r = await window.FAI_DB.getSafety(FORMULA);
+        const txt = (r && (r.analysis || r.summary || r.result || r.text)) ||
+          (typeof r === 'string' ? r : JSON.stringify(r).slice(0, 800));
+        out.innerHTML = `<div style="white-space:pre-wrap;">${esc(txt)}</div>`;
+      } catch (e) {
+        out.innerHTML = `<span style="color:#ff7a7a;">${esc((e && e.message) || 'Safety analysis unavailable.')}</span>`;
+      }
+    });
+
+    whenDbReady(load);
+  })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
+</body>
+</html>

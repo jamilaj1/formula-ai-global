@@ -19,11 +19,31 @@
 
 name = "formula-ai-brain"
 main = "worker.js"
-compatibility_date = "2024-10-01"
+# Keep in sync with the value already set in the Cloudflare dashboard.
+# Bumping this can change runtime behavior (fetch, streams, etc.) — only raise
+# it deliberately after testing.
+compatibility_date = "2026-05-09"
+# Preview deployments are disabled in production for security (no parallel
+# anon-readable Worker URLs leaking pre-release code).
+preview_urls = false
 
-# Public (non-secret) values
+# KV namespace for the per-IP / per-user rate limiter (Phase 1.1).
+# Used by worker-src/lib/ratelimit.js. If this binding is missing the limiter
+# fails OPEN and only logs a warning — the site stays up but scraping is not
+# blocked. Namespace created in the Cloudflare dashboard on 2026-05-25.
+[[kv_namespaces]]
+binding = "RATELIMIT_KV"
+id      = "d4fd954875414eb39cda8ec53fed3c9f"
+
+# Public (non-secret) values.
+# These MUST match the Worker's "Variables and Secrets" in the dashboard,
+# otherwise `wrangler deploy` will silently delete the missing ones from
+# production. Verified against the dashboard on 2026-05-25.
 [vars]
-SUPABASE_URL = "https://ivabcssceeaqgqjzgmdx.supabase.co"
+SUPABASE_URL     = "https://ivabcssceeaqgqjzgmdx.supabase.co"
+CHEM_BACKEND_URL = "https://formula-ai-chem.onrender.com"
+SERVICE_ENV      = "production"
+SERVICE_NAME     = "formula-ai-worker"
 # Paystack subscription plan codes (created in Paystack dashboard).
 # Override with `wrangler secret put` if you'd rather not commit them here.
 # PAYSTACK_PLAN_PRO = "PLN_..."
@@ -33,6 +53,13 @@ SUPABASE_URL = "https://ivabcssceeaqgqjzgmdx.supabase.co"
 # STRIPE_PRICE_PRO = "price_..."
 # STRIPE_PRICE_BIZ = "price_..."
 # STRIPE_PRICE_ENT = "price_..."
+
+# Cloudflare Cron Triggers (Phase 1.2 §1.2.7).
+# 09:00 UTC daily → Worker's scheduled() calls runDailyCostReport(), which
+# POSTs to the Supabase RPC `public.send_daily_cost_report()` to email the
+# previous UTC day's Claude spend to the owner via Resend (pg_net).
+[triggers]
+crons = ["0 9 * * *"]
 
 # To enable observability with Cloudflare's built-in logs:
 [observability]

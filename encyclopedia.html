@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Open Encyclopedia — 50,000 free formulas | Formula AI Global</title>
-  <meta name="description" content="The world's largest free chemistry encyclopedia — 50,000 verified formulas under CC-BY-SA-4.0 license. Free for everyone, forever." />
+  <title>Formula Library — 3,381 verified formulas | Formula AI Global</title>
+  <meta name="description" content="Exclusive verified formulations — members only. 3,381 owner-verified chemical formulas, growing." />
   <meta name="theme-color" content="#00ff88" />
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
   <style>
     .enc-search-bar {
       max-width: 720px;
@@ -152,12 +153,26 @@
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./safety.html" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
-        <li><a href="./encyclopedia.html" class="active" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
+        <li><a href="./encyclopedia.html" class="active" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
         <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
       </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme" data-i18n-attr="title" data-i18n-title-ar="تبديل الوضع">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
       <div class="nav-cta">
         <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
         <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
@@ -168,6 +183,7 @@
     </div>
   </nav>
 
+  <main>
   <!-- Hero -->
   <section style="padding: 130px 0 40px; position: relative;">
     <div class="hero-bg">
@@ -177,19 +193,19 @@
 
     <div class="container" style="position: relative; z-index: 2;">
       <div style="text-align: center; max-width: 880px; margin: 0 auto 40px;">
-        <span class="eyebrow reveal">Free for the world · CC-BY-SA-4.0</span>
-        <h1 class="reveal">The Open <span class="gradient-text">Chemistry Encyclopedia</span></h1>
+        <span class="eyebrow reveal">Exclusive · Members only</span>
+        <h1 class="reveal">The Formula <span class="gradient-text">Library</span></h1>
         <p class="reveal delay-1" style="color: var(--text-2); font-size: 1.15rem; margin-top: 22px; line-height: 1.85;">
-          50,000 verified chemical formulas — released free to humanity under Creative Commons. From small artisans in Ghana to research labs in Tokyo, anyone can use, modify, and share.
+          Exclusive verified formulations — members only. 3,381 owner-verified chemical formulas, expanding continuously. Unlock the full library with a membership.
         </p>
       </div>
 
       <!-- Stats -->
       <div class="stats reveal delay-2" style="max-width: 1100px; margin-bottom: 40px;">
-        <div class="stat"><div class="stat-value">50K</div><div class="stat-label">Free formulas</div></div>
+        <div class="stat"><div class="stat-value">3,381</div><div class="stat-label">Verified formulas</div></div>
         <div class="stat"><div class="stat-value">40</div><div class="stat-label">Industries</div></div>
         <div class="stat"><div class="stat-value">95%+</div><div class="stat-label">Trust score</div></div>
-        <div class="stat"><div class="stat-value">∞</div><div class="stat-label">Downloads</div></div>
+        <div class="stat"><div class="stat-value">132</div><div class="stat-label">Owner-verified</div></div>
       </div>
 
       <!-- Search -->
@@ -220,17 +236,13 @@
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">2,847</span> formulas in this category</h2>
+          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">3,381</span> verified formulas · growing</h2>
           <p style="color: var(--text-3); font-size: 0.92rem;">Sorted by trust score — highest verified first</p>
         </div>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-ghost">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
             Filters
-          </button>
-          <button class="btn btn-ghost">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-            Bulk download
           </button>
         </div>
       </div>
@@ -252,47 +264,47 @@
   <section class="section" style="background: linear-gradient(180deg, transparent, rgba(0, 212, 255, 0.04), transparent);">
     <div class="container">
       <div class="section-header reveal">
-        <span class="eyebrow">Why we made it free</span>
-        <h2>A <span class="gradient-text">gift to humanity</span></h2>
+        <span class="eyebrow">Members-only library</span>
+        <h2>Exclusive, <span class="gradient-text">verified, growing</span></h2>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;">
         <div class="card reveal">
           <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-          <h3>For the small chemist in Africa</h3>
-          <p>A factory owner in Ghana shouldn't pay $5,000 for a formula that costs us $0.02 to verify. Free baseline, paid premium tier.</p>
+          <h3>Owner-verified</h3>
+          <p>Every formula is reviewed by a chemist with 25+ years of industrial experience. 132 owner-verified and counting.</p>
         </div>
 
         <div class="card reveal delay-1">
           <div class="card-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20"/></svg></div>
-          <h3>For the research student</h3>
-          <p>University students get the entire 50K library free for life — no paywall behind learning chemistry.</p>
+          <h3>Exclusive to members</h3>
+          <p>These formulations are proprietary to this platform — not published anywhere else. Access is for members only.</p>
         </div>
 
         <div class="card reveal delay-2">
           <div class="card-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
-          <h3>CC-BY-SA-4.0 licensed</h3>
-          <p>Use commercially. Modify freely. Redistribute. The only condition: share back improvements with the same license.</p>
+          <h3>Always growing</h3>
+          <p>The library expands continuously — 3,381 verified formulas today across 40 industries, more added every week.</p>
         </div>
 
         <div class="card reveal delay-3">
           <div class="card-icon gold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4 2 7L12 16l-6.5 4 2-7L2 9h7z"/></svg></div>
           <h3>Trust score 90%+</h3>
-          <p>Only formulas that pass our 7-stage validation enter the encyclopedia. Quality bar is uncompromising.</p>
+          <p>Only formulas that pass our 7-stage validation enter the library. The quality bar is uncompromising.</p>
         </div>
       </div>
 
-      <!-- License box -->
+      <!-- Membership CTA -->
       <div class="card reveal" style="margin-top: 30px; max-width: 780px; margin-inline: auto; padding: 28px;">
         <div style="display: flex; gap: 16px; align-items: flex-start;">
-          <div style="font-size: 2.4rem;">📜</div>
+          <div style="font-size: 2.4rem;">🔒</div>
           <div>
-            <h3 style="margin-bottom: 8px;">Creative Commons Attribution-ShareAlike 4.0</h3>
+            <h3 style="margin-bottom: 8px;">Unlock the full library</h3>
             <p style="color: var(--text-2); margin-bottom: 14px; line-height: 1.8;">
-              You are free to use, share, and adapt every formula in the encyclopedia — including for commercial purposes — as long as you credit Formula AI Global and share derivative works under the same license.
+              Browse the catalog free. Full formulations, batch scaling, safety analysis and export are reserved for members. Choose a plan to unlock everything.
             </p>
-            <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener" class="btn btn-outline">
-              Read the full license
+            <a href="./pricing.html" class="btn btn-outline">
+              View membership plans
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg>
             </a>
           </div>
@@ -304,8 +316,8 @@
   <!-- CTA -->
   <section class="container" style="padding-bottom: 80px;">
     <div class="cta-banner reveal">
-      <h2>Help us reach 100,000 free formulas by 2027</h2>
-      <p>Submit your verified formula. Earn citation credit. Make chemistry accessible.</p>
+      <h2>A growing library of verified formulations</h2>
+      <p>Members can submit formulas for review. Earn citation credit when yours is verified.</p>
       <a href="./register.html" class="btn btn-primary btn-lg" style="position: relative;">
         Contribute a formula
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
@@ -314,16 +326,23 @@
   </section>
 
   <!-- Footer -->
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-bottom" style="padding-top: 0; border-top: none;">
-        <div>© <span data-year>2026</span> Formula AI Global · Encyclopedia content licensed CC-BY-SA-4.0</div>
-        <div style="display: flex; gap: 18px;"><a href="#">Privacy</a><a href="#">Terms</a><a href="./about.html">About</a></div>
+        <div>© <span data-year>2026</span> Formula AI Global · Proprietary verified formulations</div>
+        <div style="display: flex; gap: 18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a><a href="./about.html" data-i18n-ar="من نحن">About</a></div>
       </div>
     </div>
   </footer>
 
-  <script src="./assets/app.js"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <!-- auth.js + supabase-client.js — every public page must load
+       these so the navbar reflects sign-in state consistently.
+       Same shared GoTrueClient avoids "multiple instances" race. -->
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
   <script>
     const ENCYCLOPEDIA = [
       { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
@@ -371,11 +390,10 @@
               ${f.cmp} components
             </span>
             <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-              ${f.dl}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg>
+              Verified · trust ${f.trust}%
             </span>
           </div>
-          <div class="formula-card-license">CC-BY-SA-4.0</div>
         </a>
       `).join('');
     }
@@ -390,5 +408,6 @@
 
     renderEncyclopedia();
   </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

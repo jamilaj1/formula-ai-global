@@ -260,25 +260,19 @@ if (document.getElementById('compliance-result')) {
   window.updateCompliance(initialCountry);
 }
 
-// Service Worker registration + auto-upgrade.
-// When a new SW takes over (controllerchange), reload the page once so the
-// fresh JS/CSS/HTML take effect without the user having to hard-refresh.
+// Service Worker: PERMANENTLY DISABLED.
+// The caching SW caused launch-blocking bugs (stale pages, fixes never
+// reaching users). We do NOT register it anymore, and we one-time
+// unregister any leftover SW + clear its caches. Critically we DO NOT
+// reload on controllerchange — register→activate→controllerchange→reload
+// was an infinite ~1s loop ("the screen keeps moving every second").
 if ('serviceWorker' in navigator) {
-  let didReload = false;
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (didReload) return;
-    didReload = true;
-    location.reload();
-  });
-  navigator.serviceWorker.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'fai-force-reload' && !didReload) {
-      didReload = true;
-      location.reload();
-    }
-  });
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
-  });
+  navigator.serviceWorker.getRegistrations()
+    .then((regs) => regs.forEach((r) => r.unregister()))
+    .catch(() => {});
+  if (window.caches && caches.keys) {
+    caches.keys().then((ks) => ks.forEach((k) => caches.delete(k))).catch(() => {});
+  }
 }
 
 // Year for footer
@@ -689,6 +683,33 @@ function faiApplyLang(code) {
   // Apply saved (or default) language on page load BEFORE user interaction
   faiApplyLang(saved);
   setActive(saved);
+
+  // Defensive UX: also expose an AR/EN switch INSIDE the mobile hamburger
+  // menu so the language is always discoverable on small screens even
+  // when the desktop lang-dropdown in nav-tools is squeezed/overlooked.
+  (function injectMobileLang() {
+    const navLinks = document.querySelector('.nav-links');
+    if (!navLinks || navLinks.querySelector('.mobile-lang')) return;
+    const li = document.createElement('li');
+    li.className = 'mobile-lang';
+    const renderLabel = () => {
+      const code = localStorage.getItem('fai_lang') || 'en';
+      li.innerHTML = code === 'ar'
+        ? '<a href="#" role="button"><span class="flag" aria-hidden="true">🇬🇧</span><span>Switch to English</span></a>'
+        : '<a href="#" role="button"><span class="flag" aria-hidden="true">🇸🇦</span><span>التبديل إلى العربية</span></a>';
+    };
+    renderLabel();
+    li.addEventListener('click', (e) => {
+      e.preventDefault();
+      const next = ((localStorage.getItem('fai_lang') || 'en') === 'ar') ? 'en' : 'ar';
+      localStorage.setItem('fai_lang', next);
+      setActive(next);
+      faiApplyLang(next);
+      renderLabel();
+      if (navLinks.classList.contains('open')) navLinks.classList.remove('open');
+    });
+    navLinks.appendChild(li);
+  })();
 
   if (!trigger || !menu) return;
 

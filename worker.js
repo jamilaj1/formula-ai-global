@@ -1,3 +1,242 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// worker-src/observability.js
+var observability_exports = {};
+__export(observability_exports, {
+  shipError: () => shipError,
+  shipLog: () => shipLog,
+  shipSentry: () => shipSentry,
+  withObservability: () => withObservability
+});
+function anonymizeIp(ip) {
+  if (!ip) return "";
+  try {
+    if (ip.includes(":")) {
+      const head = ip.split(":").slice(0, 3).join(":");
+      return `${head}::`;
+    }
+    const parts = ip.split(".");
+    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+    return "";
+  } catch {
+    return "";
+  }
+}
+function getConfig(env) {
+  return {
+    bsToken: env.BETTER_STACK_TOKEN || "",
+    bsHost: (env.BETTER_STACK_HOST || "https://in.logs.betterstack.com").replace(/\/+$/, ""),
+    sentryDsn: env.SENTRY_DSN || "",
+    name: env.SERVICE_NAME || "formula-ai-worker",
+    envName: env.SERVICE_ENV || "production"
+  };
+}
+function parseSentryDsn(dsn) {
+  if (!dsn) return null;
+  try {
+    const u = new URL(dsn);
+    const projectId = u.pathname.replace(/^\/+/, "");
+    if (!u.username || !projectId) return null;
+    return {
+      publicKey: u.username,
+      host: u.host,
+      projectId,
+      envelopeUrl: `${u.protocol}//${u.host}/api/${projectId}/envelope/`
+    };
+  } catch {
+    return null;
+  }
+}
+async function shipLog(env, record, ctx) {
+  const cfg = getConfig(env);
+  if (!cfg.bsToken) return;
+  const payload = {
+    dt: (/* @__PURE__ */ new Date()).toISOString(),
+    service: cfg.name,
+    env: cfg.envName,
+    ...record
+  };
+  const p = fetch(cfg.bsHost, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${cfg.bsToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  }).catch(() => null);
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(p);
+  } else {
+    await p;
+  }
+}
+async function shipError(env, err, ctx, extra = {}) {
+  await Promise.all([
+    shipLog(env, {
+      level: "error",
+      message: err?.message || String(err),
+      stack: err?.stack || null,
+      ...extra
+    }, ctx),
+    shipSentry(env, err, ctx, extra)
+  ]);
+}
+async function shipSentry(env, err, ctx, extra = {}) {
+  const cfg = getConfig(env);
+  console.log("[sentry] shipSentry called, dsn_present=", !!cfg.sentryDsn, "dsn_len=", (cfg.sentryDsn || "").length);
+  const dsn = parseSentryDsn(cfg.sentryDsn);
+  if (!dsn) {
+    console.error("[sentry] DSN missing or unparseable; skipping");
+    return;
+  }
+  console.log("[sentry] envelope target:", dsn.envelopeUrl);
+  const eventId = crypto.randomUUID().replace(/-/g, "");
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const event = {
+    event_id: eventId,
+    timestamp: now,
+    platform: "javascript",
+    level: "error",
+    server_name: cfg.name,
+    environment: cfg.envName,
+    release: env.WORKER_VERSION_ID || void 0,
+    message: err?.message || String(err),
+    exception: {
+      values: [
+        {
+          type: err?.name || "Error",
+          value: err?.message || String(err),
+          stacktrace: err?.stack ? { frames: parseStackTrace(err.stack) } : void 0
+        }
+      ]
+    },
+    tags: {
+      service: cfg.name,
+      env: cfg.envName,
+      ...extra.path ? { path: extra.path } : {},
+      ...extra.method ? { method: extra.method } : {}
+    },
+    extra
+  };
+  const envelopeHeader = JSON.stringify({
+    event_id: eventId,
+    sent_at: now,
+    dsn: cfg.sentryDsn
+  });
+  const itemHeader = JSON.stringify({ type: "event" });
+  const itemPayload = JSON.stringify(event);
+  const body = `${envelopeHeader}
+${itemHeader}
+${itemPayload}
+`;
+  const p = fetch(dsn.envelopeUrl, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-sentry-envelope",
+      // Sentry expects either an X-Sentry-Auth header or the DSN in the
+      // envelope header; we use the DSN form above. The header form is
+      // here for redundancy with older relays.
+      "X-Sentry-Auth": `Sentry sentry_version=7,sentry_client=formula-ai-worker/1.0,sentry_timestamp=${Math.floor(Date.now() / 1e3)},sentry_key=${dsn.publicKey}`
+    },
+    body
+  }).then(async (r) => {
+    if (!r.ok) {
+      const txt = (await r.text()).slice(0, 300);
+      console.error("[sentry] POST failed", r.status, txt);
+    } else {
+      console.log("[sentry] event delivered", eventId, "status", r.status);
+    }
+    return r;
+  }).catch((err2) => {
+    console.error("[sentry] fetch threw", err2?.message);
+    return null;
+  });
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(p);
+  } else {
+    await p;
+  }
+}
+function parseStackTrace(stack) {
+  const out = [];
+  const lines = String(stack).split("\n");
+  const reAt = /\s*at\s+(?:(.+?)\s+\()?(.+?):(\d+):(\d+)\)?\s*$/;
+  for (const raw of lines) {
+    const m = raw.match(reAt);
+    if (m) {
+      out.push({
+        function: m[1] || "<anonymous>",
+        filename: m[2] || "",
+        lineno: parseInt(m[3], 10),
+        colno: parseInt(m[4], 10),
+        in_app: !/node_modules|cloudflareworkers/.test(m[2] || "")
+      });
+    }
+  }
+  if (!out.length) {
+    out.push({ function: "<raw>", filename: "", lineno: 0, colno: 0, in_app: true });
+  }
+  return out.reverse();
+}
+function withObservability(handler) {
+  return async function wrapped(request, env, ctx) {
+    const url = new URL(request.url);
+    const start = Date.now();
+    let status = 500;
+    let errored = false;
+    try {
+      const response = await handler(request, env, ctx);
+      status = response.status;
+      errored = status >= 500;
+      return response;
+    } catch (err) {
+      errored = true;
+      await shipError(env, err, ctx, {
+        method: request.method,
+        path: url.pathname,
+        cf_ray: request.headers.get("cf-ray") || null
+      });
+      return new Response(
+        JSON.stringify({ error: "unhandled", detail: err.message }),
+        { status: 500, headers: { "content-type": "application/json" } }
+      );
+    } finally {
+      const elapsed = Date.now() - start;
+      const path = url.pathname;
+      const slow = elapsed > 3e3;
+      const noisy = path === "/" || path === "/health";
+      const shouldShip = errored || status >= 400 || slow || !noisy;
+      if (shouldShip) {
+        await shipLog(env, {
+          level: errored ? "error" : status >= 400 ? "warning" : "info",
+          message: `${request.method} ${path} \u2192 ${status} (${elapsed}ms)`,
+          method: request.method,
+          path,
+          status,
+          duration_ms: elapsed,
+          slow,
+          cf_country: request.cf?.country || null,
+          cf_colo: request.cf?.colo || null,
+          ip_prefix: anonymizeIp(request.headers.get("cf-connecting-ip")),
+          user_agent: request.headers.get("user-agent") || ""
+        }, ctx);
+      }
+    }
+  };
+}
+var init_observability = __esm({
+  "worker-src/observability.js"() {
+  }
+});
+
 // worker-src/lib/responses.js
 var corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -130,15 +369,27 @@ async function getDailyUsage(callerId, env) {
     return 0;
   }
 }
-async function recordUsage(callerId, endpoint, env) {
+async function recordUsage(callerId, endpoint, env, meta) {
   try {
+    const row = { caller_id: callerId, endpoint };
+    if (typeof callerId === "string" && callerId.startsWith("user:")) {
+      row.user_id = callerId.slice(5);
+    }
+    if (meta && typeof meta === "object") {
+      if (meta.model) row.model = meta.model;
+      if (meta.input_tokens != null) row.input_tokens = meta.input_tokens | 0;
+      if (meta.output_tokens != null) row.output_tokens = meta.output_tokens | 0;
+      if (meta.est_cost_usd != null) row.est_cost_usd = Number(meta.est_cost_usd);
+      if (meta.cache_hit != null) row.cache_hit = !!meta.cache_hit;
+      if (meta.status_code != null) row.status_code = meta.status_code | 0;
+    }
     await sbService(env, "/api_usage", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Prefer: "return=minimal"
       },
-      body: JSON.stringify({ caller_id: callerId, endpoint })
+      body: JSON.stringify(row)
     });
   } catch (_) {
   }
@@ -147,7 +398,25 @@ async function recordUsage(callerId, endpoint, env) {
 // worker-src/lib/claude.js
 var ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 var ANTHROPIC_API_VERSION = "2023-06-01";
-var CLAUDE_MODEL = "claude-haiku-4-5";
+var CLAUDE_SONNET = "claude-sonnet-4-5";
+var CLAUDE_HAIKU = "claude-haiku-4-5";
+var CLAUDE_MODEL = CLAUDE_HAIKU;
+var PRICING_USD = {
+  [CLAUDE_SONNET]: { input: 3, output: 15 },
+  [CLAUDE_HAIKU]: { input: 0.8, output: 4 }
+};
+var PAID_PLANS = /* @__PURE__ */ new Set(["professional", "business", "enterprise"]);
+function modelForPlan(plan) {
+  return PAID_PLANS.has(String(plan || "").toLowerCase()) ? CLAUDE_SONNET : CLAUDE_HAIKU;
+}
+function estimateCostUsd(model, usage) {
+  const p = PRICING_USD[model];
+  if (!p || !usage) return 0;
+  const inTok = Number(usage.input_tokens) || 0;
+  const outTok = Number(usage.output_tokens) || 0;
+  const cost = (inTok * p.input + outTok * p.output) / 1e6;
+  return Math.round(cost * 1e6) / 1e6;
+}
 async function claudeMessages(env, body) {
   try {
     const r = await fetch(ANTHROPIC_API_URL, {
@@ -168,6 +437,35 @@ async function claudeMessages(env, body) {
     return { ok: false, status: 0, detail: err.message };
   }
 }
+async function claudeCall(env, body, opts = {}) {
+  const wantModel = opts.model || modelForPlan(opts.plan);
+  const allowFallback = opts.allowFallback !== false;
+  const firstBody = { ...body, model: wantModel };
+  let r = await claudeMessages(env, firstBody);
+  let fellback = false;
+  if (!r.ok && allowFallback && wantModel === CLAUDE_SONNET && (r.status === 429 || r.status === 529 || r.status === 503)) {
+    const fallbackBody = { ...body, model: CLAUDE_HAIKU };
+    const r2 = await claudeMessages(env, fallbackBody);
+    if (r2.ok) {
+      fellback = true;
+      r = r2;
+    }
+  }
+  if (!r.ok) {
+    return { ...r, model_used: wantModel, fellback: false };
+  }
+  const modelUsed = fellback ? CLAUDE_HAIKU : wantModel;
+  const usage = r.data?.usage || { input_tokens: 0, output_tokens: 0 };
+  const cost_usd = estimateCostUsd(modelUsed, usage);
+  return {
+    ok: true,
+    data: r.data,
+    model_used: modelUsed,
+    fellback,
+    usage,
+    cost_usd
+  };
+}
 function extractClaudeJson(claudeResponse) {
   const text = (claudeResponse?.content?.[0]?.text || "").trim().replace(/^```json\s*/i, "").replace(/```$/, "").trim();
   if (!text) return null;
@@ -176,6 +474,95 @@ function extractClaudeJson(claudeResponse) {
   } catch (_) {
     return null;
   }
+}
+
+// worker-src/lib/cache.js
+var KEY_PREFIX = "cache:";
+var DEFAULT_TTL_SECONDS = 60 * 60 * 24;
+async function sha256Hex(s) {
+  const bytes = new TextEncoder().encode(s);
+  const hash = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(hash)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function buildCacheKey({ model, system, messages, tools }) {
+  const canonical = JSON.stringify({
+    m: model,
+    s: system || "",
+    msgs: messages || [],
+    t: tools || []
+  });
+  const hash = await sha256Hex(canonical);
+  return KEY_PREFIX + hash;
+}
+async function cacheGet(env, key) {
+  if (!env || !env.RATELIMIT_KV) return null;
+  try {
+    const raw = await env.RATELIMIT_KV.get(key);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch (err) {
+    console.warn("[cache] get failed for", key, err?.message);
+    return null;
+  }
+}
+async function cachePut(env, key, response, ttlSeconds = DEFAULT_TTL_SECONDS) {
+  if (!env || !env.RATELIMIT_KV) return false;
+  try {
+    await env.RATELIMIT_KV.put(key, JSON.stringify(response), {
+      expirationTtl: Math.max(60, ttlSeconds | 0)
+    });
+    return true;
+  } catch (err) {
+    console.warn("[cache] put failed for", key, err?.message);
+    return false;
+  }
+}
+
+// worker-src/lib/ratelimit.js
+function currentBucket(windowSeconds) {
+  return Math.floor(Date.now() / 1e3 / windowSeconds);
+}
+function clientIP(request) {
+  return request.headers.get("CF-Connecting-IP") || request.headers.get("X-Forwarded-For")?.split(",")[0].trim() || request.headers.get("X-Real-IP") || "unknown";
+}
+async function rateLimit(env, { bucket, limit, window }) {
+  if (!env || !env.RATELIMIT_KV) {
+    console.warn("[ratelimit] RATELIMIT_KV not bound \u2014 failing open");
+    return { ok: true, used: 0, limit, resetIn: 0, retryAfter: 0 };
+  }
+  const win = Math.max(1, Number(window) || 60);
+  const max = Math.max(1, Number(limit) || 30);
+  const b = currentBucket(win);
+  const key = `${bucket}:${b}`;
+  const prev = await env.RATELIMIT_KV.get(key);
+  const used = (prev ? parseInt(prev, 10) : 0) + 1;
+  await env.RATELIMIT_KV.put(key, String(used), { expirationTtl: win + 5 });
+  const resetIn = win - Math.floor(Date.now() / 1e3) % win;
+  if (used > max) {
+    return { ok: false, used, limit: max, resetIn, retryAfter: resetIn };
+  }
+  return { ok: true, used, limit: max, resetIn, retryAfter: 0 };
+}
+function rateLimitResponse(rl, message = "rate_limit_exceeded") {
+  return new Response(
+    JSON.stringify({
+      error: message,
+      detail: `You have made ${rl.used} requests; the limit is ${rl.limit} per window. Try again in ${rl.resetIn}s.`,
+      limit: rl.limit,
+      used: rl.used,
+      retry_after: rl.retryAfter
+    }),
+    {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "Retry-After": String(rl.retryAfter),
+        "X-RateLimit-Limit": String(rl.limit),
+        "X-RateLimit-Remaining": "0",
+        "X-RateLimit-Reset": String(rl.resetIn)
+      }
+    }
+  );
 }
 
 // worker-src/handlers/search.js
@@ -190,19 +577,59 @@ EXAMPLES:
 "\u0634\u0627\u0645\u0628\u0648 \u0637\u0628\u064A\u0639\u064A \u0644\u0644\u0634\u0639\u0631 \u0627\u0644\u062C\u0627\u0641" -> {"must":["shampoo"],"categories":["hair_care"],"boost":["natural","dry","herbal"]}
 "\u0635\u0627\u0628\u0648\u0646 \u0645\u0639\u0642\u0645" -> {"must":["soap"],"categories":["personal_hygiene","disinfectants"],"boost":["antibacterial","antiseptic","sanitizer","disinfectant"]}
 "\u0645\u0639\u062C\u0648\u0646 \u0623\u0633\u0646\u0627\u0646 \u0644\u0644\u0623\u0637\u0641\u0627\u0644" -> {"must":["toothpaste"],"categories":["oral_care"],"boost":["children","kids","baby"]}`;
-async function claudePlan(query, env) {
-  const res = await claudeMessages(env, {
-    model: CLAUDE_MODEL,
-    max_tokens: 250,
+async function claudePlan(query, env, plan) {
+  const messages = [{ role: "user", content: query }];
+  const cacheKey = await buildCacheKey({
+    model: "/search-plan",
     system: SEARCH_PLAN_SYSTEM,
-    messages: [{ role: "user", content: query }]
+    messages
   });
-  if (!res.ok) return null;
-  return extractClaudeJson(res.data);
+  const cached = await cacheGet(env, cacheKey);
+  if (cached) {
+    return {
+      plan: extractClaudeJson(cached),
+      meta: {
+        model: cached._model || null,
+        input_tokens: 0,
+        output_tokens: 0,
+        est_cost_usd: 0,
+        cache_hit: true
+      }
+    };
+  }
+  const cr = await claudeCall(
+    env,
+    {
+      max_tokens: 250,
+      system: SEARCH_PLAN_SYSTEM,
+      messages
+    },
+    { plan }
+  );
+  if (!cr.ok) {
+    return {
+      plan: null,
+      meta: { model: cr.model_used || null, status_code: cr.status || 500 }
+    };
+  }
+  await cachePut(env, cacheKey, { ...cr.data, _model: cr.model_used });
+  return {
+    plan: extractClaudeJson(cr.data),
+    meta: {
+      model: cr.model_used,
+      input_tokens: cr.usage?.input_tokens || 0,
+      output_tokens: cr.usage?.output_tokens || 0,
+      est_cost_usd: cr.cost_usd || 0,
+      cache_hit: false
+    }
+  };
 }
-async function handleSearch(url, auth, env) {
+async function handleSearch(url, auth, env, request) {
   const query = (url.searchParams.get("q") || "").trim();
   if (!query) return json({ rows: [], error: "empty" });
+  const rlKey = auth?.id ? `search:user:${auth.id}` : `search:ip:${clientIP(request || { headers: new Headers() })}`;
+  const rl = await rateLimit(env, { bucket: rlKey, limit: 30, window: 60 });
+  if (!rl.ok) return rateLimitResponse(rl);
   const limit = dailyLimitFor(auth.plan);
   const used = await getDailyUsage(auth.id, env);
   if (used >= limit) {
@@ -219,18 +646,27 @@ async function handleSearch(url, auth, env) {
       429
     );
   }
-  const plan = await claudePlan(query, env);
-  if (!plan) return json({ rows: [], plan: null, error: "claude_failed" }, 500);
-  if (!plan.must?.length) return json({ rows: [], plan, error: "no_must_term" });
-  const must = String(plan.must[0] || "").replace(/[%_,()*\s]/g, "").trim();
-  if (!must) return json({ rows: [], plan, error: "empty_must" });
+  const { plan, meta: planMeta } = await claudePlan(query, env, auth.plan);
+  if (!plan) {
+    await recordUsage(auth.id, "/search", env, planMeta);
+    return json({ rows: [], plan: null, error: "claude_failed" }, 500);
+  }
+  if (!plan.must?.length) {
+    await recordUsage(auth.id, "/search", env, planMeta);
+    return json({ rows: [], plan, error: "no_must_term" });
+  }
+  const nounRaw = String(plan.must[0] || "").trim();
+  const noun = nounRaw.replace(/[%_(),"]/g, " ").replace(/\s+/g, " ").trim();
+  if (!noun) return json({ rows: [], plan, error: "empty_must" });
+  const nounLike = noun.split(" ").filter(Boolean).join("*");
   const select = "id,name,name_en,category,sub_category,form_type,components,trust_score";
-  let path = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
+  const baseFilter = `or=(name.ilike.*${nounLike}*,name_en.ilike.*${nounLike}*,sub_category.ilike.*${nounLike}*)`;
+  let path = `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`;
   if (Array.isArray(plan.categories) && plan.categories.length) {
     const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, "")}"`).join(",");
     path += `&category=in.(${cats})`;
   }
-  const sbRes = await sb(env, path);
+  const sbRes = await sbService(env, path);
   if (!sbRes.ok) {
     return json(
       { error: "supabase_error", plan, detail: (await sbRes.text()).slice(0, 300) },
@@ -240,22 +676,62 @@ async function handleSearch(url, auth, env) {
   let rows = await sbRes.json();
   if (!Array.isArray(rows)) rows = [];
   if (rows.length === 0 && plan.categories?.length) {
-    const fbPath = `/formulas?select=${select}&order=trust_score.desc&limit=80&or=(name.ilike.*${must}*,name_en.ilike.*${must}*)`;
-    const fb = await sb(env, fbPath);
+    const fb = await sbService(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&${baseFilter}`);
     if (fb.ok) {
       const j = await fb.json();
       if (Array.isArray(j)) rows = j;
     }
   }
-  const boost = (plan.boost || []).map((b) => String(b).toLowerCase()).filter(Boolean);
-  const ranked = rows.map((r) => {
-    const hay = `${r.name || ""} ${r.name_en || ""} ${r.sub_category || ""}`.toLowerCase();
+  if (rows.length === 0 && plan.categories?.length) {
+    const cats = plan.categories.map((c) => `"${String(c).replace(/"/g, "")}"`).join(",");
+    const fb = await sbService(env, `/formulas?select=${select}&order=trust_score.desc&limit=120&category=in.(${cats})`);
+    if (fb.ok) {
+      const j = await fb.json();
+      if (Array.isArray(j)) rows = j;
+    }
+  }
+  const norm = (s) => String(s || "").toLowerCase();
+  const STOP = /* @__PURE__ */ new Set([
+    "the",
+    "a",
+    "an",
+    "of",
+    "for",
+    "and",
+    "with",
+    "to",
+    "\u0645\u0639",
+    "\u0645\u0646",
+    "\u0641\u064A",
+    "\u0639\u0646",
+    "\u0639\u0644\u0649",
+    "\u0627\u0644\u0649",
+    "\u0647\u0644"
+  ]);
+  const qTokens = [...new Set(
+    norm(query).split(/[^\p{L}\p{N}]+/u).filter((w) => w.length >= 3 && !STOP.has(w))
+  )];
+  const mustTokens = (plan.must || []).flatMap((m) => norm(m).split(/\s+/)).filter(Boolean);
+  const boost = (plan.boost || []).map(norm).filter(Boolean);
+  const planCats = (plan.categories || []).map(norm);
+  const nounLc = norm(noun);
+  let ranked = rows.map((r) => {
+    const name = `${norm(r.name)} ${norm(r.name_en)}`;
+    const comps = Array.isArray(r.components) ? r.components.map((c) => norm(c && (c.name_en || c.name))).join(" ") : "";
+    const hay = `${name} ${norm(r.sub_category)} ${norm(r.category)} ${comps}`;
     let score = 0;
-    for (const b of boost) if (hay.includes(b)) score += 10;
-    score += (r.trust_score || 0) / 10;
+    if (nounLc && name.includes(nounLc)) score += 40;
+    for (const b of boost) if (b && hay.includes(b)) score += 12;
+    for (const m of mustTokens) if (m && name.includes(m)) score += 8;
+    for (const t of qTokens) if (hay.includes(t)) score += 5;
+    if (planCats.includes(norm(r.category))) score += 6;
+    score += Math.min(5, (r.trust_score || 0) * 0.05);
     return { ...r, _score: score };
-  }).sort((a, b) => b._score - a._score);
-  await recordUsage(auth.id, "/search", env);
+  }).filter((r) => r._score > 5).sort((a, b) => b._score - a._score || (b.trust_score || 0) - (a.trust_score || 0));
+  if (ranked.length === 0 && rows.length) {
+    ranked = rows.map((r) => ({ ...r, _score: (r.trust_score || 0) * 0.05 })).sort((a, b) => b._score - a._score);
+  }
+  await recordUsage(auth.id, "/search", env, planMeta);
   return json({
     query,
     plan,
@@ -280,19 +756,53 @@ async function handleUsage(auth, env) {
 }
 
 // worker-src/handlers/insights.js
-async function handleSafety(request, env) {
-  let formula;
-  try {
-    formula = await request.json();
-  } catch {
-    return badRequest("invalid_json");
+async function runJsonCall(env, auth, endpoint, system, userText, maxTokens) {
+  const messages = [{ role: "user", content: userText }];
+  const cacheKey = await buildCacheKey({
+    model: endpoint,
+    // namespace per endpoint to avoid cross-collision
+    system,
+    messages
+  });
+  const cached = await cacheGet(env, cacheKey);
+  if (cached) {
+    const analysis2 = extractClaudeJson(cached);
+    await recordUsage(auth.id, endpoint, env, {
+      model: cached._model || null,
+      input_tokens: 0,
+      output_tokens: 0,
+      est_cost_usd: 0,
+      cache_hit: true
+    });
+    if (!analysis2) return json({ error: "parse_failed" }, 500);
+    return json(analysis2);
   }
-  if (!formula?.components?.length) return badRequest("missing_components");
-  const ingredients = formula.components.map((c) => `${c.name_en} (${c.cas_number || "no-CAS"}) ${c.percentage}%`).join("; ");
-  const res = await claudeMessages(env, {
-    model: CLAUDE_MODEL,
-    max_tokens: 800,
-    system: `You are a chemical safety expert. Analyze the given formula and output JSON:
+  const cr = await claudeCall(
+    env,
+    { max_tokens: maxTokens, system, messages },
+    { plan: auth.plan }
+  );
+  if (!cr.ok) {
+    await recordUsage(auth.id, endpoint, env, {
+      model: cr.model_used || null,
+      status_code: cr.status || 500
+    });
+    return json({ error: "claude_error", detail: cr.detail || "" }, cr.status || 500);
+  }
+  const toCache = { ...cr.data, _model: cr.model_used };
+  await cachePut(env, cacheKey, toCache);
+  await recordUsage(auth.id, endpoint, env, {
+    model: cr.model_used,
+    input_tokens: cr.usage?.input_tokens || 0,
+    output_tokens: cr.usage?.output_tokens || 0,
+    est_cost_usd: cr.cost_usd || 0,
+    cache_hit: false
+  });
+  const analysis = extractClaudeJson(cr.data);
+  if (!analysis) return json({ error: "parse_failed" }, 500);
+  return json(analysis);
+}
+var SAFETY_SYSTEM = `You are a chemical safety expert. Analyze the given formula and output JSON:
 {
   "overall_risk": "safe|caution|warning|dangerous",
   "ghs_classes": ["H315", ...],
@@ -302,24 +812,8 @@ async function handleSafety(request, env) {
   "storage": "...",
   "summary_ar": "\u0645\u0644\u062E\u0635 \u0628\u0627\u0644\u0639\u0631\u0628\u064A\u0629..."
 }
-Output ONLY JSON, no prose.`,
-    messages: [
-      {
-        role: "user",
-        content: `Formula: ${formula.name_en || formula.name || "unnamed"}
-Ingredients: ${ingredients}
-Form type: ${formula.form_type || "unknown"}`
-      }
-    ]
-  });
-  if (!res.ok) {
-    return json({ error: "claude_error", detail: res.detail }, 500);
-  }
-  const analysis = extractClaudeJson(res.data);
-  if (!analysis) return json({ error: "parse_failed" }, 500);
-  return json(analysis);
-}
-async function handleLab(request, env) {
+Output ONLY JSON, no prose.`;
+async function handleSafety(request, auth, env) {
   let formula;
   try {
     formula = await request.json();
@@ -327,11 +821,13 @@ async function handleLab(request, env) {
     return badRequest("invalid_json");
   }
   if (!formula?.components?.length) return badRequest("missing_components");
-  const ingredients = formula.components.map((c) => `${c.name_en} (${c.percentage}%)`).join("; ");
-  const res = await claudeMessages(env, {
-    model: CLAUDE_MODEL,
-    max_tokens: 600,
-    system: `You are a virtual chemistry lab. Predict the physical properties of the given formula. Output ONLY JSON:
+  const ingredients = formula.components.map((c) => `${c.name_en} (${c.cas_number || "no-CAS"}) ${c.percentage}%`).join("; ");
+  const userText = `Formula: ${formula.name_en || formula.name || "unnamed"}
+Ingredients: ${ingredients}
+Form type: ${formula.form_type || "unknown"}`;
+  return runJsonCall(env, auth, "/safety", SAFETY_SYSTEM, userText, 800);
+}
+var LAB_SYSTEM = `You are a virtual chemistry lab. Predict the physical properties of the given formula. Output ONLY JSON:
 {
   "ph_estimate": "5.5-6.5",
   "viscosity_cp": "2000-3000",
@@ -341,20 +837,20 @@ async function handleLab(request, env) {
   "shelf_life_months": 24,
   "compatibility_notes": ["..."],
   "predicted_issues": []
-}`,
-    messages: [
-      {
-        role: "user",
-        content: `Formula: ${formula.name_en || formula.name}
+}`;
+async function handleLab(request, auth, env) {
+  let formula;
+  try {
+    formula = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  if (!formula?.components?.length) return badRequest("missing_components");
+  const ingredients = formula.components.map((c) => `${c.name_en} (${c.percentage}%)`).join("; ");
+  const userText = `Formula: ${formula.name_en || formula.name}
 Ingredients: ${ingredients}
-Form type: ${formula.form_type || "liquid"}`
-      }
-    ]
-  });
-  if (!res.ok) return json({ error: "claude_error" }, 500);
-  const prediction = extractClaudeJson(res.data);
-  if (!prediction) return json({ error: "parse_failed" }, 500);
-  return json(prediction);
+Form type: ${formula.form_type || "liquid"}`;
+  return runJsonCall(env, auth, "/lab", LAB_SYSTEM, userText, 600);
 }
 
 // worker-src/handlers/chat.js
@@ -556,7 +1052,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
       let path = `/formulas?select=${select}&order=trust_score.desc&limit=${limit}&or=(name.ilike.*${encodeURIComponent(safe)}*,name_en.ilike.*${encodeURIComponent(safe)}*)`;
       if (toolInput.category)
         path += `&category=eq.${encodeURIComponent(toolInput.category)}`;
-      const r = await sb(env, path);
+      const r = await sbService(env, path);
       if (!r.ok) continue;
       const rows = await r.json();
       if (!Array.isArray(rows)) continue;
@@ -574,7 +1070,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
         const safe = v.replace(/[%_,()*]/g, "").trim();
         if (!safe) continue;
         const path = `/formulas?select=${select}&order=trust_score.desc&limit=${limit}&or=(name.ilike.*${encodeURIComponent(safe)}*,name_en.ilike.*${encodeURIComponent(safe)}*)`;
-        const r = await sb(env, path);
+        const r = await sbService(env, path);
         if (!r.ok) continue;
         const rows = await r.json();
         if (Array.isArray(rows))
@@ -597,7 +1093,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
   if (toolName === "get_formula_details") {
     const id = String(toolInput.formula_id || "").trim();
     if (!id) return { error: "missing_id" };
-    const r = await sb(env, `/formulas?id=eq.${id}&select=*`);
+    const r = await sbService(env, `/formulas?id=eq.${id}&select=*`);
     if (!r.ok) return { error: "db_error" };
     const arr = await r.json();
     if (!arr.length) return { error: "not_found" };
@@ -691,28 +1187,30 @@ async function handleChat(request, auth, env) {
   const formulaRefs = [];
   let finalText = "";
   let stopReason = null;
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCostUsd = 0;
+  let modelUsed = modelForPlan(auth.plan);
   for (let round = 0; round < 5; round++) {
-    const cr = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "x-api-key": env.ANTHROPIC_API_KEY,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
+    const cr = await claudeCall(
+      env,
+      {
         max_tokens: 1500,
         system: CHAT_SYSTEM_PROMPT,
         tools: CHAT_TOOLS,
         messages
-      })
-    });
+      },
+      { plan: auth.plan }
+    );
     if (!cr.ok) {
-      const errText = (await cr.text()).slice(0, 400);
-      return json({ error: "claude_error", detail: errText }, 500);
+      return json({ error: "claude_error", detail: cr.detail || "" }, cr.status || 500);
     }
-    const cd = await cr.json();
+    const cd = cr.data;
     stopReason = cd.stop_reason;
+    totalInputTokens += cr.usage?.input_tokens || 0;
+    totalOutputTokens += cr.usage?.output_tokens || 0;
+    totalCostUsd += cr.cost_usd || 0;
+    modelUsed = cr.model_used || modelUsed;
     const blocks = cd.content || [];
     const textBlocks = blocks.filter((b) => b.type === "text");
     const toolUseBlocks = blocks.filter((b) => b.type === "tool_use");
@@ -758,7 +1256,13 @@ async function handleChat(request, auth, env) {
     { text: finalText, formula_refs: formulaRefs },
     env
   );
-  await recordUsage(auth.id, "/chat", env);
+  await recordUsage(auth.id, "/chat", env, {
+    model: modelUsed,
+    input_tokens: totalInputTokens,
+    output_tokens: totalOutputTokens,
+    est_cost_usd: totalCostUsd,
+    cache_hit: false
+  });
   return json({
     session_id: sessionId,
     reply: finalText,
@@ -2226,109 +2730,30 @@ async function handleBackendProxy(path, request, auth, env) {
   }
 }
 
-// worker-src/observability.js
-function anonymizeIp(ip) {
-  if (!ip) return "";
+// worker-src/handlers/cost_report.js
+async function runDailyCostReport(env) {
   try {
-    if (ip.includes(":")) {
-      const head = ip.split(":").slice(0, 3).join(":");
-      return `${head}::`;
+    const r = await sbService(env, "/rpc/send_daily_cost_report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}"
+    });
+    if (!r.ok) {
+      const detail = (await r.text()).slice(0, 300);
+      console.error("[cost_report] RPC failed", r.status, detail);
+      return { ok: false, status: r.status, detail };
     }
-    const parts = ip.split(".");
-    if (parts.length === 4) return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
-    return "";
-  } catch {
-    return "";
+    const subject = (await r.text()).trim().replace(/^"|"$/g, "") || null;
+    console.log("[cost_report] sent:", subject);
+    return { ok: true, subject };
+  } catch (err) {
+    console.error("[cost_report] threw", err?.message);
+    return { ok: false, detail: err?.message || "unknown" };
   }
-}
-function getConfig(env) {
-  return {
-    token: env.BETTER_STACK_TOKEN || "",
-    host: (env.BETTER_STACK_HOST || "https://in.logs.betterstack.com").replace(/\/+$/, ""),
-    name: env.SERVICE_NAME || "formula-ai-worker",
-    envName: env.SERVICE_ENV || "production"
-  };
-}
-async function shipLog(env, record, ctx) {
-  const cfg = getConfig(env);
-  if (!cfg.token) return;
-  const payload = {
-    dt: (/* @__PURE__ */ new Date()).toISOString(),
-    service: cfg.name,
-    env: cfg.envName,
-    ...record
-  };
-  const p = fetch(cfg.host, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${cfg.token}`,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  }).catch(() => null);
-  if (ctx && typeof ctx.waitUntil === "function") {
-    ctx.waitUntil(p);
-  } else {
-    await p;
-  }
-}
-async function shipError(env, err, ctx, extra = {}) {
-  await shipLog(env, {
-    level: "error",
-    message: err?.message || String(err),
-    stack: err?.stack || null,
-    ...extra
-  }, ctx);
-}
-function withObservability(handler) {
-  return async function wrapped(request, env, ctx) {
-    const url = new URL(request.url);
-    const start = Date.now();
-    let status = 500;
-    let errored = false;
-    try {
-      const response = await handler(request, env, ctx);
-      status = response.status;
-      errored = status >= 500;
-      return response;
-    } catch (err) {
-      errored = true;
-      await shipError(env, err, ctx, {
-        method: request.method,
-        path: url.pathname,
-        cf_ray: request.headers.get("cf-ray") || null
-      });
-      return new Response(
-        JSON.stringify({ error: "unhandled", detail: err.message }),
-        { status: 500, headers: { "content-type": "application/json" } }
-      );
-    } finally {
-      const elapsed = Date.now() - start;
-      const path = url.pathname;
-      const slow = elapsed > 3e3;
-      const noisy = path === "/" || path === "/health";
-      const shouldShip = errored || status >= 400 || slow || !noisy;
-      if (shouldShip) {
-        await shipLog(env, {
-          level: errored ? "error" : status >= 400 ? "warning" : "info",
-          message: `${request.method} ${path} \u2192 ${status} (${elapsed}ms)`,
-          method: request.method,
-          path,
-          status,
-          duration_ms: elapsed,
-          slow,
-          cf_country: request.cf?.country || null,
-          cf_colo: request.cf?.colo || null,
-          // GDPR: never ship a raw client IP to the 3rd-party logger.
-          ip_prefix: anonymizeIp(request.headers.get("cf-connecting-ip")),
-          user_agent: request.headers.get("user-agent") || ""
-        }, ctx);
-      }
-    }
-  };
 }
 
 // worker-src/index.js
+init_observability();
 var SERVICE_VERSION = "Formula AI Brain v8";
 function healthResponse() {
   return json({
@@ -2400,6 +2825,26 @@ async function handleRequest(request, env, ctx) {
   const path = url.pathname;
   try {
     if (path === "/" || path === "/health") return healthResponse();
+    if (path === "/debug/throw") {
+      if (request.headers.get("x-debug-key") !== "formula-ai-obs-2026") {
+        return new Response("forbidden", { status: 403, headers: corsHeaders });
+      }
+      throw new Error("Observability self-test \u2014 this exception is intentional.");
+    }
+    if (path === "/debug/sentry") {
+      if (request.headers.get("x-debug-key") !== "formula-ai-obs-2026") {
+        return new Response("forbidden", { status: 403, headers: corsHeaders });
+      }
+      const { shipSentry: shipSentry2 } = await Promise.resolve().then(() => (init_observability(), observability_exports));
+      const fakeErr = new Error("Direct sentry-test from /debug/sentry endpoint");
+      await shipSentry2(env, fakeErr, ctx, { source: "debug-endpoint", path: "/debug/sentry" });
+      return json({
+        ok: true,
+        dsn_set: !!env.SENTRY_DSN,
+        dsn_len: (env.SENTRY_DSN || "").length,
+        dsn_prefix: (env.SENTRY_DSN || "").slice(0, 20)
+      });
+    }
     if (path === "/stripe/webhook" && request.method === "POST") {
       return await handleStripeWebhook(request, env);
     }
@@ -2407,7 +2852,7 @@ async function handleRequest(request, env, ctx) {
       return await handlePaystackWebhook(request, env);
     }
     const auth = await resolveCaller(request, env);
-    if (path === "/search") return await handleSearch(url, auth, env);
+    if (path === "/search") return await handleSearch(url, auth, env, request);
     if (path === "/usage") return await handleUsage(auth, env);
     if (path === "/chat" && request.method === "POST")
       return await handleChat(request, auth, env);
@@ -2446,9 +2891,9 @@ async function handleRequest(request, env, ctx) {
     if (path === "/discover/debug" && request.method === "GET")
       return await handleDiscoverDebug(url, auth, env);
     if (path === "/safety" && request.method === "POST")
-      return await handleSafety(request, env);
+      return await handleSafety(request, auth, env);
     if (path === "/lab" && request.method === "POST")
-      return await handleLab(request, env);
+      return await handleLab(request, auth, env);
     if (path === "/paystack/checkout" && request.method === "POST")
       return await handlePaystackCheckout(request, auth, env);
     if (path === "/paystack/verify" && request.method === "GET")
@@ -2466,8 +2911,20 @@ async function handleRequest(request, env, ctx) {
     return json({ error: "unhandled", detail: err.message }, 500);
   }
 }
+async function handleScheduled(event, env, ctx) {
+  try {
+    if (event.cron === "0 9 * * *") {
+      ctx.waitUntil(runDailyCostReport(env));
+      return;
+    }
+    console.warn("[cron] unhandled schedule:", event.cron);
+  } catch (err) {
+    console.error("[cron] handler threw", err?.message);
+  }
+}
 var index_default = {
-  fetch: withObservability(handleRequest)
+  fetch: withObservability(handleRequest),
+  scheduled: handleScheduled
 };
 export {
   index_default as default

@@ -10,8 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
   <style>
     .risk-deadly { background: linear-gradient(135deg, #4a0008, #1a0000); border-color: #ff003c; }
     .risk-deadly .risk-icon { color: #ff003c; filter: drop-shadow(0 0 12px #ff003c); }
@@ -138,8 +139,9 @@
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./safety.html" class="active" data-i18n-ar="محرك السلامة">Safety Engine</a></li>
-        <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Encyclopedia</a></li>
+        <li><a href="./encyclopedia.html" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
         <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
@@ -154,6 +156,7 @@
     </div>
   </nav>
 
+  <main>
   <!-- Hero -->
   <section style="padding: 130px 0 40px; position: relative;">
     <div class="hero-bg">
@@ -324,6 +327,8 @@
   </section>
 
   <!-- Footer -->
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-bottom" style="padding-top: 0; border-top: none;">
@@ -333,7 +338,12 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <!-- auth.js + supabase-client.js — every public page must load
+       these so the navbar reflects sign-in state consistently.
+       Same shared GoTrueClient avoids "multiple instances" race. -->
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
   <script>
     const SCENARIOS = {
       deadly: {
@@ -718,5 +728,6 @@
     // Initial AI analysis
     runScenario('deadly');
   </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

@@ -107,5 +107,62 @@ const FAI_CHEM = {
   health: () => callGet('/chem/health'),
 };
 
-window.FAI_CHEM = FAI_CHEM;
-console.info('[FAI_CHEM] loaded — chemistry API client ready');
+/* ─── Subscription gate ─────────────────────────────────────────────
+   The chemistry tools (substitute / predict / scan / agent / similarity)
+   are members-only. For non-paid users we DO NOT call the API — we show
+   an upgrade modal instead (cheap, honest, protects API cost). */
+let _paidCache = null;
+async function isPaidUser() {
+  if (_paidCache !== null) return _paidCache;
+  try {
+    if (!window.FAI_DB || !window.FAI_DB.getProfile) return false; // unknown → treat as not paid
+    const profile = await window.FAI_DB.getProfile();
+    _paidCache = !!(profile && (
+      profile.subscription_status === 'active' ||
+      (profile.plan && profile.plan !== 'free') ||
+      profile.subscription_plan_id ||
+      (Number(profile.pro_credits_months || 0)
+        > Number(profile.pro_credits_used || 0))
+    ));
+  } catch (_) { _paidCache = false; }
+  return _paidCache;
+}
+
+function showUpgradeModal() {
+  if (document.getElementById('fai-gate-modal')) return;
+  const ar = (document.documentElement.lang === 'ar');
+  const bg = document.createElement('div');
+  bg.id = 'fai-gate-modal';
+  bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999;padding:20px;';
+  bg.innerHTML =
+    '<div style="background:var(--bg-2,#111);border:1px solid var(--border,#333);border-radius:18px;padding:30px 32px;max-width:420px;text-align:center;">' +
+      '<div style="font-size:2.4rem;margin-bottom:8px;">🔒</div>' +
+      '<h3 style="margin:0 0 10px;">' + (ar ? 'أداة للأعضاء فقط' : 'Members-only tool') + '</h3>' +
+      '<p style="color:var(--text-2,#aaa);margin:0 0 20px;font-size:.92rem;line-height:1.6;">' +
+        (ar ? 'هذه الأداة متاحة للمشتركين فقط. اختر خطة لفتح كل الأدوات.' : 'This tool is available to members only. Choose a plan to unlock all tools.') +
+      '</p>' +
+      '<a href="./pricing.html" class="btn btn-primary" style="margin:4px;">' + (ar ? 'اعرض الخطط' : 'View plans') + '</a>' +
+      '<button class="btn btn-ghost" id="fai-gate-close" style="margin:4px;">' + (ar ? 'لاحقاً' : 'Maybe later') + '</button>' +
+    '</div>';
+  bg.addEventListener('click', (e) => { if (e.target === bg) bg.remove(); });
+  document.body.appendChild(bg);
+  const c = document.getElementById('fai-gate-close');
+  if (c) c.addEventListener('click', () => bg.remove());
+}
+
+// Wrap every API method (except health) with the gate.
+const _GATED = Object.keys(FAI_CHEM).filter((k) => k !== 'health');
+const FAI_CHEM_GATED = { ...FAI_CHEM };
+for (const name of _GATED) {
+  const original = FAI_CHEM[name];
+  FAI_CHEM_GATED[name] = async function (...args) {
+    if (!(await isPaidUser())) {
+      showUpgradeModal();
+      return { error: 'members_only', _gated: true };
+    }
+    return original.apply(FAI_CHEM, args);
+  };
+}
+
+window.FAI_CHEM = FAI_CHEM_GATED;
+console.info('[FAI_CHEM] loaded — chemistry API client ready (subscription-gated)');

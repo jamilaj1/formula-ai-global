@@ -15,8 +15,11 @@
  *  - `save_modified_formula`  → write to user_formulas (requires signed-in user)
  */
 import { json, badRequest } from '../lib/responses.js';
-import { sb, sbService } from '../lib/supabase.js';
-import { CLAUDE_MODEL } from '../lib/claude.js';
+// All formulas reads must go through sbService — Phase 1.1 RLS denies the
+// anon role direct SELECT on the `formulas` table. The Worker is server-
+// side and never leaks the service-role key to the browser.
+import { sbService } from '../lib/supabase.js';
+import { claudeCall, modelForPlan } from '../lib/claude.js';
 import { dailyLimitFor } from '../config.js';
 import { getDailyUsage, recordUsage } from '../auth.js';
 
@@ -224,7 +227,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
       let path = `/formulas?select=${select}&order=trust_score.desc&limit=${limit}&or=(name.ilike.*${encodeURIComponent(safe)}*,name_en.ilike.*${encodeURIComponent(safe)}*)`;
       if (toolInput.category)
         path += `&category=eq.${encodeURIComponent(toolInput.category)}`;
-      const r = await sb(env, path);
+      const r = await sbService(env, path);
       if (!r.ok) continue;
       const rows = await r.json();
       if (!Array.isArray(rows)) continue;
@@ -243,7 +246,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
         const safe = v.replace(/[%_,()*]/g, '').trim();
         if (!safe) continue;
         const path = `/formulas?select=${select}&order=trust_score.desc&limit=${limit}&or=(name.ilike.*${encodeURIComponent(safe)}*,name_en.ilike.*${encodeURIComponent(safe)}*)`;
-        const r = await sb(env, path);
+        const r = await sbService(env, path);
         if (!r.ok) continue;
         const rows = await r.json();
         if (Array.isArray(rows))
@@ -268,7 +271,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
   if (toolName === 'get_formula_details') {
     const id = String(toolInput.formula_id || '').trim();
     if (!id) return { error: 'missing_id' };
-    const r = await sb(env, `/formulas?id=eq.${id}&select=*`);
+    const r = await sbService(env, `/formulas?id=eq.${id}&select=*`);
     if (!r.ok) return { error: 'db_error' };
     const arr = await r.json();
     if (!arr.length) return { error: 'not_found' };
@@ -380,28 +383,41 @@ export async function handleChat(request, auth, env) {
   let finalText = '';
   let stopReason = null;
 
+  // Accumulate token usage across all tool-use rounds — we report one
+  // api_usage row per chat turn (which may have called Claude up to 5
+  // times). The model and cost are summed; if Sonnet fell back to Haiku
+  // on any round we record the FALLBACK model (whichever billed us).
+  let totalInputTokens = 0;
+  let totalOutputTokens = 0;
+  let totalCostUsd = 0;
+  let modelUsed = modelForPlan(auth.plan);
+
   for (let round = 0; round < 5; round++) {
-    const cr = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
+    // Tool-use rounds are not cached: the tool_result blocks change every
+    // call (different DB rows, different timestamps) so cache hit rate
+    // would be near zero and false hits would be dangerous.
+    const cr = await claudeCall(
+      env,
+      {
         max_tokens: 1500,
         system: CHAT_SYSTEM_PROMPT,
         tools: CHAT_TOOLS,
         messages,
-      }),
-    });
+      },
+      { plan: auth.plan }
+    );
     if (!cr.ok) {
-      const errText = (await cr.text()).slice(0, 400);
-      return json({ error: 'claude_error', detail: errText }, 500);
+      return json({ error: 'claude_error', detail: cr.detail || '' }, cr.status || 500);
     }
-    const cd = await cr.json();
+    const cd = cr.data;
     stopReason = cd.stop_reason;
+
+    // Accumulate cost. modelUsed updates to whichever model billed us
+    // (claudeCall surfaces the fallback if Sonnet 429'd).
+    totalInputTokens  += cr.usage?.input_tokens  || 0;
+    totalOutputTokens += cr.usage?.output_tokens || 0;
+    totalCostUsd      += cr.cost_usd             || 0;
+    modelUsed = cr.model_used || modelUsed;
 
     const blocks = cd.content || [];
     const textBlocks = blocks.filter((b) => b.type === 'text');
@@ -454,7 +470,13 @@ export async function handleChat(request, auth, env) {
     env
   );
 
-  await recordUsage(auth.id, '/chat', env);
+  await recordUsage(auth.id, '/chat', env, {
+    model: modelUsed,
+    input_tokens:  totalInputTokens,
+    output_tokens: totalOutputTokens,
+    est_cost_usd:  totalCostUsd,
+    cache_hit:     false,
+  });
 
   return json({
     session_id: sessionId,

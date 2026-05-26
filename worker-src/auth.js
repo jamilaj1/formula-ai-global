@@ -68,19 +68,65 @@ export async function getDailyUsage(callerId, env) {
   }
 }
 
-/** Record a usage event. Best-effort; silent failure. */
-export async function recordUsage(callerId, endpoint, env) {
+/**
+ * Record a usage event. Best-effort; silent failure (a logging miss must
+ * never break the user-facing request).
+ *
+ * Backward-compatible: existing call sites
+ *     recordUsage(auth.id, '/search', env)
+ * keep working unchanged. New Claude-aware sites pass an optional `meta`
+ * object as the fourth argument:
+ *     recordUsage(auth.id, '/chat', env, {
+ *       model: 'claude-sonnet-4-5',
+ *       input_tokens:  res.usage.input_tokens,
+ *       output_tokens: res.usage.output_tokens,
+ *       est_cost_usd:  res.cost_usd,
+ *       cache_hit:     false,
+ *     });
+ * Non-Claude callers leave `meta` undefined; the new columns stay NULL
+ * for those rows, which is how the daily cost report (Phase 1.2 §1.2.7)
+ * filters them out (WHERE model IS NOT NULL).
+ *
+ * @param {string} callerId  'user:<uuid>' or 'ip:<address>'
+ * @param {string} endpoint  e.g. '/search', '/chat', '/safety'
+ * @param {object} env       Worker env
+ * @param {object} [meta]    optional Claude usage metadata
+ * @param {string} [meta.model]
+ * @param {number} [meta.input_tokens]
+ * @param {number} [meta.output_tokens]
+ * @param {number} [meta.est_cost_usd]
+ * @param {boolean} [meta.cache_hit]
+ * @param {number} [meta.status_code]  override default 200 (e.g. 429)
+ */
+export async function recordUsage(callerId, endpoint, env, meta) {
   try {
+    const row = { caller_id: callerId, endpoint };
+
+    // Promote the user uuid into its own column when the caller is a
+    // signed-in user, so the FK index speeds up per-user reports.
+    if (typeof callerId === 'string' && callerId.startsWith('user:')) {
+      row.user_id = callerId.slice(5);
+    }
+
+    if (meta && typeof meta === 'object') {
+      if (meta.model)         row.model         = meta.model;
+      if (meta.input_tokens  != null) row.input_tokens  = meta.input_tokens  | 0;
+      if (meta.output_tokens != null) row.output_tokens = meta.output_tokens | 0;
+      if (meta.est_cost_usd  != null) row.est_cost_usd  = Number(meta.est_cost_usd);
+      if (meta.cache_hit     != null) row.cache_hit     = !!meta.cache_hit;
+      if (meta.status_code   != null) row.status_code   = meta.status_code | 0;
+    }
+
     await sbService(env, '/api_usage', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify({ caller_id: callerId, endpoint }),
+      body: JSON.stringify(row),
     });
   } catch (_) {
-    /* ignore */
+    /* ignore — logging must not break the user request */
   }
 }
 

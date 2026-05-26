@@ -23,13 +23,156 @@
   <link rel="manifest" href="./manifest.json" />
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="apple-touch-icon" href="./assets/icon.svg" />
+  <link rel="canonical" href="https://jamilformula.com/" />
+
+  <!-- Brand entity for Google: Organization + WebSite (with sitelinks
+       search box) + WebApplication. Unlocks Knowledge Panel & sitelinks. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://jamilformula.com/#org",
+        "name": "Formula AI Global",
+        "url": "https://jamilformula.com/",
+        "logo": "https://jamilformula.com/assets/icon.svg",
+        "description": "AI-powered chemistry platform for industrial formulators across 40+ industries.",
+        "founder": { "@type": "Person", "name": "Jamil Abduljalil" },
+        "knowsAbout": ["industrial formulation", "cosmetics chemistry", "home care chemistry", "cleaning chemistry", "agrochemicals", "RDKit cheminformatics"]
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://jamilformula.com/#site",
+        "url": "https://jamilformula.com/",
+        "name": "Formula AI Global",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://jamilformula.com/#org" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": { "@type": "EntryPoint", "urlTemplate": "https://jamilformula.com/search.html?q={search_term_string}" },
+          "query-input": "required name=search_term_string"
+        }
+      },
+      {
+        "@type": "WebApplication",
+        "name": "Formula AI Global",
+        "url": "https://jamilformula.com/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Any (web)",
+        "description": "Search, generate, validate and scale verified chemical formulations across 40+ industries — 3,381 owner-verified formulas, AI substitution, safety analysis and batch tools.",
+        "publisher": { "@id": "https://jamilformula.com/#org" },
+        "offers": {
+          "@type": "AggregateOffer",
+          "lowPrice": 0, "highPrice": 125, "priceCurrency": "USD", "offerCount": 4
+        }
+      }
+    ]
+  }
+  </script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
 
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
+
+  <!-- ── Homepage hero polish ─────────────────────────────────────────
+       Scoped to index.html only (inline <style> never leaks to other
+       pages). Does NOT touch styles.css or any other page. Only
+       enhances visuals (size/gradient/glass/shadow) — never opacity or
+       transform, so the .reveal entrance animation keeps working. ── -->
+  <style>
+    /* Clear the fixed solid navbar (~64px) so the eyebrow/h1 never sit
+       under it. Generous top padding = premium, breathing hero. */
+    .hero { position: relative; min-height: 100vh; display: flex;
+            align-items: center; padding: 130px 0 60px;
+            overflow: hidden; }
+    .hero-content { text-align: center; width: 100%; }
+
+    .hero .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 16px; border-radius: 999px;
+      background: color-mix(in srgb, var(--primary) 12%, transparent);
+      border: 1px solid color-mix(in srgb, var(--primary) 35%, transparent);
+      color: var(--primary); font-weight: 700; font-size: 0.82rem;
+      letter-spacing: .3px; backdrop-filter: blur(6px);
+      box-shadow: 0 0 24px color-mix(in srgb, var(--primary) 22%, transparent);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.6rem, 6vw, 4.6rem);
+      line-height: 1.06; font-weight: 900; letter-spacing: -1.5px;
+      margin: 22px auto 18px; max-width: 16ch;
+    }
+    .hero h1 .gradient-text {
+      background: linear-gradient(110deg,
+        var(--primary) 0%, #34e0ff 45%, #a86bff 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-size: 220% auto; animation: heroGrad 7s ease infinite;
+    }
+    @keyframes heroGrad { 0%,100%{background-position:0% 50%}
+                          50%{background-position:100% 50%} }
+
+    .hero .hero-sub {
+      max-width: 60ch; margin: 0 auto; font-size: clamp(1rem,1.6vw,1.18rem);
+      line-height: 1.7; color: var(--text-2);
+    }
+
+    .hero .hero-cta { margin-top: 34px; gap: 14px; }
+    .hero .hero-cta .btn-lg { padding: 15px 30px; font-size: 1.02rem;
+      font-weight: 800; border-radius: 14px; }
+    .hero .hero-cta .btn-primary {
+      box-shadow: 0 10px 34px color-mix(in srgb, var(--primary) 38%, transparent);
+      transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .hero .hero-cta .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 16px 44px color-mix(in srgb, var(--primary) 52%, transparent);
+    }
+
+    /* Stats → premium glass metric cards */
+    .hero .stats {
+      margin-top: 56px; display: grid; gap: 16px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      max-width: 920px; margin-inline: auto;
+    }
+    @media (max-width: 760px) {
+      .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    .hero .stat {
+      background: color-mix(in srgb, var(--bg-2) 70%, transparent);
+      border: 1px solid var(--border); border-radius: 18px;
+      padding: 22px 16px; backdrop-filter: blur(10px);
+      transition: transform .2s ease, border-color .2s ease,
+                  box-shadow .2s ease;
+    }
+    .hero .stat:hover {
+      transform: translateY(-4px);
+      border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+      box-shadow: 0 18px 40px rgba(0,0,0,.22);
+    }
+    .hero .stat-value {
+      font-size: clamp(1.9rem, 3.4vw, 2.7rem); font-weight: 900;
+      line-height: 1; background: linear-gradient(120deg,
+        var(--text-1), color-mix(in srgb, var(--primary) 80%, var(--text-1)));
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero .stat-label {
+      margin-top: 8px; font-size: 0.82rem; color: var(--text-3);
+      font-weight: 600; letter-spacing: .2px;
+    }
+
+    /* Brighter, larger ambient orbs for a premium depth feel */
+    .hero .hero-orb { filter: blur(70px); opacity: .55; }
+    .hero .hero-orb.green  { width: 460px; height: 460px; }
+    .hero .hero-orb.blue   { width: 420px; height: 420px; }
+    .hero .hero-orb.purple { width: 480px; height: 480px; }
+  </style>
 </head>
 <body>
   <!-- Navigation -->
@@ -44,6 +187,7 @@
 
       <ul class="nav-links">
         <li><a href="./index.html" class="active" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./safety.html" data-i18n-ar="السلامة">Safety</a></li>
@@ -82,6 +226,7 @@
     </div>
   </nav>
 
+  <main>
   <!-- Hero -->
   <section class="hero">
     <div class="hero-bg">
@@ -120,20 +265,20 @@
       <!-- Stats -->
       <div class="stats reveal delay-3">
         <div class="stat">
-          <div class="stat-value"><span data-counter="3400" data-suffix="+">0</span></div>
-          <div class="stat-label" data-i18n-ar="فورمولا موثّقة، تنمو يومياً">Verified formulas · growing daily</div>
+          <div class="stat-value"><span id="hero-formula-count" data-counter="3381">0</span></div>
+          <div class="stat-label" data-i18n-ar="فورمولا في المكتبة">Formulas in the library</div>
         </div>
         <div class="stat">
-          <div class="stat-value"><span data-counter="40" data-suffix="+">0</span></div>
-          <div class="stat-label" data-i18n-ar="صناعة كيميائية">Chemical industries</div>
+          <div class="stat-value"><span data-counter="132">0</span></div>
+          <div class="stat-label" data-i18n-ar="فورمولا مُثبَتة من الإنتاج">Owner-verified formulas</div>
         </div>
         <div class="stat">
-          <div class="stat-value"><span data-counter="195">0</span></div>
-          <div class="stat-label" data-i18n-ar="دولة مغطاة">Countries covered</div>
+          <div class="stat-value"><span data-counter="900" data-suffix="+">0</span></div>
+          <div class="stat-label" data-i18n-ar="مُثرَاة كيميائياً (RDKit + PubChem)">Chemistry-enriched</div>
         </div>
         <div class="stat">
-          <div class="stat-value"><span data-counter="12" data-suffix="">0</span></div>
-          <div class="stat-label" data-i18n-ar="لغات مدعومة">Languages supported</div>
+          <div class="stat-value"><span data-counter="20">0</span></div>
+          <div class="stat-label" data-i18n-ar="لغة مدعومة">Languages supported</div>
         </div>
       </div>
     </div>
@@ -299,45 +444,45 @@
     </div>
   </section>
 
-  <!-- Open Encyclopedia teaser -->
+  <!-- Members-only library teaser -->
   <section class="section">
     <div class="container">
       <div class="section-header reveal">
-        <span class="eyebrow" data-i18n-ar="هدية للعالم">A gift to the world</span>
-        <h2 data-i18n-ar='موسوعة كيميائية <span class="gradient-text">مفتوحة ومجانية</span> للعالم'>An open and free <span class="gradient-text">chemical encyclopedia</span> for the world</h2>
-        <p data-i18n-ar="موسوعة Formula AI المفتوحة - كل فورمولا تحت ترخيص Creative Commons - استخدمها، عدّلها، شاركها. تنمو يومياً.">The Formula AI Open Encyclopedia — every formula under Creative Commons. Use it, modify it, share it. Growing daily.</p>
+        <span class="eyebrow" data-i18n-ar="مكتبة للأعضاء فقط">Members-only library</span>
+        <h2 data-i18n-ar='تركيبات موثّقة <span class="gradient-text">حصرية</span> — للأعضاء فقط'>Exclusive verified <span class="gradient-text">formulations</span> — members only</h2>
+        <p data-i18n-ar="3,381 فورمولا موثّقة من المالك، تنمو باستمرار. استعرض الفهرس مجاناً، وافتح التركيبات الكاملة بعضوية.">3,381 owner-verified formulas, growing continuously. Browse the catalog free — unlock full formulations with a membership.</p>
       </div>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; max-width: 1100px; margin: 0 auto 32px;">
         <div class="card reveal" style="text-align: center;">
-          <div style="font-size: 2.4rem; margin-bottom: 10px;">📜</div>
-          <strong data-i18n-ar="ترخيص CC-BY-SA-4.0">CC-BY-SA-4.0 license</strong>
-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="استخدام تجاري مسموح">Commercial use allowed</p>
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">🔒</div>
+          <strong data-i18n-ar="حصري وخاص">Exclusive & proprietary</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="غير منشورة في أي مكان آخر">Not published anywhere else</p>
         </div>
         <div class="card reveal delay-1" style="text-align: center;">
-          <div style="font-size: 2.4rem; margin-bottom: 10px;">🎓</div>
-          <strong data-i18n-ar="مجاني للجامعات">Free for universities</strong>
-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="500 جامعة مستهدفة">500 universities target</p>
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">✅</div>
+          <strong data-i18n-ar="موثّقة من المالك">Owner-verified</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="132 موثّقة من خبير 25+ سنة">132 verified by a 25+ yr chemist</p>
         </div>
         <div class="card reveal delay-2" style="text-align: center;">
-          <div style="font-size: 2.4rem; margin-bottom: 10px;">🏆</div>
-          <strong data-i18n-ar="جائزة $10,000 سنوياً">$10,000 yearly award</strong>
-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="لأفضل فورمولا خضراء">For greenest formula</p>
+          <div style="font-size: 2.4rem; margin-bottom: 10px;">📈</div>
+          <strong data-i18n-ar="تنمو باستمرار">Always growing</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="3,381 فورمولا عبر 40 صناعة">3,381 formulas across 40 industries</p>
         </div>
         <div class="card reveal delay-3" style="text-align: center;">
           <div style="font-size: 2.4rem; margin-bottom: 10px;">🛡️</div>
-          <strong data-i18n-ar="شهادات Gold Standard">Gold Standard certificates</strong>
-          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="ختم رقمي موثوق">Verifiable digital seal</p>
+          <strong data-i18n-ar="درجة ثقة 90%+">Trust score 90%+</strong>
+          <p style="font-size: 0.88rem; color: var(--text-3); margin-top: 6px;" data-i18n-ar="تحقق من 7 مراحل">7-stage validation</p>
         </div>
       </div>
 
       <div style="text-align: center; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
         <a href="./encyclopedia.html" class="btn btn-primary btn-lg">
-          <span data-i18n-ar="استعرض الموسوعة">Browse encyclopedia</span>
+          <span data-i18n-ar="استعرض المكتبة">Browse library</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
         </a>
-        <a href="./programs.html" class="btn btn-outline btn-lg">
-          <span data-i18n-ar="اكتشف البرامج">Discover programs</span>
+        <a href="./pricing.html" class="btn btn-outline btn-lg">
+          <span data-i18n-ar="خطط العضوية">Membership plans</span>
         </a>
       </div>
     </div>
@@ -643,6 +788,8 @@
   </section>
 
   <!-- Footer -->
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -678,7 +825,7 @@
         <div class="footer-col">
           <h4 data-i18n-ar="الموارد">Resources</h4>
           <ul>
-            <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة المفتوحة">Open Encyclopedia</a></li>
+            <li><a href="./encyclopedia.html" data-i18n-ar="مكتبة الفورمولا">Formula Library</a></li>
             <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
             <li><a href="./docs.html" data-i18n-ar="التوثيق">Documentation</a></li>
             <li><a href="./docs.html#sdk" data-i18n-ar="واجهة API">API reference</a></li>
@@ -699,6 +846,45 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <!-- auth.js + supabase-client.js — every public page must load
+       these so the navbar reflects sign-in state consistently.
+       Same shared GoTrueClient avoids "multiple instances" race. -->
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script>
+    /* Live formula count — keeps the homepage hero number in sync with
+       the database. As soon as new formulas are added in Supabase, the
+       next visitor sees the new total. Silent fallback to the hard-coded
+       number (data-counter="3381") if the fetch is blocked or fails. */
+    (function () {
+      var el = document.getElementById('hero-formula-count');
+      if (!el) return;
+      var tries = 0;
+      var t = setInterval(function () {
+        if (window.FAI_AUTH && window.FAI_AUTH.client) {
+          clearInterval(t);
+          window.FAI_AUTH.client
+            .from('formulas_public')
+            .select('id', { count: 'exact', head: true })
+            .then(function (res) {
+              if (res.error || !res.count) return;
+              // Feed the live total to the count-up animation if it has
+              // not run yet...
+              el.dataset.counter = String(res.count);
+              // ...and after the 1.8s animation window, set the final
+              // value directly in case it already finished on the old one.
+              setTimeout(function () {
+                el.textContent = Number(res.count).toLocaleString('en-US');
+              }, 2300);
+            })
+            .catch(function () { /* keep the hard-coded fallback */ });
+        } else if (++tries > 100) {
+          clearInterval(t);
+        }
+      }, 50);
+    })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

@@ -10,8 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
   <style>
     .docs-layout {
       display: grid;
@@ -130,6 +131,7 @@
       <ul class="nav-links">
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
@@ -460,7 +462,12 @@ result = response.<span class="fn">json</span>()
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <!-- auth.js + supabase-client.js — every public page must load
+       these so the navbar reflects sign-in state consistently.
+       Same shared GoTrueClient avoids "multiple instances" race. -->
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
   <script>
     // Smooth-scroll active section in sidebar
     const links = document.querySelectorAll('.docs-sidebar a');
@@ -477,5 +484,6 @@ result = response.<span class="fn">json</span>()
     }, { rootMargin: '-100px 0px -60% 0px' });
     sections.forEach(s => observer.observe(s));
   </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

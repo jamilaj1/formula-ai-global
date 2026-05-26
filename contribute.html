@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Contribute a Formula — Formula AI Global</title>
+  <meta name="description" content="Share a formulation with the community. Paste a recipe or attach a file — our team reviews every submission before it goes live." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
+  <style>
+    .cb-wrap { max-width: 760px; margin: 0 auto; }
+    .cb-panel { background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-xl); padding: 28px; }
+    .cb-field { margin-bottom: 18px; }
+    .cb-field label { display: block; font-weight: 700; margin-bottom: 6px; color: var(--text-2); font-size: 0.92rem; }
+    .cb-field input, .cb-field select, .cb-field textarea {
+      width: 100%; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius); color: var(--text-1); font-family: inherit; font-size: 0.97rem;
+    }
+    .cb-field textarea { resize: vertical; min-height: 150px; font-family: ui-monospace, monospace; line-height: 1.6; }
+    .cb-field input:focus, .cb-field select:focus, .cb-field textarea:focus { outline: none; border-color: var(--primary); }
+    .cb-hint { font-size: 0.82rem; color: var(--text-3); margin-top: 5px; line-height: 1.5; }
+    .cb-state { text-align:center; padding: 50px 20px; color: var(--text-3); }
+    .cb-state svg { width: 52px; height: 52px; opacity: .4; margin: 0 auto 14px; display:block; }
+    .cb-ok { background: rgba(0,255,136,.08); border: 1px solid rgba(0,255,136,.35); border-radius: var(--radius); padding: 22px; text-align:center; }
+    .cb-ok h3 { margin: 0 0 6px; color: var(--primary); }
+    .cb-err { background: rgba(255,90,90,.08); border: 1px solid rgba(255,90,90,.35); color:#ff9a9a; border-radius: var(--radius); padding: 14px 16px; margin-bottom: 16px; font-size: 0.9rem; }
+    .cb-note { font-size: 0.85rem; color: var(--text-3); line-height: 1.7; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg>
+        </span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" class="active" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+          <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        </button>
+        <div class="lang-dropdown">
+          <button class="icon-btn lang-trigger" aria-label="Language">
+            <span class="flag">🇸🇦</span><span class="label">AR</span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <div class="lang-menu"></div>
+        </div>
+      </div>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+  </nav>
+
+  <main>
+  <section style="padding: 120px 0 60px; position: relative;">
+    <div class="hero-bg">
+      <div class="hero-orb green" style="top: 0; opacity: 0.28;"></div>
+      <div class="hero-orb purple" style="opacity: 0.28;"></div>
+    </div>
+    <div class="container" style="position: relative; z-index: 2;">
+      <div class="cb-wrap">
+        <div style="text-align:center; margin-bottom: 30px;">
+          <span class="eyebrow" data-i18n-ar="ساهم في أكبر قاعدة فورمولات">Build the world's formula library</span>
+          <h1 style="margin: 10px 0 12px;" data-i18n-ar='شارك <span class="gradient-text">فورمولا</span> مع المجتمع'>
+            Contribute a <span class="gradient-text">formula</span>
+          </h1>
+          <p style="color: var(--text-2); font-size: 1.05rem;" data-i18n-ar="الصق وصفة أو أرفق ملفاً. كل مساهمة تُراجَع من فريقنا قبل نشرها — لضمان جودة وثقة القاعدة.">
+            Paste a recipe or attach a file. Every submission is reviewed by our team before it goes live — to keep the library trustworthy.
+          </p>
+        </div>
+
+        <!-- Not signed in -->
+        <div id="cb-auth" class="cb-state" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          <div style="font-weight:700; color:var(--text-1); margin-bottom:6px;" data-i18n-ar="سجّل الدخول للمساهمة">Sign in to contribute</div>
+          <div style="margin-bottom:18px;" data-i18n-ar="نطلب حساباً لمنع السبام وربط مساهمتك بك.">We require an account to prevent spam and credit your contribution.</div>
+          <a href="./login.html" class="btn btn-primary" data-i18n-ar="تسجيل الدخول">Sign in</a>
+          <a href="./register.html" class="btn btn-ghost" style="margin-inline-start:8px;" data-i18n-ar="حساب جديد مجاني">Create free account</a>
+        </div>
+
+        <!-- Loading -->
+        <div id="cb-loading" class="cb-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          <div data-i18n-ar="جارٍ التحميل…">Loading…</div>
+        </div>
+
+        <!-- The form -->
+        <div id="cb-form-wrap" class="cb-panel" style="display:none;">
+          <div id="cb-err" class="cb-err" style="display:none;"></div>
+
+          <div class="cb-field">
+            <label data-i18n-ar="اسم الفورمولا / المنتج">Formula / product name</label>
+            <input id="cb-title" type="text" maxlength="160" placeholder="e.g. Lemon Liquid Dish Soap" />
+          </div>
+
+          <div class="cb-field">
+            <label data-i18n-ar="الفئة">Category</label>
+            <select id="cb-type">
+              <option value="" data-i18n-ar="اختر…">Select…</option>
+              <option value="home_care">Home care / cleaners</option>
+              <option value="personal_care">Personal care</option>
+              <option value="cosmetics">Cosmetics</option>
+              <option value="soap">Soap</option>
+              <option value="detergent">Detergent</option>
+              <option value="industrial">Industrial</option>
+              <option value="agrochemical">Agrochemical</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="cb-field">
+            <label data-i18n-ar="الوصفة (المكوّنات + النِّسب + الطريقة)">The recipe (ingredients + % + method)</label>
+            <textarea id="cb-text" maxlength="12000" placeholder="Water 80%&#10;SLES 12%&#10;Cocamidopropyl Betaine 5%&#10;Salt 2%&#10;Fragrance 0.5%&#10;Preservative 0.2%&#10;&#10;Method: dissolve... mix... adjust pH..."></textarea>
+            <div class="cb-hint" data-i18n-ar="اكتب بأي شكل — بالعربية أو الإنجليزية. ذكاؤنا يُنظّمها لاحقاً. اذكر النتيجة إن أمكن (نجحت/مشكلة وحلّها) — هذا الأثمن.">
+              Write it any way you like — Arabic or English. Our AI structures it later. If you can, note the outcome (worked / a problem &amp; its fix) — that's the most valuable part.
+            </div>
+          </div>
+
+          <div class="cb-field">
+            <label data-i18n-ar="أو أرفق ملفاً (اختياري — Excel / CSV / نص)">Or attach a file (optional — Excel / CSV / text)</label>
+            <input id="cb-file" type="file" accept=".csv,.tsv,.txt,.xlsx,.xlsm" />
+            <div class="cb-hint" data-i18n-ar="حتى 2 ميجابايت. الملف يكمّل النص أعلاه (لا يستبدله).">Up to 2 MB. A file complements the text above (does not replace it).</div>
+          </div>
+
+          <button id="cb-submit" class="btn btn-primary btn-block btn-lg" style="margin-top:6px;" data-i18n-ar="أرسل للمراجعة">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+            Submit for review
+          </button>
+
+          <div class="cb-note" data-i18n-ar="بإرسالك توافق على مراجعة فريقنا للمحتوى قبل نشره. لن يظهر تلقائياً. شكراً لمساهمتك في إثراء أكبر قاعدة فورمولات كيميائية.">
+            By submitting you agree that our team reviews the content before publishing. It will not appear automatically. Thank you for helping build the world's largest chemical formula library.
+          </div>
+        </div>
+
+        <!-- Success -->
+        <div id="cb-done" class="cb-ok" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" style="width:48px;height:48px;margin:0 auto 12px;display:block;"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+          <h3 data-i18n-ar="تمّ الإرسال — شكراً لك!">Submitted — thank you!</h3>
+          <p style="color:var(--text-2); margin:6px 0 18px;" data-i18n-ar="مساهمتك الآن قيد المراجعة. ستُنشَر بعد اعتمادها للحفاظ على جودة القاعدة.">
+            Your contribution is now pending review. It will be published once approved, to keep the library trustworthy.
+          </p>
+          <button id="cb-again" class="btn btn-ghost" data-i18n-ar="أضف فورمولا أخرى">Add another formula</button>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  
+  </main>
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="./index.html" class="logo">
+            <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+            Formula <span>AI</span>
+          </a>
+          <p data-i18n-ar="منصة ذكاء اصطناعي كيميائي.">An AI chemical platform.</p>
+        </div>
+        <div class="footer-col"><h4 data-i18n-ar="الأدوات">Tools</h4><ul><li><a href="./search.html" data-i18n-ar="بحث ذكي">Smart Search</a></li><li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li><li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li><li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li><li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الشركة">Company</h4><ul><li><a href="./about.html" data-i18n-ar="من نحن">About</a></li><li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li><li><a href="./contact.html" data-i18n-ar="اتصل بنا">Contact</a></li></ul></div>
+        <div class="footer-col"><h4 data-i18n-ar="الموارد">Resources</h4><ul><li><a href="./docs.html" data-i18n-ar="التوثيق">Docs</a></li><li><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a></li><li><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></li></ul></div>
+      </div>
+      <div class="footer-bottom">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global.">© <span data-year>2026</span> Formula AI Global. All rights reserved.</div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=22"></script>
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script>
+  /* contribute.html — community formula upload (sign-in required).
+     Pure addition. Inserts into user_submissions via the user's own
+     authenticated Supabase client (RLS enforces submitter = self).
+     Nothing is published until the owner moderates it. */
+  (function () {
+    const $ = (id) => document.getElementById(id);
+    const els = {
+      auth: $('cb-auth'), loading: $('cb-loading'), form: $('cb-form-wrap'),
+      done: $('cb-done'), err: $('cb-err'),
+      title: $('cb-title'), type: $('cb-type'), text: $('cb-text'),
+      file: $('cb-file'), submit: $('cb-submit'), again: $('cb-again'),
+    };
+    let USER = null, CLIENT = null;
+
+    function showOnly(key) {
+      ['auth', 'loading', 'form', 'done'].forEach((k) =>
+        els[k].style.display = (k === key ? '' : 'none'));
+    }
+    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+
+    // Wait for the auth module, then decide which view to show.
+    let tries = 0;
+    const wait = setInterval(async () => {
+      tries++;
+      const A = window.FAI_AUTH;
+      if (A && A.client) {
+        clearInterval(wait);
+        CLIENT = A.client;
+        try {
+          const { data: { session } } = await CLIENT.auth.getSession();
+          USER = session && session.user ? session.user : (A.user || null);
+        } catch (_) { USER = A.user || null; }
+        if (USER && USER.id) { showOnly('form'); applyLang(); }
+        else { showOnly('auth'); applyLang(); }
+      } else if (tries > 60) {     // ~3s — auth never loaded
+        clearInterval(wait);
+        showOnly('auth'); applyLang();
+      }
+    }, 50);
+
+    function readFile(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        const isText = /\.(csv|tsv|txt)$/i.test(file.name);
+        r.onload = () => resolve({
+          isText,
+          value: r.result,            // text OR dataURL
+          name: file.name,
+          type: file.type || 'application/octet-stream',
+        });
+        r.onerror = reject;
+        if (isText) r.readAsText(file);
+        else r.readAsDataURL(file);   // xlsx → base64 data URL
+      });
+    }
+
+    async function submit() {
+      els.err.style.display = 'none';
+      const title = els.title.value.trim();
+      const text = els.text.value.trim();
+      const f = els.file.files[0];
+
+      if (!title) return fail('Please enter a formula / product name.');
+      if (!text && !f) return fail('Paste the recipe or attach a file.');
+      if (f && f.size > 2 * 1024 * 1024) return fail('File is larger than 2 MB.');
+
+      els.submit.disabled = true;
+      els.submit.textContent = '…';
+
+      let row = {
+        submitter_id: USER.id,
+        submitter_email: USER.email || null,
+        mode: f ? 'file' : 'paste',
+        title,
+        product_type: els.type.value || null,
+        raw_text: text || null,
+        review_status: 'pending',
+      };
+
+      try {
+        if (f) {
+          const fr = await readFile(f);
+          row.file_name = fr.name;
+          row.content_type = fr.type;
+          if (fr.isText) {
+            row.raw_text = (text ? text + '\n\n---FILE---\n' : '') + fr.value;
+          } else {
+            row.file_b64 = fr.value;        // base64 data URL
+          }
+        }
+        const { error } = await CLIENT.from('user_submissions').insert([row]);
+        if (error) throw error;
+        showOnly('done'); applyLang();
+      } catch (e) {
+        fail((e && (e.message || e.error_description)) ||
+             'Could not submit. Please try again.');
+      } finally {
+        els.submit.disabled = false;
+        els.submit.innerHTML =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg> Submit for review';
+        applyLang();
+      }
+    }
+
+    function fail(msg) {
+      els.err.textContent = msg;
+      els.err.style.display = '';
+    }
+
+    els.submit.addEventListener('click', submit);
+    els.again.addEventListener('click', () => {
+      els.title.value = ''; els.text.value = ''; els.type.value = '';
+      els.file.value = ''; showOnly('form'); applyLang();
+    });
+  })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
+</body>
+</html>

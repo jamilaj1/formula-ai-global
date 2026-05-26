@@ -87,6 +87,7 @@ import {
 } from './handlers/payments.js';
 import { handleChemProxy } from './handlers/chem.js';
 import { handleBackendProxy } from './handlers/backend_proxy.js';
+import { runDailyCostReport } from './handlers/cost_report.js';
 import { withObservability } from './observability.js';
 
 const SERVICE_VERSION = 'Formula AI Brain v8';
@@ -166,6 +167,34 @@ async function handleRequest(request, env, ctx) {
       // Health
       if (path === '/' || path === '/health') return healthResponse();
 
+      // Observability self-test (Phase 1.3): deliberately throws so we can
+      // confirm Sentry + Better Stack are catching exceptions end-to-end.
+      // Returns nothing useful in production — keep it but don't advertise it.
+      // Auth-gated by a header so a scraper can't spam it.
+      if (path === '/debug/throw') {
+        if (request.headers.get('x-debug-key') !== 'formula-ai-obs-2026') {
+          return new Response('forbidden', { status: 403, headers: corsHeaders });
+        }
+        throw new Error('Observability self-test — this exception is intentional.');
+      }
+      // Direct shipSentry test (no exception path) — verifies the envelope POST
+      // actually reaches Sentry. Returns a JSON diagnostic so we can see exactly
+      // what happened without parsing tail logs.
+      if (path === '/debug/sentry') {
+        if (request.headers.get('x-debug-key') !== 'formula-ai-obs-2026') {
+          return new Response('forbidden', { status: 403, headers: corsHeaders });
+        }
+        const { shipSentry } = await import('./observability.js');
+        const fakeErr = new Error('Direct sentry-test from /debug/sentry endpoint');
+        await shipSentry(env, fakeErr, ctx, { source: 'debug-endpoint', path: '/debug/sentry' });
+        return json({
+          ok: true,
+          dsn_set: !!env.SENTRY_DSN,
+          dsn_len: (env.SENTRY_DSN || '').length,
+          dsn_prefix: (env.SENTRY_DSN || '').slice(0, 20),
+        });
+      }
+
       // Webhooks BEFORE auth (each verifies its own signature)
       if (path === '/stripe/webhook' && request.method === 'POST') {
         return await handleStripeWebhook(request, env);
@@ -178,7 +207,7 @@ async function handleRequest(request, env, ctx) {
       const auth = await resolveCaller(request, env);
 
       // Read-only
-      if (path === '/search') return await handleSearch(url, auth, env);
+      if (path === '/search') return await handleSearch(url, auth, env, request);
       if (path === '/usage') return await handleUsage(auth, env);
 
       // Chat
@@ -225,11 +254,12 @@ async function handleRequest(request, env, ctx) {
       if (path === '/discover/debug' && request.method === 'GET')
         return await handleDiscoverDebug(url, auth, env);
 
-      // Claude-powered insights
+      // Claude-powered insights (auth-aware: picks Sonnet for paid plans,
+      // caches answers per identical formula, records cost to api_usage).
       if (path === '/safety' && request.method === 'POST')
-        return await handleSafety(request, env);
+        return await handleSafety(request, auth, env);
       if (path === '/lab' && request.method === 'POST')
-        return await handleLab(request, env);
+        return await handleLab(request, auth, env);
 
       // Payments (Paystack primary, Stripe legacy)
       if (path === '/paystack/checkout' && request.method === 'POST')
@@ -255,8 +285,31 @@ async function handleRequest(request, env, ctx) {
     }
 }
 
+/**
+ * Cloudflare Cron handler. Fires on the cron schedules in wrangler.toml.
+ * Currently a single schedule: 09:00 UTC daily → daily Claude cost email.
+ *
+ * `event.cron` is the cron expression string ("0 9 * * *"). If we add
+ * more schedules later, branch on this value.
+ *
+ * Errors here go to the Workers `Tail` stream (Observability tab) but
+ * must never propagate — the runtime will retry on its own schedule.
+ */
+async function handleScheduled(event, env, ctx) {
+  try {
+    if (event.cron === '0 9 * * *') {
+      ctx.waitUntil(runDailyCostReport(env));
+      return;
+    }
+    console.warn('[cron] unhandled schedule:', event.cron);
+  } catch (err) {
+    console.error('[cron] handler threw', err?.message);
+  }
+}
+
 // Wrap with observability: every request is timed, non-2xx & slow ones get
 // shipped to Better Stack, unhandled exceptions are captured with stack.
 export default {
-  fetch: withObservability(handleRequest),
+  fetch:     withObservability(handleRequest),
+  scheduled: handleScheduled,
 };

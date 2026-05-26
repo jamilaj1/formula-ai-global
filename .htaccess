@@ -46,6 +46,18 @@
   Header always set X-Frame-Options "SAMEORIGIN"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # HSTS — production HTTPS-only, 1 year, all subdomains, preload-eligible.
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+  # Content Security Policy
+  #   script-src   : own + esm.sh (Supabase JS bundle) + Paystack checkout
+  #                  + Supabase + Cloudflare Web Analytics beacon.
+  #   connect-src  : Supabase REST/Realtime, Worker, Paystack API,
+  #                  Google fonts/auth, esm.sh, Cloudflare Insights beacon.
+  # NOTE: keep this on one line — Apache does not parse continuation lines
+  #       inside a Header value.
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://esm.sh https://js.paystack.co https://*.supabase.co https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com data:; img-src 'self' data: blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://formula-ai-brain.jamilaj1.workers.dev https://api.paystack.co https://accounts.google.com https://fonts.googleapis.com https://fonts.gstatic.com https://esm.sh https://cloudflareinsights.com; frame-src https://checkout.paystack.com https://accounts.google.com https://*.supabase.co; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self' https://checkout.paystack.com; frame-ancestors 'self'; upgrade-insecure-requests"
 </IfModule>
 
 # ---------- Compression ----------

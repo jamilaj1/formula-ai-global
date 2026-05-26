@@ -10,8 +10,38 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
+  <style>
+    /* Search result cards — mobile-first + bidi-safe (RTL/LTR mixed) */
+    .fx-res { padding: 18px 20px; margin-bottom: 12px; cursor: pointer;
+      transition: border-color .15s ease, transform .15s ease; }
+    .fx-res:hover { border-color: var(--border-primary); transform: translateY(-2px); }
+    .fx-res-top { display: flex; flex-wrap: wrap; align-items: center;
+      gap: 8px; margin-bottom: 10px; }
+    .fx-res-tag { background: rgba(0,255,136,0.12); color: var(--primary);
+      padding: 4px 10px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; }
+    .fx-res-tag.muted { background: var(--bg-glass); color: var(--text-3); font-weight: 600; }
+    .fx-res-trust { margin-inline-start: auto; color: var(--primary);
+      font-weight: 800; font-size: 0.82rem; }
+    .fx-res-title { margin: 0 0 6px; font-size: 1.1rem; line-height: 1.4;
+      text-align: start; }
+    .fx-res-meta { color: var(--text-3); font-size: 0.82rem; margin-bottom: 10px; }
+    .fx-res-ings { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+    .fx-res-ing { direction: ltr; unicode-bidi: isolate;
+      display: inline-flex; align-items: baseline; gap: 6px;
+      background: var(--bg-glass); border: 1px solid var(--border);
+      border-radius: 8px; padding: 4px 10px; font-size: 0.82rem;
+      color: var(--text-2); max-width: 100%; }
+    .fx-res-ing .p { color: var(--primary); font-weight: 700; font-size: 0.78rem; }
+    @media (max-width: 600px) {
+      .fx-res { padding: 14px; }
+      .fx-res-title { font-size: 1rem; }
+      .fx-res-ing { font-size: 0.78rem; }
+      .fx-res-ings { gap: 6px; }
+    }
+  </style>
 </head>
 <body>
   <nav class="navbar">
@@ -26,6 +56,7 @@
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
         <li><a href="./search.html" class="active" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
@@ -57,6 +88,7 @@
     </div>
   </nav>
 
+  <main>
   <section style="padding: 130px 0 40px; position: relative;">
     <div class="hero-bg">
       <div class="hero-orb green" style="top: 0; opacity: 0.4;"></div>
@@ -158,6 +190,8 @@
   </section>
 
   <!-- Footer -->
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-grid">
@@ -179,9 +213,10 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
-  <script type="module" src="./assets/auth.js"></script>
-  <script type="module" src="./assets/supabase-client.js"></script>
-  <script src="./assets/search-live.js"></script>
+  <script src="./assets/app.js?v=22"></script>
+  <script type="module" src="./assets/auth.js?v=22"></script>
+  <script type="module" src="./assets/supabase-client.js?v=22"></script>
+  <script src="./assets/search-live.js?v=22"></script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

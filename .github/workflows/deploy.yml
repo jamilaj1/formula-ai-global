@@ -1,0 +1,149 @@
+name: Deploy
+
+# Phase 1.4 of BUILD_ROADMAP.md.
+#
+# `git push origin main` is the only command needed for a release:
+#   • The `worker` job rebuilds and `wrangler deploy`s the Cloudflare Worker
+#     (uses CLOUDFLARE_API_TOKEN).
+#   • The `frontend` job runs sync_formula_count.py + build_phase3.py
+#     and FTP-uploads the result to Hostinger (uses FTP_HOST/USER/PASS).
+#
+# Both jobs run in parallel — Worker and frontend are independent.
+# Either can fail without affecting the other (so a Hostinger outage
+# can't block a Worker hotfix and vice versa).
+#
+# Required GitHub repo secrets (Settings → Secrets and variables → Actions):
+#   CLOUDFLARE_API_TOKEN  Cloudflare → My Profile → API Tokens → "Edit Workers" template
+#   FTP_HOST              hpanel.hostinger.com → Files → FTP Accounts → Host
+#   FTP_USER              same screen → Username (often u<digits>)
+#   FTP_PASS              same screen → Password (use a fresh one if unsure)
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:           # also runnable manually from the Actions tab
+
+# Cancel an in-flight deploy when a newer commit lands. Avoids race
+# conditions where two simultaneous deploys leave the site in a mixed
+# state (some files new, some old).
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ───────────────────────── Worker (Cloudflare) ─────────────────────────
+  worker:
+    name: Deploy Cloudflare Worker
+    runs-on: ubuntu-latest
+    # Soft-fail: if the secret is missing we skip the job rather than fail
+    # the whole workflow. This lets the frontend job still ship.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity-check secret
+        id: check_secret
+        run: |
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            echo "⚠️  CLOUDFLARE_API_TOKEN is not set — skipping Worker deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.check_secret.outputs.skip != 'true'
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install deps
+        if: steps.check_secret.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Build worker.js
+        if: steps.check_secret.outputs.skip != 'true'
+        run: npm run build:worker
+
+      - name: Deploy to Cloudflare
+        if: steps.check_secret.outputs.skip != 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: npx wrangler@latest deploy
+
+  # ─────────────────────────── Frontend (Hostinger) ──────────────────────
+  frontend:
+    name: Deploy frontend to Hostinger
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Need the full history so `git rev-list --count HEAD` works in
+          # build_phase3.py — without `fetch-depth: 0` GitHub gives us a
+          # shallow clone with 1 commit and cache-bust always shows "1".
+          fetch-depth: 0
+
+      - name: Sanity-check secrets
+        id: check_secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.FTP_HOST }}" ] && missing="$missing FTP_HOST"
+          [ -z "${{ secrets.FTP_USER }}" ] && missing="$missing FTP_USER"
+          [ -z "${{ secrets.FTP_PASS }}" ] && missing="$missing FTP_PASS"
+          if [ -n "$missing" ]; then
+            echo "⚠️  Missing secrets:$missing — skipping frontend deploy."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.check_secrets.outputs.skip != 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Install Python deps
+        if: steps.check_secrets.outputs.skip != 'true'
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Sync live formula count into HTML
+        if: steps.check_secrets.outputs.skip != 'true'
+        run: python scripts/sync_formula_count.py
+        continue-on-error: true  # a transient Supabase blip mustn't block deploy
+
+      - name: Build frontend (cache-bust + zip)
+        if: steps.check_secrets.outputs.skip != 'true'
+        run: python scripts/build_phase3.py
+
+      - name: Extract zip into a staging directory
+        if: steps.check_secrets.outputs.skip != 'true'
+        # The FTP-deploy action uploads a directory tree, not a zip; we
+        # already have the file list in DEPLOY_PHASE3.zip so we just
+        # unpack it into ./deploy_staging/ and point the action at that.
+        run: |
+          mkdir -p deploy_staging
+          unzip -o DEPLOY_PHASE3.zip -d deploy_staging
+          echo "Files staged:"
+          find deploy_staging -type f | wc -l
+
+      - name: Upload via FTP to Hostinger
+        if: steps.check_secrets.outputs.skip != 'true'
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          local-dir: ./deploy_staging/
+          server-dir: ./public_html/
+          # Don't touch files the deploy bundle never owned —
+          # .htaccess is uploaded manually + maintained separately.
+          # Anything we DELETE on the server we never put there, so the
+          # site can't break from an over-eager prune.
+          dangerous-clean-slate: false
+          exclude: |
+            **/.htaccess
+            **/.git*
+            **/node_modules/**
+            **/.DS_Store

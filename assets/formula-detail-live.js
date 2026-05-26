@@ -1,7 +1,7 @@
 /* ──────────────────────────────────────────────────────────────────────────
    formula-detail-live.js — v2 (full, professional)
    Renders the complete formula detail page when ?id=<uuid> is in the URL.
-     • Hero card: name, category, trust score, source, language toggle
+     • Hero card: name, category, trust score, language toggle
      • Components table: CAS, percentage, function, phase
      • Preparation steps (process_conditions)
      • Safety warnings panel (auto-derived from ingredient hazards)
@@ -112,12 +112,25 @@
     const id = params.get("id");
     if (!id) return; // No id → leave the static demo content untouched
 
-    const { row, error } = await window.FAI_DB.getById(id);
-    if (error || !row) {
-      console.warn("[formula-detail] not found:", error);
-      renderNotFound(error?.message || "Formula not found");
+    const data = await window.FAI_DB.getById(id);
+    if (!data || data.error) {
+      console.warn("[formula-detail] not found:", data && data.error);
+      renderNotFound((data && data.error) || "Formula not found");
       return;
     }
+    const row = data;
+
+    let isPaid = false;
+    try {
+      const profile = await window.FAI_DB.getProfile();
+      isPaid = !!(profile && (
+        profile.subscription_status === "active" ||
+        (profile.plan && profile.plan !== "free") ||
+        profile.subscription_plan_id ||
+        (Number(profile.pro_credits_months || 0)
+          > Number(profile.pro_credits_used || 0))
+      ));
+    } catch (_) { isPaid = false; }
 
     injectPrintStyles();
 
@@ -127,7 +140,7 @@
     const hazards = detectHazards(components);
 
     const componentRows = components.map((c, i) => `
-      <tr>
+      <tr${!isPaid && i >= 3 ? ' class="fai-locked-row"' : ''}>
         <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06); color:var(--text-3); width:32px;">${i + 1}</td>
         <td style="padding:10px 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
           <strong>${escapeHTML(c.name_en || "—")}</strong>
@@ -164,9 +177,19 @@
     const subCat = row.sub_category ? ` · ${escapeHTML(row.sub_category)}` : "";
     const formType = row.form_type ? `<span style="color:var(--text-3); font-size:0.92rem;">${escapeHTML(row.form_type)}</span>` : "";
     const trustScore = row.trust_score ?? 0;
-    const code = row.source_url || row.id?.slice(0, 8);
+    const code = row.id?.slice(0, 8);
+
+    const lockCard = isPaid ? "" : `
+      <div class="card no-print" style="padding:24px 28px; margin-bottom:24px; text-align:center; background:linear-gradient(180deg, rgba(0,255,136,0.10), rgba(0,212,255,0.06)); border:1px solid rgba(0,255,136,0.35);">
+        <div style="font-size:2rem; margin-bottom:6px;">🔒</div>
+        <h3 style="margin:0 0 6px;">${T("Members-only formula", "فورمولا للأعضاء فقط")}</h3>
+        <p style="color:var(--text-2); font-size:0.9rem; margin:0 0 14px;">${T("The remaining ingredients, full procedure and safety analysis are reserved for members.", "بقية المكوّنات وطريقة التحضير الكاملة وتحليل السلامة محجوزة للأعضاء.")}</p>
+        <a href="./pricing.html" class="btn btn-primary">${T("Unlock full formula", "افتح الفورمولا الكاملة")}</a>
+      </div>
+    `;
 
     const html = `
+      <style>tr.fai-locked-row td{filter:blur(5px);user-select:none;pointer-events:none;}</style>
       <section style="padding: 120px 0 60px;">
         <div class="container" style="max-width: 1100px;">
 
@@ -200,11 +223,9 @@
               </div>
             </div>
 
-            ${row.source_title ? `
-              <div style="padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); color:var(--text-3); font-size:0.85rem;">
-                📚 ${T("Source", "المصدر")}: ${escapeHTML(row.source_title)}${row.source_author ? ` · ${escapeHTML(row.source_author)}` : ""}${row.source_year ? ` · ${row.source_year}` : ""}
-              </div>
-            ` : ""}
+            <div style="padding-top:14px; border-top:1px solid rgba(255,255,255,0.06); color:var(--text-3); font-size:0.85rem;">
+              ✓ ${T("Verified", "موثّقة")} · ${T("trust", "ثقة")} ${trustScore}%
+            </div>
           </div>
 
           <!-- Action Bar -->
@@ -248,14 +269,16 @@
             </div>
           </div>
 
-          ${proc ? `
+          ${lockCard}
+
+          ${isPaid && proc ? `
             <div class="card" style="padding:32px; margin-bottom:24px;">
               <h2 style="font-size:1.3rem; margin-bottom:14px;">⚗️ ${T("Preparation", "طريقة التحضير")}</h2>
               <p style="color:var(--text-2); line-height:1.9; white-space:pre-wrap; font-size:0.98rem;">${escapeHTML(proc)}</p>
             </div>
           ` : ""}
 
-          ${hazards.length ? `
+          ${isPaid && hazards.length ? `
             <div class="card" style="padding:32px; margin-bottom:24px;">
               <h2 style="font-size:1.3rem; margin-bottom:6px;">⚠️ ${T("Safety Notes", "ملاحظات السلامة")}</h2>
               <p style="color:var(--text-3); font-size:0.88rem; margin-bottom:18px;">
@@ -265,7 +288,7 @@
             </div>
           ` : ""}
 
-          ${row.properties && Object.keys(row.properties).length ? `
+          ${isPaid && row.properties && Object.keys(row.properties).length ? `
             <div class="card" style="padding:32px; margin-bottom:24px;">
               <h2 style="font-size:1.3rem; margin-bottom:14px;">📊 ${T("Properties", "الخصائص")}</h2>
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">

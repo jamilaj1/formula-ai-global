@@ -3,7 +3,7 @@
      • Renders results with category, ingredient counts, top components
      • Shows daily usage indicator (e.g. "3 / 10 searches today")
      • Handles rate-limit (429) with an upgrade CTA
-     • Click row → /formulas.html?id=…
+     • Click row → /formula.html?id=…  (rich single-formula page)
    Loaded from search.html with: <script src="./assets/search-live.js"></script>
    Depends on FAI_DB (assets/supabase-client.js).
    ────────────────────────────────────────────────────────────────────────── */
@@ -49,25 +49,31 @@
       .replace(/"/g,"&quot;").replace(/'/g,"&#39;");
 
     function renderRow(f) {
-      const compCount = Array.isArray(f.components) ? f.components.length : 0;
-      const top = (Array.isArray(f.components) ? f.components.slice(0, 3) : [])
-        .map(c => `<span style="color:var(--text-2);font-size:0.85rem;">${escape(c.name_en||"")}<span style="color:var(--text-3);"> ${(c.percentage??0).toFixed(1)}%</span></span>`)
-        .join('<span style="color:var(--text-3);margin:0 8px;">·</span>');
+      const comps = Array.isArray(f.components) ? f.components : [];
+      const compCount = comps.length;
+      // Each ingredient is an LTR bidi-isolated chip so the English name +
+      // numeric % never scramble when the page is in Arabic RTL mode.
+      const top = comps.slice(0, 4).map(c => {
+        const n = escape(c.name_en || c.name || "—");
+        const pv = Number(c.percentage);
+        const p = (c.percentage != null && !isNaN(pv))
+          ? `<span class="p">${pv.toFixed(1)}%</span>` : "";
+        return `<span class="fx-res-ing">${n}${p}</span>`;
+      }).join("");
       const cat = escape(f.category || "specialty");
-      const form = f.form_type ? `<span style="color:var(--text-3);font-size:0.78rem;">${escape(f.form_type)}</span>` : "";
-      return `<article class="card" style="padding:22px;margin-bottom:12px;cursor:pointer;" data-id="${escape(f.id)}">
-        <div style="display:flex;justify-content:space-between;gap:16px;align-items:flex-start;">
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
-              <span style="background:rgba(0,255,136,0.12);color:var(--primary);padding:4px 10px;border-radius:999px;font-size:0.78rem;font-weight:600;">🧪 ${cat}</span>
-              ${form}
-            </div>
-            <h3 style="margin:0 0 8px;font-size:1.15rem;line-height:1.4;">${escape(f.name_en||f.name||"—")}</h3>
-            <div style="color:var(--text-3);font-size:0.85rem;margin-bottom:6px;">${compCount} ingredients</div>
-            ${top ? `<div style="margin-top:6px;">${top}</div>` : ""}
-          </div>
-          <div style="text-align:right;flex-shrink:0;color:var(--primary);font-weight:700;font-size:0.85rem;">${f.trust_score||0}%</div>
+      const form = f.form_type
+        ? `<span class="fx-res-tag muted">${escape(f.form_type)}</span>` : "";
+      const trust = (f.trust_score != null)
+        ? `<span class="fx-res-trust">${escape(String(f.trust_score))}%</span>` : "";
+      return `<article class="card fx-res" data-id="${escape(f.id)}">
+        <div class="fx-res-top">
+          <span class="fx-res-tag">🧪 ${cat}</span>
+          ${form}
+          ${trust}
         </div>
+        <h3 class="fx-res-title" dir="auto">${escape(f.name_en || f.name || "—")}</h3>
+        <div class="fx-res-meta">${compCount} ingredients</div>
+        ${top ? `<div class="fx-res-ings">${top}</div>` : ""}
       </article>`;
     }
 
@@ -110,7 +116,7 @@
       renderState("results", header + data.rows.map(renderRow).join(""));
       results.querySelectorAll("[data-id]").forEach(el => {
         el.addEventListener("click", () => {
-          window.location.href = `./formulas.html?id=${encodeURIComponent(el.dataset.id)}`;
+          window.location.href = `./formula.html?id=${encodeURIComponent(el.dataset.id)}`;
         });
       });
       refreshUsageBadge();

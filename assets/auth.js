@@ -13,9 +13,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const SUPABASE_URL  = "https://ivabcssceeaqgqjzgmdx.supabase.co";
-const SUPABASE_ANON = "PASTE_ANON_PUBLIC_KEY_HERE";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml2YWJjc3NjZWVhcWdxanpnbWR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc1NDA5MjQsImV4cCI6MjA5MzExNjkyNH0.B925FvgcZVM4_QSj31Ed-8Fg5XQWUEx0VJMN9GMQfYk";
 
-// Fail loudly if the anon key wasn't filled in before deploy.
+// Safety net (key now hard-coded above). Kept for accidental regressions.
 if (!SUPABASE_ANON || SUPABASE_ANON.startsWith('PASTE_') || SUPABASE_ANON.length < 40) {
   const msg = '[FAI auth] SUPABASE_ANON key is missing or still a placeholder. ' +
     'Fill it in assets/auth.js before deploy.';
@@ -40,6 +40,11 @@ const FAI_AUTH = {
 
   /** Current session (null if guest). */
   session: null,
+
+  /** True after the very first getSession() resolves. Other scripts
+   *  should wait for this before deciding "user is guest" — otherwise
+   *  they race the async module load and treat real users as guests. */
+  initialized: false,
 
   /** Listeners for auth state changes. */
   _listeners: [],
@@ -73,13 +78,25 @@ const FAI_AUTH = {
     return { data, error };
   },
 
-  /** Sign up new user with email + password. */
-  async signUp(email, password, fullName) {
+  /** Sign up new user with email + password.
+   *
+   *  `extras` may carry optional onboarding fields that the
+   *  handle_new_user_v2() trigger reads off raw_user_meta_data:
+   *    • education_field — e.g. "chemistry", "chemical-engineering"
+   *    • profession      — e.g. "factory-owner", "lab-supervisor"
+   *  Both default to null/empty and are safe to omit. */
+  async signUp(email, password, fullName, extras = {}) {
+    const meta = { full_name: fullName || email.split("@")[0] };
+    if (extras && typeof extras === "object") {
+      if (extras.education_field) meta.education_field = String(extras.education_field);
+      if (extras.profession)      meta.profession      = String(extras.profession);
+      if (extras.lang)            meta.lang            = String(extras.lang);
+    }
     const { data, error } = await sb.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName || email.split("@")[0] },
+        data: meta,
         emailRedirectTo: `${window.location.origin}/dashboard.html`,
       },
     });
@@ -122,6 +139,7 @@ const FAI_AUTH = {
   const { data: { session } } = await sb.auth.getSession();
   FAI_AUTH.session = session;
   FAI_AUTH.user    = session?.user || null;
+  FAI_AUTH.initialized = true;
   FAI_AUTH._notify();
   installNavbarUI();
 

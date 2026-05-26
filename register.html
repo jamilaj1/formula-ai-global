@@ -10,8 +10,9 @@
   <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=22" />
 </head>
 <body>
   <nav class="navbar">
@@ -23,6 +24,7 @@
       <ul class="nav-links">
         <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
         <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
         <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
         <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
         <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
@@ -51,6 +53,7 @@
     </div>
   </nav>
 
+  <main>
   <section style="padding: 130px 0 60px; min-height: 80vh; display: flex; align-items: center;">
     <div class="hero-bg">
       <div class="hero-orb green" style="top: 10%; opacity: 0.4;"></div>
@@ -88,6 +91,53 @@
             <label class="form-label" data-i18n-ar="كلمة المرور (6 أحرف على الأقل)">Password (min 6 chars)</label>
             <input id="password" type="password" class="form-input" required minlength="6" />
           </div>
+
+          <!-- Onboarding: education + profession ─────────────────────
+               Optional but helps us recommend the right tools and
+               recognise contributors. Saved on first signup. -->
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" data-i18n-ar="التعليم / التخصّص (اختياري)">Education / field of study (optional)</label>
+            <select id="education-field" class="form-input" dir="auto">
+              <option value="" data-i18n-ar="— اختر —">— Select —</option>
+              <option value="chemistry"               data-i18n-ar="كيمياء">Chemistry</option>
+              <option value="chemical-engineering"    data-i18n-ar="هندسة كيميائية">Chemical engineering</option>
+              <option value="manufacturing-engineering" data-i18n-ar="هندسة تصنيع / صناعية">Manufacturing / industrial engineering</option>
+              <option value="pharmacy"                data-i18n-ar="صيدلة">Pharmacy</option>
+              <option value="biochemistry"            data-i18n-ar="كيمياء حيوية">Biochemistry</option>
+              <option value="environmental-science"   data-i18n-ar="علوم بيئية">Environmental science</option>
+              <option value="food-technology"         data-i18n-ar="تكنولوجيا أغذية">Food technology</option>
+              <option value="materials-engineering"   data-i18n-ar="هندسة مواد">Materials engineering</option>
+              <option value="petroleum-engineering"   data-i18n-ar="هندسة بترول">Petroleum engineering</option>
+              <option value="cosmetic-science"        data-i18n-ar="علوم تجميل">Cosmetic science</option>
+              <option value="textile-science"         data-i18n-ar="علوم نسيج">Textile science</option>
+              <option value="sciences-general"        data-i18n-ar="علوم عامة">Sciences (general)</option>
+              <option value="medicine"                data-i18n-ar="طب">Medicine</option>
+              <option value="other"                   data-i18n-ar="أخرى">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label" data-i18n-ar="المهنة (اختياري)">Profession (optional)</label>
+            <select id="profession" class="form-input" dir="auto">
+              <option value="" data-i18n-ar="— اختر —">— Select —</option>
+              <option value="factory-owner"         data-i18n-ar="صاحب معمل / مالك">Factory owner</option>
+              <option value="production-manager"    data-i18n-ar="مدير إنتاج">Production manager</option>
+              <option value="lab-supervisor"        data-i18n-ar="مسؤول مخبر">Lab supervisor</option>
+              <option value="lab-technician"        data-i18n-ar="فنّي مخبر">Lab technician</option>
+              <option value="qc-manager"            data-i18n-ar="مدير جودة (QC)">Quality control manager</option>
+              <option value="rd-chemist"            data-i18n-ar="كيميائي بحث وتطوير">R&amp;D chemist</option>
+              <option value="researcher"            data-i18n-ar="باحث">Researcher</option>
+              <option value="consultant"            data-i18n-ar="استشاري">Consultant</option>
+              <option value="professor"             data-i18n-ar="أستاذ / مدرّس">Professor / teacher</option>
+              <option value="student"               data-i18n-ar="طالب">Student</option>
+              <option value="sales-manager"         data-i18n-ar="مدير مبيعات">Sales manager</option>
+              <option value="general-manager"       data-i18n-ar="مدير عام">General manager</option>
+              <option value="maintenance-engineer"  data-i18n-ar="مهندس صيانة">Maintenance engineer</option>
+              <option value="freelance"             data-i18n-ar="مستقل / فريلانس">Freelance</option>
+              <option value="other"                 data-i18n-ar="أخرى">Other</option>
+            </select>
+          </div>
+
           <label style="display: flex; gap: 8px; align-items: flex-start; font-size: 0.85rem; color: var(--text-3); margin-bottom: 18px;">
             <input id="terms" type="checkbox" required style="margin-top: 3px;" />
             <span>
@@ -110,6 +160,8 @@
     </div>
   </section>
 
+  
+  </main>
   <footer class="footer">
     <div class="container">
       <div class="footer-bottom">
@@ -118,9 +170,9 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=3"></script>
+  <script src="./assets/app.js?v=22"></script>
   <script type="module">
-    import "./assets/auth.js";
+    import "./assets/auth.js?v=22";
 
     function whenReady(fn) {
       if (window.FAI_AUTH) return fn();
@@ -139,6 +191,22 @@
         await window.FAI_AUTH.signInWithGoogle();
       });
 
+      // If the visitor clicks "Sign up with Google" we still want to
+      // carry the (optional) onboarding answers across the OAuth round
+      // trip — they'll be applied by dashboard.html once the user is
+      // authenticated.
+      function stashOnboarding() {
+        const edu  = document.getElementById("education-field").value;
+        const prof = document.getElementById("profession").value;
+        if (edu || prof) {
+          try {
+            localStorage.setItem("fai_pending_onboarding",
+              JSON.stringify({ education_field: edu || null, profession: prof || null }));
+          } catch (_) { /* ignore quota errors */ }
+        }
+      }
+      document.getElementById("google-signup").addEventListener("click", stashOnboarding, { capture: true });
+
       form.addEventListener("submit", async e => {
         e.preventDefault();
         msg.textContent = "";
@@ -146,7 +214,15 @@
         const fullName = document.getElementById("full-name").value.trim();
         const email    = document.getElementById("email").value.trim();
         const password = document.getElementById("password").value;
-        const { data, error } = await window.FAI_AUTH.signUp(email, password, fullName);
+        const edu      = document.getElementById("education-field").value;
+        const prof     = document.getElementById("profession").value;
+        stashOnboarding();
+        const userLang = localStorage.getItem("fai_lang") || "en";
+        const { data, error } = await window.FAI_AUTH.signUp(email, password, fullName, {
+          education_field: edu || null,
+          profession:      prof || null,
+          lang:            userLang,
+        });
         if (error) {
           msg.style.color = "#f87171";
           msg.textContent = error.message || "Sign-up failed";
@@ -161,5 +237,6 @@
       });
     });
   </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
 </html>

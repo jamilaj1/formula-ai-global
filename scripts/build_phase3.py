@@ -1,36 +1,125 @@
 """Phase 3 deploy builder.
-1. Bump every ?v=8 -> ?v=9 in all root *.html (cache-bust; supabase-client.js
-   and chem-client.js are site-wide deps that changed).
-2. Build DEPLOY_PHASE3.zip with forward-slash entries only.
+
+1. Cache-bust: bump every `?v=<N>` in all root `*.html` and `industries/*.html`
+   to a fresh number so browsers + Cloudflare drop stale copies. The new
+   number is the current git commit count (monotonically increasing,
+   reproducible per push), falling back to "current + 1" if git is
+   unavailable (e.g. running locally outside a clone).
+2. Build `DEPLOY_PHASE3.zip` with forward-slash-only entries.
+
+Why auto-increment (Phase 1.4)
+------------------------------
+The earlier hard-coded `OLD_ROOT = "?v=20"` / `NEW_ROOT = "?v=21"` required
+manual edits before every release — easy to forget, which then leaves
+users stuck on stale cached JS. Tying NEW to `git rev-list --count HEAD`
+means every push to main produces a guaranteed-fresh version with zero
+human action.
 """
 import glob
 import os
+import re
+import subprocess
+import sys
 import zipfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# --- 1. cache-bust ---
-bumped = 0
-for path in glob.glob(os.path.join(ROOT, "*.html")):
-    with open(path, "r", encoding="utf-8") as f:
-        src = f.read()
-    if "?v=8" in src:
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(src.replace("?v=8", "?v=9"))
-        bumped += 1
-print(f"cache-bust: {bumped} html files bumped ?v=8 -> ?v=9")
+# ── 1. Determine OLD and NEW version ────────────────────────────────
 
-# --- 2. build zip ---
+VERSION_RE = re.compile(r"\?v=(\d+)")
+
+
+def detect_current_version():
+    """Find the highest `?v=<N>` currently in any root HTML file.
+
+    Scanning every file (not just index.html) protects us when some pages
+    were bumped in a previous run but others were skipped due to an edit
+    conflict. We bump from the MAX so we never accidentally regress.
+    """
+    seen = []
+    for path in glob.glob(os.path.join(ROOT, "*.html")):
+        with open(path, "r", encoding="utf-8") as f:
+            for m in VERSION_RE.finditer(f.read()):
+                seen.append(int(m.group(1)))
+    return max(seen) if seen else 0
+
+
+def git_commit_count():
+    """Return `git rev-list --count HEAD` as int, or None if git absent/failed.
+
+    Used as the canonical NEW version inside a checked-out repo (CI or
+    a developer machine). We deliberately do NOT use the short hash —
+    string `?v=abc1234` works but loses ordering, which makes log
+    correlation harder when debugging cache issues.
+    """
+    try:
+        out = subprocess.check_output(
+            ["git", "rev-list", "--count", "HEAD"],
+            cwd=ROOT,
+            stderr=subprocess.DEVNULL,
+            timeout=5,
+        )
+        return int(out.decode().strip())
+    except (subprocess.CalledProcessError, FileNotFoundError,
+            subprocess.TimeoutExpired, ValueError):
+        return None
+
+
+current_version = detect_current_version()
+git_count = git_commit_count()
+
+if git_count is not None and git_count > current_version:
+    new_version = git_count
+    reason = f"git commit count = {git_count}"
+elif git_count is not None and git_count <= current_version:
+    # Git is available but we've bumped past it (e.g. multiple builds per
+    # commit during local dev). Stay monotonic: take MAX(git, current+1).
+    new_version = current_version + 1
+    reason = f"current ({current_version}) >= git ({git_count}); bumping +1"
+else:
+    new_version = current_version + 1
+    reason = f"git unavailable; bumping current ({current_version}) +1"
+
+OLD_PATTERN = re.compile(r"\?v=\d+")
+NEW_TAG = f"?v={new_version}"
+
+print(f"cache-bust: current={current_version}, new={new_version}  ({reason})")
+
+# ── 2. Apply cache-bust to root + industries ───────────────────────
+
+def bump_dir(directory, label):
+    """Replace every `?v=<N>` in *.html under `directory` with NEW_TAG."""
+    if not os.path.isdir(directory):
+        return 0
+    bumped = 0
+    for path in sorted(glob.glob(os.path.join(directory, "*.html"))):
+        with open(path, "r", encoding="utf-8") as f:
+            src = f.read()
+        new_src = OLD_PATTERN.sub(NEW_TAG, src)
+        if new_src != src:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(new_src)
+            bumped += 1
+    print(f"cache-bust ({label}): {bumped} html files updated to {NEW_TAG}")
+    return bumped
+
+
+bump_dir(ROOT, "root")
+bump_dir(os.path.join(ROOT, "industries"), "industries")
+
+# ── 3. Build zip ────────────────────────────────────────────────────
+
 ASSETS = [
     "assets/styles.css",
     "assets/app.js",
-    "assets/auth.js",                 # auth module — loaded by every page
+    "assets/auth.js",
     "assets/supabase-client.js",
     "assets/search-live.js",
     "assets/chem-client.js",
-    "assets/formula-detail-live.js",  # changed in Phase 3, loaded by formulas.html
-    "assets/chat-live.js",            # markdown renderer upgrade (chat.html)
+    "assets/formula-detail-live.js",
+    "assets/chat-live.js",
 ]
+
 zip_path = os.path.join(ROOT, "DEPLOY_PHASE3.zip")
 entries = []
 with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
@@ -62,3 +151,8 @@ print(f"entries: {len(entries)}  backslash entries: {len(backslash)}")
 print(f"size: {os.path.getsize(zip_path)} bytes")
 assert not backslash, "FAIL: backslash entries present"
 print("OK: 0 backslash entries")
+
+# Expose the new version on stdout so the CI workflow can pick it up
+# (e.g. for tagging the release or naming the deploy artifact).
+print(f"::cache-bust-version::{new_version}")
+sys.exit(0)
