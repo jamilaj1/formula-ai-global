@@ -67,17 +67,16 @@ jobs:
 
       - name: Deploy to Cloudflare
         if: steps.check_secret.outputs.skip != 'true'
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          # CLOUDFLARE_ACCOUNT_ID lets wrangler skip its "pick an account"
-          # prompt when the token has access to multiple accounts. We have
-          # only one, but setting this explicitly avoids any future ambiguity.
-          CLOUDFLARE_ACCOUNT_ID: bb2863bb7e4de6f2d44fc5ea7dbef5cc
-        # `--keep-vars` tells wrangler "trust the remote vars; don't replace
-        # them with whatever's in wrangler.toml unless I changed the file"
-        # — this avoids interactive "Deploy anyway? (y/n)" prompts that
-        # block in CI even when there's no real difference.
-        run: npx wrangler@latest deploy --keep-vars
+        # Use Cloudflare's official wrangler-action instead of `npx wrangler`
+        # directly. The action sets every env var wrangler 4.x expects in
+        # CI (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID, CI=true) and
+        # passes --keep-vars implicitly so the "remote configuration
+        # differs / Deploy anyway?" prompt can't deadlock the runner.
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: bb2863bb7e4de6f2d44fc5ea7dbef5cc
+          command: deploy --keep-vars
 
   # ─────────────────────────── Frontend (Hostinger) ──────────────────────
   frontend:
