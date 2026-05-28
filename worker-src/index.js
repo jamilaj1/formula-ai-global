@@ -94,6 +94,11 @@ import {
   handleConsultingDraft,
   handleConsultingPay,
 } from './handlers/consulting.js';
+import {
+  handleEnterpriseLead,
+  handleEnterpriseList,
+  handleEnterpriseLeadUpdate,
+} from './handlers/enterprise.js';
 import { withObservability } from './observability.js';
 
 const SERVICE_VERSION = 'Formula AI Brain v8';
@@ -276,6 +281,14 @@ async function handleRequest(request, env, ctx) {
         return await handleConsultingDraft(request, auth, env);
       if (path === '/be/consulting/pay' && request.method === 'POST')
         return await handleConsultingPay(request, auth, env);
+
+      // Enterprise B2B (Phase 3). Public lead intake + owner-only admin.
+      if (path === '/be/enterprise/lead' && request.method === 'POST')
+        return await handleEnterpriseLead(request, auth, env);
+      if (path === '/be/enterprise/list' && request.method === 'GET')
+        return await handleEnterpriseList(auth, env);
+      if (path.startsWith('/be/enterprise/lead/') && request.method === 'PATCH')
+        return await handleEnterpriseLeadUpdate(request, auth, env, path.slice('/be/enterprise/lead/'.length));
 
       // Payments (Paystack primary, Stripe legacy)
       if (path === '/paystack/checkout' && request.method === 'POST')
