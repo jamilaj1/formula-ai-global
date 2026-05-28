@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Calculators — Chemistry workbench | Formula AI Global</title>
+  <meta name="description" content="Daily-use chemistry calculators: batch cost, lab-to-production scale-up, surfactant blend (HLB), pH correction, SDS auto-generation." />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=36" />
+  <link rel="canonical" href="https://jamilformula.com/calculators.html" />
+  <style>
+    .calc-tabs { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+    .calc-tab { background: transparent; border: none; padding: 10px 18px; color: var(--text-3); font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .calc-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .calc-pane { display: none; }
+    .calc-pane.active { display: block; }
+    .calc-row { display: grid; grid-template-columns: 200px 1fr 80px; gap: 10px; margin-bottom: 8px; align-items: center; }
+    .calc-row label { font-size: 0.92rem; color: var(--text-2); }
+    .calc-row input, .calc-row select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); font-family: inherit; width: 100%; }
+    .calc-row span { color: var(--text-3); font-size: 0.85rem; }
+    .calc-result { padding: 18px; background: rgba(0,255,136,0.06); border: 1px solid rgba(0,255,136,0.3); border-radius: 12px; margin-top: 16px; font-size: 0.95rem; line-height: 1.7; }
+    .calc-result strong { color: var(--primary); }
+    .calc-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.88rem; }
+    .calc-table th, .calc-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: start; }
+    .calc-table th { color: var(--text-3); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    .calc-table input { padding: 5px 8px; }
+    .calc-add-btn, .calc-del-btn { padding: 6px 10px; font-size: 0.82rem; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./workspace.html" data-i18n-ar="مساحتي">Workspace</a></li>
+        <li><a href="./calculators.html" class="active" data-i18n-ar="الحاسبات">Calculators</a></li>
+        <li><a href="./consulting.html" data-i18n-ar="الاستشارات">Consulting</a></li>
+        <li><a href="./enterprise.html" data-i18n-ar="المؤسسات">Enterprise</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./login.html" class="btn btn-ghost" data-i18n-ar="دخول">Sign in</a>
+        <a href="./register.html" class="btn btn-primary" data-i18n-ar="ابدأ مجاناً">Get Started Free</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+  <section style="padding: 110px 0 60px;">
+    <div class="container">
+      <div style="margin-bottom: 28px;">
+        <span class="eyebrow" data-i18n-ar="حاسبات يومية">Daily tools</span>
+        <h1 style="font-size: 2rem; margin: 8px 0;" data-i18n-ar='حاسبات <span class="gradient-text">الكيمياء الصناعية</span>'>Industrial chemistry <span class="gradient-text">calculators</span></h1>
+        <p style="color: var(--text-2); margin: 0; max-width: 720px;" data-i18n-ar="خمس أدوات تستخدمها يومياً في المعمل والإنتاج: التكلفة، التوسيع، خلطات المُسطّحات، تصحيح pH، توليد بطاقة السلامة. كل شيء بالمتصفّح — لا تخزين، لا مشاركة.">
+          Five tools you use every day in the lab and in production: batch cost, lab-to-production scale-up, surfactant blends (HLB), pH correction, and an SDS draft generator. All client-side — no data leaves your browser unless you choose to save.
+        </p>
+      </div>
+
+      <div class="card" style="padding: 24px;">
+        <div class="calc-tabs" role="tablist">
+          <button class="calc-tab active" data-tab="cost"      role="tab">💰 Batch cost</button>
+          <button class="calc-tab"        data-tab="scale"     role="tab">📐 Scale-up</button>
+          <button class="calc-tab"        data-tab="surfactant" role="tab">🧴 Surfactant HLB</button>
+          <button class="calc-tab"        data-tab="ph"        role="tab">🧪 pH correction</button>
+          <button class="calc-tab"        data-tab="sds"       role="tab">📄 SDS generator</button>
+        </div>
+
+        <!-- ────── 1. Batch cost calculator ────── -->
+        <div class="calc-pane active" data-pane="cost">
+          <h2 style="margin: 0 0 4px; font-size: 1.15rem;">Batch cost calculator</h2>
+          <p style="color: var(--text-3); margin: 0 0 14px; font-size: 0.88rem;">
+            Enter ingredients with their percentage in the formula and price per kg. Pick a batch size and we'll compute total cost + cost per kg of finished product.
+          </p>
+
+          <div class="calc-row">
+            <label>Batch size</label>
+            <input id="cost-batch" type="number" value="100" min="0.1" step="any" />
+            <span>kg</span>
+          </div>
+          <div class="calc-row">
+            <label>Overhead (labour + utilities + waste)</label>
+            <input id="cost-overhead" type="number" value="10" min="0" step="any" />
+            <span>%</span>
+          </div>
+
+          <table class="calc-table" id="cost-table">
+            <thead>
+              <tr><th>Ingredient</th><th style="width:90px;">%</th><th style="width:120px;">$/kg</th><th style="width:60px;"></th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input placeholder="e.g. SLES 70%"></td><td><input type="number" value="15" min="0" step="any"></td><td><input type="number" value="2.5" min="0" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+              <tr><td><input placeholder="e.g. Glycerin"></td><td><input type="number" value="5" min="0" step="any"></td><td><input type="number" value="1.2" min="0" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+              <tr><td><input placeholder="e.g. Water"></td><td><input type="number" value="80" min="0" step="any"></td><td><input type="number" value="0.005" min="0" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+            </tbody>
+          </table>
+          <button id="cost-add" class="btn btn-ghost calc-add-btn" style="margin-top:8px;">+ Add ingredient</button>
+          <button id="cost-calc" class="btn btn-primary" style="margin-top:14px;">Calculate</button>
+          <div id="cost-result" class="calc-result" style="display:none;"></div>
+        </div>
+
+        <!-- ────── 2. Scale-up calculator ────── -->
+        <div class="calc-pane" data-pane="scale">
+          <h2 style="margin: 0 0 4px; font-size: 1.15rem;">Lab-to-production scale-up</h2>
+          <p style="color: var(--text-3); margin: 0 0 14px; font-size: 0.88rem;">
+            Multiply a lab-scale recipe to any target batch size, with optional safety margin for evaporation / clean-up losses.
+          </p>
+
+          <div class="calc-row">
+            <label>Lab batch size</label>
+            <input id="scale-lab" type="number" value="0.5" min="0.001" step="any" />
+            <span>kg</span>
+          </div>
+          <div class="calc-row">
+            <label>Target batch size</label>
+            <input id="scale-target" type="number" value="500" min="0.001" step="any" />
+            <span>kg</span>
+          </div>
+          <div class="calc-row">
+            <label>Safety margin (waste + cleanup)</label>
+            <input id="scale-margin" type="number" value="3" min="0" step="any" />
+            <span>%</span>
+          </div>
+
+          <table class="calc-table" id="scale-table">
+            <thead>
+              <tr><th>Ingredient</th><th style="width:120px;">Lab amount</th><th style="width:80px;">Unit</th><th style="width:60px;"></th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input placeholder="e.g. SLES"></td><td><input type="number" value="75" min="0" step="any"></td><td><select><option>g</option><option>kg</option><option>mL</option><option>L</option></select></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+              <tr><td><input placeholder="e.g. Water"></td><td><input type="number" value="400" min="0" step="any"></td><td><select><option>g</option><option>kg</option><option selected>mL</option><option>L</option></select></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+            </tbody>
+          </table>
+          <button id="scale-add" class="btn btn-ghost calc-add-btn" style="margin-top:8px;">+ Add ingredient</button>
+          <button id="scale-calc" class="btn btn-primary" style="margin-top:14px;">Scale up</button>
+          <div id="scale-result" class="calc-result" style="display:none;"></div>
+        </div>
+
+        <!-- ────── 3. Surfactant blend (HLB) ────── -->
+        <div class="calc-pane" data-pane="surfactant">
+          <h2 style="margin: 0 0 4px; font-size: 1.15rem;">Surfactant blend (Required HLB)</h2>
+          <p style="color: var(--text-3); margin: 0 0 14px; font-size: 0.88rem;">
+            Enter the surfactants and percentages of your blend with their individual HLB. We'll compute the weighted-average HLB and tell you the closest match for common applications (O/W emulsion, W/O emulsion, solubiliser, detergent).
+          </p>
+
+          <table class="calc-table" id="hlb-table">
+            <thead>
+              <tr><th>Surfactant</th><th style="width:90px;">% of blend</th><th style="width:90px;">HLB</th><th style="width:60px;"></th></tr>
+            </thead>
+            <tbody>
+              <tr><td><input value="Tween 80"></td><td><input type="number" value="60" min="0" step="any"></td><td><input type="number" value="15.0" min="0" max="40" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+              <tr><td><input value="Span 80"></td><td><input type="number" value="40" min="0" step="any"></td><td><input type="number" value="4.3" min="0" max="40" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td></tr>
+            </tbody>
+          </table>
+          <button id="hlb-add" class="btn btn-ghost calc-add-btn" style="margin-top:8px;">+ Add surfactant</button>
+          <button id="hlb-calc" class="btn btn-primary" style="margin-top:14px;">Compute blend HLB</button>
+          <div id="hlb-result" class="calc-result" style="display:none;"></div>
+        </div>
+
+        <!-- ────── 4. pH correction ────── -->
+        <div class="calc-pane" data-pane="ph">
+          <h2 style="margin: 0 0 4px; font-size: 1.15rem;">pH correction</h2>
+          <p style="color: var(--text-3); margin: 0 0 14px; font-size: 0.88rem;">
+            Estimate how much acid or base to add to bring a batch from a measured pH to a target pH. This is a first-order approximation — always titrate slowly and re-measure before production.
+          </p>
+
+          <div class="calc-row">
+            <label>Batch volume</label>
+            <input id="ph-volume" type="number" value="100" min="0.001" step="any" />
+            <span>L</span>
+          </div>
+          <div class="calc-row">
+            <label>Measured pH</label>
+            <input id="ph-current" type="number" value="5.2" min="0" max="14" step="0.01" />
+            <span>—</span>
+          </div>
+          <div class="calc-row">
+            <label>Target pH</label>
+            <input id="ph-target" type="number" value="6.5" min="0" max="14" step="0.01" />
+            <span>—</span>
+          </div>
+          <div class="calc-row">
+            <label>Buffer strength (typical: 0.01 = soft, 0.1 = strong)</label>
+            <input id="ph-buffer" type="number" value="0.05" min="0.001" step="any" />
+            <span>mol/L</span>
+          </div>
+          <div class="calc-row">
+            <label>Corrector</label>
+            <select id="ph-corrector">
+              <optgroup label="Bases (raise pH)">
+                <option value="naoh" data-mw="40" data-protons="1" data-strong="1">NaOH (sodium hydroxide)</option>
+                <option value="koh"  data-mw="56" data-protons="1" data-strong="1">KOH (potassium hydroxide)</option>
+                <option value="tea"  data-mw="149" data-protons="1" data-strong="0">Triethanolamine (TEA)</option>
+              </optgroup>
+              <optgroup label="Acids (lower pH)">
+                <option value="hcl"     data-mw="36.5" data-protons="1" data-strong="1">HCl (37%)</option>
+                <option value="citric"  data-mw="192"  data-protons="1" data-strong="0">Citric acid</option>
+                <option value="lactic"  data-mw="90"   data-protons="1" data-strong="0">Lactic acid</option>
+              </optgroup>
+            </select>
+            <span></span>
+          </div>
+          <button id="ph-calc" class="btn btn-primary" style="margin-top:14px;">Estimate dose</button>
+          <div id="ph-result" class="calc-result" style="display:none;"></div>
+        </div>
+
+        <!-- ────── 5. SDS generator ────── -->
+        <div class="calc-pane" data-pane="sds">
+          <h2 style="margin: 0 0 4px; font-size: 1.15rem;">SDS draft generator</h2>
+          <p style="color: var(--text-3); margin: 0 0 14px; font-size: 0.88rem;">
+            Generate a GHS-style Safety Data Sheet first draft (16 sections) for one of your saved formulas. The draft is for review only — always validate against your local regulator before shipping.
+          </p>
+          <div style="padding: 24px; background: var(--bg-glass); border-radius: 12px; text-align: center; color: var(--text-3);">
+            <div style="font-size: 2rem; margin-bottom: 12px;">🚧</div>
+            <strong>Coming soon.</strong><br>
+            SDS generation requires your formula's full ingredient list with CAS numbers + GHS classification per ingredient. We're connecting this to the chemistry agents now. For an immediate signed SDS, use the
+            <a href="./consulting.html" style="color: var(--secondary);">Quick Diagnostic consulting package</a> ($1,000) — turnaround 48 hours.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom" style="padding-top: 22px;">
+        <div data-i18n-ar="© <span data-year>2026</span> Formula AI Global">© <span data-year>2026</span> Formula AI Global</div>
+        <div style="display:flex; gap:18px;"><a href="./privacy.html" data-i18n-ar="الخصوصية">Privacy</a><a href="./terms.html" data-i18n-ar="الشروط">Terms</a></div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="./assets/app.js?v=36"></script>
+  <script>
+    (function () {
+      // ─── Tab switching ───────────────────────────────────────────
+      document.querySelectorAll('.calc-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.calc-tab').forEach(b => b.classList.toggle('active', b === btn));
+          document.querySelectorAll('.calc-pane').forEach(p =>
+            p.classList.toggle('active', p.dataset.pane === btn.dataset.tab));
+        });
+      });
+
+      // Add/delete row helpers (shared across all tables).
+      function wireTable(tableId, rowTemplate, addBtnId) {
+        const tbody = document.querySelector(`#${tableId} tbody`);
+        tbody.addEventListener('click', (e) => {
+          if (e.target.classList.contains('calc-del-btn')) {
+            const tr = e.target.closest('tr');
+            if (tbody.children.length > 1) tr.remove();
+          }
+        });
+        const addBtn = document.getElementById(addBtnId);
+        if (addBtn) addBtn.addEventListener('click', () => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = rowTemplate;
+          tbody.appendChild(tr);
+        });
+      }
+      wireTable('cost-table',
+        '<td><input></td><td><input type="number" value="0" min="0" step="any"></td><td><input type="number" value="0" min="0" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td>',
+        'cost-add');
+      wireTable('scale-table',
+        '<td><input></td><td><input type="number" value="0" min="0" step="any"></td><td><select><option>g</option><option>kg</option><option>mL</option><option>L</option></select></td><td><button class="btn btn-ghost calc-del-btn">×</button></td>',
+        'scale-add');
+      wireTable('hlb-table',
+        '<td><input></td><td><input type="number" value="0" min="0" step="any"></td><td><input type="number" value="10" min="0" max="40" step="any"></td><td><button class="btn btn-ghost calc-del-btn">×</button></td>',
+        'hlb-add');
+
+      // ─── 1. Cost ─────────────────────────────────────────────────
+      document.getElementById('cost-calc').addEventListener('click', () => {
+        const batch = Number(document.getElementById('cost-batch').value) || 0;
+        const overhead = Number(document.getElementById('cost-overhead').value) || 0;
+        const rows = document.querySelectorAll('#cost-table tbody tr');
+        let totalPct = 0, ingredientCost = 0;
+        const lines = [];
+        rows.forEach(tr => {
+          const name = tr.querySelector('td:nth-child(1) input').value.trim() || '(unnamed)';
+          const pct = Number(tr.querySelector('td:nth-child(2) input').value) || 0;
+          const ppk = Number(tr.querySelector('td:nth-child(3) input').value) || 0;
+          totalPct += pct;
+          const mass = batch * (pct / 100);
+          const lineCost = mass * ppk;
+          ingredientCost += lineCost;
+          lines.push(`<tr><td>${name}</td><td>${pct.toFixed(2)}%</td><td>${mass.toFixed(3)} kg</td><td>$${lineCost.toFixed(2)}</td></tr>`);
+        });
+        const overheadCost = ingredientCost * (overhead / 100);
+        const total = ingredientCost + overheadCost;
+        const costPerKg = batch > 0 ? total / batch : 0;
+        const html = `
+          <div>Ingredient cost: <strong>$${ingredientCost.toFixed(2)}</strong></div>
+          <div>Overhead (${overhead}%): <strong>$${overheadCost.toFixed(2)}</strong></div>
+          <div style="font-size:1.15rem; margin-top:8px;">Total batch cost: <strong>$${total.toFixed(2)}</strong></div>
+          <div>Cost per kg of finished product: <strong>$${costPerKg.toFixed(4)}</strong></div>
+          ${totalPct < 99 || totalPct > 101 ? `<div style="color:#ffc850; margin-top:8px;">⚠ Ingredient percentages total ${totalPct.toFixed(2)}% — should be ~100%.</div>` : ''}
+          <table class="calc-table" style="margin-top:12px;"><thead><tr><th>Ingredient</th><th>%</th><th>Mass</th><th>Cost</th></tr></thead><tbody>${lines.join('')}</tbody></table>
+        `;
+        const el = document.getElementById('cost-result');
+        el.innerHTML = html;
+        el.style.display = 'block';
+      });
+
+      // ─── 2. Scale ────────────────────────────────────────────────
+      document.getElementById('scale-calc').addEventListener('click', () => {
+        const lab = Number(document.getElementById('scale-lab').value) || 0;
+        const target = Number(document.getElementById('scale-target').value) || 0;
+        const margin = Number(document.getElementById('scale-margin').value) || 0;
+        if (lab <= 0 || target <= 0) {
+          document.getElementById('scale-result').innerHTML = '<span style="color:#ff7070;">Lab and target sizes must be greater than zero.</span>';
+          document.getElementById('scale-result').style.display = 'block';
+          return;
+        }
+        const factor = (target / lab) * (1 + margin / 100);
+        const rows = document.querySelectorAll('#scale-table tbody tr');
+        const lines = [];
+        rows.forEach(tr => {
+          const name = tr.querySelector('td:nth-child(1) input').value.trim() || '(unnamed)';
+          const amt = Number(tr.querySelector('td:nth-child(2) input').value) || 0;
+          const unit = tr.querySelector('td:nth-child(3) select').value;
+          const scaled = amt * factor;
+          lines.push(`<tr><td>${name}</td><td>${amt.toLocaleString()} ${unit}</td><td><strong>${scaled.toLocaleString(undefined,{maximumFractionDigits:2})} ${unit}</strong></td></tr>`);
+        });
+        const html = `
+          <div>Scale factor: <strong>${factor.toFixed(2)}×</strong> (${(target/lab).toFixed(2)}× + ${margin}% margin)</div>
+          <table class="calc-table" style="margin-top:12px;"><thead><tr><th>Ingredient</th><th>Lab amount</th><th>Production amount</th></tr></thead><tbody>${lines.join('')}</tbody></table>
+        `;
+        const el = document.getElementById('scale-result');
+        el.innerHTML = html;
+        el.style.display = 'block';
+      });
+
+      // ─── 3. HLB ──────────────────────────────────────────────────
+      document.getElementById('hlb-calc').addEventListener('click', () => {
+        const rows = document.querySelectorAll('#hlb-table tbody tr');
+        let totalPct = 0, weightedHlb = 0;
+        rows.forEach(tr => {
+          const pct = Number(tr.querySelector('td:nth-child(2) input').value) || 0;
+          const hlb = Number(tr.querySelector('td:nth-child(3) input').value) || 0;
+          totalPct += pct;
+          weightedHlb += pct * hlb;
+        });
+        if (totalPct <= 0) {
+          document.getElementById('hlb-result').innerHTML = '<span style="color:#ff7070;">Add at least one surfactant with a percentage.</span>';
+          document.getElementById('hlb-result').style.display = 'block';
+          return;
+        }
+        const blendHlb = weightedHlb / totalPct;
+        const apps = [
+          { range: '1.5–3',   name: 'antifoaming agent' },
+          { range: '3–6',     name: 'water-in-oil (W/O) emulsifier' },
+          { range: '7–9',     name: 'wetting agent' },
+          { range: '8–18',    name: 'oil-in-water (O/W) emulsifier' },
+          { range: '13–15',   name: 'detergent / cleaner' },
+          { range: '15–18',   name: 'solubiliser (clear systems)' },
+        ];
+        const matches = apps.filter(a => {
+          const [lo, hi] = a.range.split('–').map(Number);
+          return blendHlb >= lo && blendHlb <= hi;
+        });
+        const html = `
+          <div style="font-size:1.4rem; margin-bottom:6px;">Blend HLB: <strong>${blendHlb.toFixed(2)}</strong></div>
+          ${totalPct < 99 || totalPct > 101 ? `<div style="color:#ffc850;">⚠ Percentages total ${totalPct.toFixed(2)}% — should be ~100% for a clean reading.</div>` : ''}
+          <div style="margin-top:10px;">Likely application range:</div>
+          <ul style="margin:6px 0 0 18px;">${matches.length ? matches.map(a => `<li><strong>${a.name}</strong> (HLB ${a.range})</li>`).join('') : '<li>Outside the common application bands — recheck your inputs.</li>'}</ul>
+        `;
+        const el = document.getElementById('hlb-result');
+        el.innerHTML = html;
+        el.style.display = 'block';
+      });
+
+      // ─── 4. pH ───────────────────────────────────────────────────
+      document.getElementById('ph-calc').addEventListener('click', () => {
+        const volume = Number(document.getElementById('ph-volume').value) || 0;       // L
+        const cur = Number(document.getElementById('ph-current').value) || 0;
+        const tgt = Number(document.getElementById('ph-target').value) || 0;
+        const buffer = Number(document.getElementById('ph-buffer').value) || 0.05;     // mol/L
+        const sel = document.getElementById('ph-corrector');
+        const opt = sel.options[sel.selectedIndex];
+        const mw = Number(opt.dataset.mw) || 40;
+        const protons = Number(opt.dataset.protons) || 1;
+        const strong = opt.dataset.strong === '1';
+
+        const delta = tgt - cur;
+        const direction = delta > 0 ? 'base' : (delta < 0 ? 'acid' : 'none');
+        if (direction === 'none' || volume <= 0) {
+          document.getElementById('ph-result').innerHTML = 'No correction needed — current pH already matches target.';
+          document.getElementById('ph-result').style.display = 'block';
+          return;
+        }
+        const wantBase = delta > 0;
+        const correctorIsBase = ['naoh','koh','tea'].includes(opt.value);
+        if (wantBase !== correctorIsBase) {
+          document.getElementById('ph-result').innerHTML =
+            `<span style="color:#ff7070;">You picked a${correctorIsBase ? ' base' : 'n acid'} but need a${wantBase ? ' base' : 'n acid'} to move pH ${wantBase ? 'up' : 'down'}.</span>`;
+          document.getElementById('ph-result').style.display = 'block';
+          return;
+        }
+        // Buffer-aware approximation. delta_C ≈ buffer × |delta_pH|
+        // For weak corrector add ~30% headroom for partial ionisation.
+        let dose_molL = buffer * Math.abs(delta);
+        if (!strong) dose_molL *= 1.3;
+        const totalMol = dose_molL * volume;
+        const dose_g = (totalMol * mw) / protons;
+        const html = `
+          <div style="font-size:1.15rem; margin-bottom:6px;">Estimated dose:
+            <strong>${dose_g.toLocaleString(undefined,{maximumFractionDigits:2})} g</strong> of ${opt.text.split(' (')[0]}
+          </div>
+          <div>For a ${volume.toLocaleString()} L batch, pH ${cur.toFixed(2)} → <strong>${tgt.toFixed(2)}</strong>.</div>
+          <div style="margin-top:10px; color:var(--text-3); font-size:0.88rem;">
+            First-order approximation. Always titrate in 3–5 increments and re-measure between additions. Final dose may differ by 20–40% from this estimate depending on real buffering capacity.
+          </div>
+        `;
+        const el = document.getElementById('ph-result');
+        el.innerHTML = html;
+        el.style.display = 'block';
+      });
+    })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
+</body>
+</html>
