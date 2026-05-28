@@ -143,15 +143,16 @@ jobs:
           username: ${{ secrets.FTP_USER }}
           password: ${{ secrets.FTP_PASS }}
           local-dir: ./deploy_staging/
-          # Hostinger's FTP account `u680581922.githubdeploy` is chroot'd
-          # to /home/u680581922/domains/jamilformula.com/ (the DOMAIN root,
-          # NOT public_html as the creation form's "Directory: /public_html"
-          # field implies). Verified by `curl ftp://...` listing — the FTP
-          # root contains `public_html/` as a subdir, plus mail/, logs/, etc.
-          # So we must upload into the public_html/ subdir, otherwise the
-          # files land next to public_html, where the live site can't see
-          # them. (Lost ~1h on this misreading; first push hit it.)
-          server-dir: ./public_html/
+          # The `u680581922.githubdeploy` FTP user is actually chroot'd
+          # INSIDE public_html itself — the FTP "/" already IS the live
+          # DocumentRoot. The Hostinger File Manager breadcrumb showed
+          # `public_html > public_html > public_html` because the earlier
+          # `./public_html/` setting kept creating a nested public_html
+          # subdir on each deploy. HTTP only ever read the outermost one,
+          # which is why every CI run since 2026-05-26 silently shipped
+          # to a phantom directory and the live site stayed on the 25-May
+          # manual upload. Verified end-to-end on 2026-05-28.
+          server-dir: ./
           # Don't touch files the deploy bundle never owned —
           # .htaccess is uploaded manually + maintained separately.
           # Anything we DELETE on the server we never put there, so the
@@ -162,3 +163,4 @@ jobs:
             **/.git*
             **/node_modules/**
             **/.DS_Store
+            public_html/**
