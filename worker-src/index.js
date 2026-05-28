@@ -64,6 +64,8 @@ import {
   handleLibraryGet,
   handleLibraryUpdate,
   handleLibraryDelete,
+  handleLibraryProjects,
+  handleLibraryPdf,
 } from './handlers/library.js';
 import { handleExtract } from './handlers/extract.js';
 import {
@@ -235,7 +237,15 @@ async function handleRequest(request, env, ctx) {
       if (path === '/my_formulas' && request.method === 'GET')
         return await handleMyFormulas(auth, env);
       if (path === '/library' && request.method === 'GET')
-        return await handleLibraryList(auth, env);
+        return await handleLibraryList(auth, env, url);
+      // Phase 4: list distinct projects for the workspace sidebar.
+      if (path === '/library/projects' && request.method === 'GET')
+        return await handleLibraryProjects(auth, env);
+      // Phase 4.4: PDF export (must match BEFORE the generic /library/:id)
+      if (path.startsWith('/library/') && path.endsWith('/pdf') && request.method === 'GET') {
+        const inner = path.slice('/library/'.length, -('/pdf'.length));
+        return await handleLibraryPdf(inner, auth, env);
+      }
       if (path.startsWith('/library/') && request.method === 'GET')
         return await handleLibraryGet(path.slice('/library/'.length), auth, env);
       if (path.startsWith('/library/') && request.method === 'PUT')

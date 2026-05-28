@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Workspace — My formulas | Formula AI Global</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#00ff88" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
+  <link rel="stylesheet" href="./assets/styles.css?v=35" />
+  <style>
+    .ws-grid { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 24px; align-items: start; }
+    @media (max-width: 800px) { .ws-grid { grid-template-columns: 1fr; } }
+    .ws-side .ws-project { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 8px; cursor: pointer; color: var(--text-2); font-size: 0.92rem; }
+    .ws-side .ws-project:hover { background: var(--bg-glass); }
+    .ws-side .ws-project.active { background: var(--bg-glass); color: var(--primary); font-weight: 700; }
+    .ws-side .ws-project .ws-count { color: var(--text-3); font-size: 0.78rem; }
+    .ws-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+    .ws-toolbar input, .ws-toolbar select { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); font-size: 0.92rem; }
+    .ws-card { padding: 16px 18px; border-radius: 12px; background: var(--bg-glass); border: 1px solid var(--border); margin-bottom: 12px; cursor: pointer; }
+    .ws-card:hover { border-color: var(--primary); }
+    .ws-card.selected { border-color: var(--primary); background: rgba(0,255,136,0.06); }
+    .ws-card.cmp-a { box-shadow: 0 0 0 2px var(--primary); }
+    .ws-card.cmp-b { box-shadow: 0 0 0 2px var(--secondary); }
+    .ws-card-head { display: flex; justify-content: space-between; align-items: start; gap: 12px; margin-bottom: 6px; }
+    .ws-card-name { font-weight: 700; font-size: 1rem; flex: 1; }
+    .ws-card-meta { color: var(--text-3); font-size: 0.8rem; }
+    .ws-tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; margin-right: 4px; background: rgba(0,212,255,0.14); color: var(--secondary); }
+    .ws-empty { padding: 60px 20px; text-align: center; color: var(--text-3); }
+    .ws-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+    .ws-modal-overlay.open { display: flex; }
+    .ws-modal { max-width: 920px; width: 100%; max-height: 90vh; overflow-y: auto; background: var(--bg-1); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+    .ws-modal h3 { margin: 0 0 12px; font-size: 1.2rem; }
+    .ws-modal input, .ws-modal textarea, .ws-modal select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-2); color: var(--text); font-family: inherit; }
+    .ws-modal textarea { resize: vertical; min-height: 80px; }
+    .ws-modal table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .ws-modal th, .ws-modal td { padding: 6px 8px; border-bottom: 1px solid var(--border); text-align: start; }
+    .cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media (max-width: 800px) { .cmp-grid { grid-template-columns: 1fr; } }
+    .cmp-diff-added   { background: rgba(0,255,136,0.10); color: var(--primary); }
+    .cmp-diff-removed { background: rgba(255,80,80,0.10); color: #ff7070; }
+    .cmp-diff-changed { background: rgba(255,200,80,0.10); color: #ffc850; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+        <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+        <li><a href="./workspace.html" class="active" data-i18n-ar="مساحتي">Workspace</a></li>
+        <li><a href="./consulting.html" data-i18n-ar="الاستشارات">Consulting</a></li>
+        <li><a href="./enterprise.html" data-i18n-ar="المؤسسات">Enterprise</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+      </ul>
+      <div class="nav-cta">
+        <a href="./dashboard.html" class="btn btn-ghost" data-i18n-ar="لوحتي">Dashboard</a>
+      </div>
+      <button class="nav-toggle" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+    </div>
+  </nav>
+
+  <main>
+  <section style="padding: 110px 0 60px;">
+    <div class="container">
+      <div id="loading" class="ws-empty">Loading your workspace…</div>
+      <div id="not-signed" class="ws-empty" style="display:none;">
+        <h1 style="font-size:1.4rem;">Sign in to use your workspace</h1>
+        <p>Your saved formulas, projects and tags live in your private workspace.</p>
+        <a href="./login.html?redirect=/workspace.html" class="btn btn-primary" style="margin-top: 16px;">Sign in</a>
+      </div>
+
+      <div id="ws" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom: 22px; flex-wrap:wrap; gap:12px;">
+          <div>
+            <h1 style="font-size: 1.8rem; margin: 0 0 4px;">My workspace</h1>
+            <p style="color: var(--text-3); margin: 0;" id="ws-summary">—</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button id="cmp-toggle-btn" class="btn btn-ghost">Compare mode</button>
+            <button id="new-btn" class="btn btn-primary">+ New formula</button>
+          </div>
+        </div>
+
+        <div class="ws-grid">
+          <!-- Sidebar: projects + tags -->
+          <aside class="ws-side card" style="padding: 16px;">
+            <h4 style="margin:0 0 10px; font-size:0.82rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em;">Projects</h4>
+            <div id="projects-list">
+              <div class="ws-project active" data-project="">
+                <span>All</span><span class="ws-count" id="all-count">0</span>
+              </div>
+            </div>
+            <h4 style="margin:18px 0 10px; font-size:0.82rem; color:var(--text-3); text-transform:uppercase; letter-spacing:0.06em;">Tags</h4>
+            <div id="tags-list" style="display:flex; flex-wrap:wrap; gap:6px;">
+              <span class="ws-tag" data-tag="">all</span>
+            </div>
+          </aside>
+
+          <!-- Main: formula list -->
+          <div>
+            <div class="ws-toolbar">
+              <input id="search-input" placeholder="Search by name…" style="flex:1; min-width:200px;" />
+              <select id="sort-select">
+                <option value="updated">Recently updated</option>
+                <option value="created">Recently created</option>
+                <option value="name">Name (A-Z)</option>
+              </select>
+            </div>
+            <div id="cmp-bar" style="display:none; padding:12px 14px; margin-bottom:12px; border-radius:10px; background:rgba(0,212,255,0.06); border:1px solid rgba(0,212,255,0.3);">
+              <strong>Compare mode:</strong> click two formulas to compare them side-by-side.
+              <span id="cmp-selected" style="color:var(--text-3);"></span>
+              <button id="cmp-go-btn" class="btn btn-primary" style="margin-left:10px; padding:6px 14px; font-size:0.85rem;" disabled>Compare →</button>
+              <button id="cmp-cancel-btn" class="btn btn-ghost" style="padding:6px 14px; font-size:0.85rem;">Cancel</button>
+            </div>
+            <div id="formulas-list">
+              <div class="ws-empty">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  </main>
+
+  <!-- Edit / New modal -->
+  <div id="edit-overlay" class="ws-modal-overlay">
+    <div class="ws-modal">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3 id="edit-title">Edit formula</h3>
+        <button id="edit-close-btn" class="btn btn-ghost" style="padding:6px 12px;">Close</button>
+      </div>
+      <form id="edit-form" style="display:grid; gap:14px;">
+        <input type="hidden" name="id" />
+        <div style="display:grid; grid-template-columns:2fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:0.85rem; color:var(--text-3);">Name *</label>
+            <input name="name" required placeholder="e.g. Antibacterial hand soap v2" />
+          </div>
+          <div>
+            <label style="font-size:0.85rem; color:var(--text-3);">Project</label>
+            <input name="project" placeholder="e.g. Personal care 2026" />
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+          <div>
+            <label style="font-size:0.85rem; color:var(--text-3);">Category</label>
+            <input name="category" placeholder="personal_hygiene" />
+          </div>
+          <div>
+            <label style="font-size:0.85rem; color:var(--text-3);">Form type</label>
+            <input name="form_type" placeholder="liquid, gel, paste…" />
+          </div>
+          <div>
+            <label style="font-size:0.85rem; color:var(--text-3);">Tags (comma-separated)</label>
+            <input name="tags" placeholder="wip, approved" />
+          </div>
+        </div>
+        <div>
+          <label style="font-size:0.85rem; color:var(--text-3);">Notes</label>
+          <textarea name="notes" rows="3" placeholder="Why this version exists…"></textarea>
+        </div>
+        <div>
+          <label style="font-size:0.85rem; color:var(--text-3);">Components (JSON — array of {name_en, cas_number, percentage, function})</label>
+          <textarea name="components_json" rows="8" style="font-family: ui-monospace, Menlo, monospace; font-size:0.85rem;"></textarea>
+        </div>
+        <div id="edit-status" style="display:none; padding:10px; border-radius:8px;"></div>
+        <div style="display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" id="edit-delete-btn" class="btn btn-ghost" style="margin-right:auto; color:#ff7070;">Delete</button>
+          <button type="button" id="edit-pdf-btn" class="btn btn-ghost">Export PDF</button>
+          <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Compare modal -->
+  <div id="cmp-overlay" class="ws-modal-overlay">
+    <div class="ws-modal" style="max-width: 1200px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+        <h3>Compare formulas</h3>
+        <button id="cmp-close-btn" class="btn btn-ghost" style="padding:6px 12px;">Close</button>
+      </div>
+      <div id="cmp-content"></div>
+    </div>
+  </div>
+
+  <script src="./assets/app.js?v=35"></script>
+  <script type="module" src="./assets/auth.js?v=35"></script>
+  <script>
+    (function () {
+      const WORKER_BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+      // Render backend URL for PDF export (Phase 4.4).
+      const RENDER_BASE = 'https://formula-ai-chem.onrender.com';
+
+      let allFormulas = [];
+      let allProjects = [];
+      let allTags = new Set();
+      let currentProject = '';     // '' = all
+      let currentTag = '';
+      let searchTerm = '';
+      let sortBy = 'updated';
+      let cmpMode = false;
+      let cmpSelected = [];       // [id, id]
+
+      // Wait for auth before doing anything.
+      let tries = 0;
+      const t = setInterval(() => {
+        if (window.FAI_AUTH && window.FAI_AUTH.initialized) {
+          clearInterval(t);
+          start();
+        } else if (++tries > 80) {
+          clearInterval(t);
+          document.getElementById('loading').textContent = 'Auth failed to load.';
+        }
+      }, 50);
+
+      function start() {
+        if (!window.FAI_AUTH.user) {
+          document.getElementById('loading').style.display = 'none';
+          document.getElementById('not-signed').style.display = 'block';
+          return;
+        }
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('ws').style.display = 'block';
+        loadAll();
+      }
+
+      async function loadAll() {
+        await Promise.all([loadProjects(), loadFormulas()]);
+      }
+
+      async function fetchAuth(path) {
+        const token = window.FAI_AUTH.session?.access_token;
+        return fetch(`${WORKER_BASE}${path}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+      }
+
+      async function loadProjects() {
+        try {
+          const r = await fetchAuth('/library/projects');
+          if (!r.ok) return;
+          const data = await r.json();
+          allProjects = data.projects || [];
+          renderProjects();
+        } catch (_) { /* ignore */ }
+      }
+
+      async function loadFormulas() {
+        try {
+          const qs = new URLSearchParams();
+          if (currentProject) qs.set('project', currentProject);
+          if (currentTag)     qs.set('tag', currentTag);
+          const path = '/library' + (qs.toString() ? '?' + qs.toString() : '');
+          const r = await fetchAuth(path);
+          if (!r.ok) {
+            document.getElementById('formulas-list').innerHTML =
+              `<div class="ws-empty">Couldn\'t load (HTTP ${r.status}).</div>`;
+            return;
+          }
+          const data = await r.json();
+          allFormulas = data.formulas || [];
+          // Collect all unique tags for the sidebar.
+          allTags = new Set();
+          for (const f of allFormulas) {
+            (f.tags || []).forEach((tg) => allTags.add(tg));
+          }
+          renderTags();
+          renderFormulas();
+          updateSummary();
+        } catch (err) {
+          document.getElementById('formulas-list').innerHTML =
+            `<div class="ws-empty">Network error: ${err.message}</div>`;
+        }
+      }
+
+      function renderProjects() {
+        const list = document.getElementById('projects-list');
+        // Total = sum of all projects' formula_count.
+        const total = allProjects.reduce((s, p) => s + Number(p.formula_count || 0), 0);
+        document.getElementById('all-count').textContent = total;
+
+        const others = allProjects.map(p => `
+          <div class="ws-project ${currentProject === p.project ? 'active' : ''}"
+               data-project="${escapeHTML(p.project)}">
+            <span>${escapeHTML(p.project)}</span>
+            <span class="ws-count">${Number(p.formula_count).toLocaleString()}</span>
+          </div>
+        `).join('');
+
+        const allRow = `
+          <div class="ws-project ${currentProject === '' ? 'active' : ''}" data-project="">
+            <span>All</span><span class="ws-count">${total}</span>
+          </div>
+        `;
+        list.innerHTML = allRow + others;
+
+        list.querySelectorAll('.ws-project').forEach(el => {
+          el.addEventListener('click', () => {
+            currentProject = el.dataset.project;
+            loadFormulas();
+            renderProjects();
+          });
+        });
+      }
+
+      function renderTags() {
+        const tagsEl = document.getElementById('tags-list');
+        const tagsArr = Array.from(allTags).sort();
+        const tags = [['', 'all'], ...tagsArr.map(t => [t, t])];
+        tagsEl.innerHTML = tags.map(([val, label]) => `
+          <span class="ws-tag" data-tag="${escapeHTML(val)}"
+                style="${currentTag === val ? 'background:var(--primary); color:var(--bg-1);' : ''}">
+            ${escapeHTML(label)}
+          </span>
+        `).join('');
+        tagsEl.querySelectorAll('.ws-tag').forEach(el => {
+          el.style.cursor = 'pointer';
+          el.addEventListener('click', () => {
+            currentTag = el.dataset.tag;
+            loadFormulas();
+          });
+        });
+      }
+
+      function renderFormulas() {
+        const list = document.getElementById('formulas-list');
+
+        let filtered = allFormulas;
+        if (searchTerm) {
+          const q = searchTerm.toLowerCase();
+          filtered = filtered.filter(f =>
+            (f.name || '').toLowerCase().includes(q) ||
+            (f.name_en || '').toLowerCase().includes(q)
+          );
+        }
+
+        if (sortBy === 'name') {
+          filtered = [...filtered].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        } else if (sortBy === 'created') {
+          filtered = [...filtered].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+        } else {
+          // 'updated' (default — server already returns in this order)
+        }
+
+        if (!filtered.length) {
+          list.innerHTML = `<div class="ws-empty">No formulas yet. ${currentProject || currentTag || searchTerm ? 'Try clearing filters.' : 'Save one from the chat or Smart Search.'}</div>`;
+          return;
+        }
+
+        list.innerHTML = filtered.map(f => {
+          const sel = cmpMode && cmpSelected.includes(f.id);
+          const sIx = cmpSelected.indexOf(f.id);
+          const cmpClass = sel ? (sIx === 0 ? 'cmp-a' : 'cmp-b') : '';
+          const tagsHTML = (f.tags || []).map(t =>
+            `<span class="ws-tag">${escapeHTML(t)}</span>`
+          ).join('');
+          return `
+            <div class="ws-card ${cmpClass}" data-id="${escapeHTML(f.id)}">
+              <div class="ws-card-head">
+                <div class="ws-card-name">${escapeHTML(f.name || '(no name)')}</div>
+                <div class="ws-card-meta">${formatDate(f.updated_at)}</div>
+              </div>
+              <div class="ws-card-meta">
+                ${escapeHTML(f.category || '—')}${f.project ? ' · ' + escapeHTML(f.project) : ''}
+                · trust ${Number(f.trust_score || 0)}
+              </div>
+              ${tagsHTML ? `<div style="margin-top:6px;">${tagsHTML}</div>` : ''}
+              ${f.notes ? `<div style="margin-top:6px; color:var(--text-2); font-size:0.85rem; max-height:3em; overflow:hidden;">${escapeHTML(f.notes)}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+
+        list.querySelectorAll('.ws-card').forEach(el => {
+          el.addEventListener('click', () => {
+            const id = el.dataset.id;
+            if (cmpMode) toggleCompare(id);
+            else openEdit(id);
+          });
+        });
+      }
+
+      function updateSummary() {
+        const projCount = allProjects.length;
+        const formulaCount = allFormulas.length;
+        document.getElementById('ws-summary').textContent =
+          `${formulaCount} formula${formulaCount === 1 ? '' : 's'} across ${projCount} project${projCount === 1 ? '' : 's'}.`;
+      }
+
+      // ─── Edit modal ──────────────────────────────────────────────
+      const editOverlay = document.getElementById('edit-overlay');
+      const editForm = document.getElementById('edit-form');
+
+      async function openEdit(id) {
+        const isNew = !id;
+        const r = isNew ? null : await fetchAuth(`/library/${id}`);
+        const f = isNew ? {} : (await r.json()).formula || {};
+        document.getElementById('edit-title').textContent = isNew ? 'New formula' : `Edit: ${f.name || ''}`;
+        editForm.elements.id.value = f.id || '';
+        editForm.elements.name.value = f.name || '';
+        editForm.elements.project.value = f.project || '';
+        editForm.elements.category.value = f.category || '';
+        editForm.elements.form_type.value = f.form_type || '';
+        editForm.elements.tags.value = (f.tags || []).join(', ');
+        editForm.elements.notes.value = f.notes || '';
+        editForm.elements.components_json.value = JSON.stringify(f.components || [], null, 2);
+        document.getElementById('edit-delete-btn').style.display = isNew ? 'none' : '';
+        document.getElementById('edit-pdf-btn').style.display = isNew ? 'none' : '';
+        document.getElementById('edit-status').style.display = 'none';
+        editOverlay.classList.add('open');
+      }
+
+      document.getElementById('new-btn').addEventListener('click', () => openEdit(null));
+      document.getElementById('edit-close-btn').addEventListener('click', () => editOverlay.classList.remove('open'));
+      editOverlay.addEventListener('click', (e) => { if (e.target === editOverlay) editOverlay.classList.remove('open'); });
+
+      editForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = editForm.elements.id.value;
+        const status = document.getElementById('edit-status');
+        status.style.display = 'none';
+
+        let components;
+        try {
+          components = JSON.parse(editForm.elements.components_json.value || '[]');
+          if (!Array.isArray(components)) throw new Error('components must be an array');
+        } catch (err) {
+          status.style.display = 'block';
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = 'Components must be valid JSON array. ' + err.message;
+          return;
+        }
+
+        const payload = {
+          name: editForm.elements.name.value.trim(),
+          project: editForm.elements.project.value.trim() || null,
+          category: editForm.elements.category.value.trim() || null,
+          form_type: editForm.elements.form_type.value.trim() || null,
+          tags: editForm.elements.tags.value.split(',').map(s => s.trim()).filter(Boolean),
+          notes: editForm.elements.notes.value.trim() || null,
+          components,
+        };
+
+        const token = window.FAI_AUTH.session?.access_token;
+        const url = id ? `${WORKER_BASE}/library/${id}` : `${WORKER_BASE}/save_formula`;
+        const method = id ? 'PUT' : 'POST';
+        const r = await fetch(url, {
+          method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+        });
+        if (!r.ok) {
+          status.style.display = 'block';
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = `Save failed (HTTP ${r.status})`;
+          return;
+        }
+        editOverlay.classList.remove('open');
+        await loadAll();
+      });
+
+      document.getElementById('edit-delete-btn').addEventListener('click', async () => {
+        const id = editForm.elements.id.value;
+        if (!id) return;
+        if (!confirm('Delete this formula? This cannot be undone.')) return;
+        const token = window.FAI_AUTH.session?.access_token;
+        await fetch(`${WORKER_BASE}/library/${id}`, {
+          method: 'DELETE',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        editOverlay.classList.remove('open');
+        await loadAll();
+      });
+
+      document.getElementById('edit-pdf-btn').addEventListener('click', async () => {
+        const id = editForm.elements.id.value;
+        if (!id) return;
+        const token = window.FAI_AUTH.session?.access_token;
+        const btn = document.getElementById('edit-pdf-btn');
+        const orig = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Generating PDF…';
+        try {
+          // Phase 4.4 — backend generates PDF and returns a download URL
+          // (or the PDF bytes directly). We open it in a new tab.
+          const r = await fetch(`${WORKER_BASE}/library/${id}/pdf`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const blob = await r.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${(editForm.elements.name.value || 'formula').replace(/[^a-z0-9-]+/gi, '_')}.pdf`;
+          document.body.appendChild(a); a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 0);
+        } catch (err) {
+          alert('PDF export failed: ' + err.message);
+        } finally {
+          btn.disabled = false;
+          btn.textContent = orig;
+        }
+      });
+
+      // ─── Compare mode ────────────────────────────────────────────
+      const cmpBtn = document.getElementById('cmp-toggle-btn');
+      const cmpBar = document.getElementById('cmp-bar');
+
+      cmpBtn.addEventListener('click', () => {
+        cmpMode = !cmpMode;
+        cmpSelected = [];
+        cmpBar.style.display = cmpMode ? 'block' : 'none';
+        cmpBtn.textContent = cmpMode ? 'Exit compare mode' : 'Compare mode';
+        renderFormulas();
+        updateCmpBar();
+      });
+      document.getElementById('cmp-cancel-btn').addEventListener('click', () => cmpBtn.click());
+
+      function toggleCompare(id) {
+        const ix = cmpSelected.indexOf(id);
+        if (ix >= 0) cmpSelected.splice(ix, 1);
+        else if (cmpSelected.length < 2) cmpSelected.push(id);
+        renderFormulas();
+        updateCmpBar();
+      }
+
+      function updateCmpBar() {
+        document.getElementById('cmp-selected').textContent =
+          `Selected: ${cmpSelected.length}/2`;
+        document.getElementById('cmp-go-btn').disabled = cmpSelected.length !== 2;
+      }
+
+      document.getElementById('cmp-go-btn').addEventListener('click', async () => {
+        const [aId, bId] = cmpSelected;
+        const [aR, bR] = await Promise.all([
+          fetchAuth(`/library/${aId}`),
+          fetchAuth(`/library/${bId}`),
+        ]);
+        const a = (await aR.json()).formula || {};
+        const b = (await bR.json()).formula || {};
+        renderCompare(a, b);
+        document.getElementById('cmp-overlay').classList.add('open');
+      });
+      document.getElementById('cmp-close-btn').addEventListener('click', () =>
+        document.getElementById('cmp-overlay').classList.remove('open'));
+
+      function renderCompare(a, b) {
+        const aMap = new Map();
+        for (const c of (a.components || [])) aMap.set(c.name_en || c.name, c);
+        const bMap = new Map();
+        for (const c of (b.components || [])) bMap.set(c.name_en || c.name, c);
+
+        const allKeys = Array.from(new Set([...aMap.keys(), ...bMap.keys()])).sort();
+
+        const rows = allKeys.map(k => {
+          const aC = aMap.get(k);
+          const bC = bMap.get(k);
+          let cls = '';
+          if (!aC) cls = 'cmp-diff-added';
+          else if (!bC) cls = 'cmp-diff-removed';
+          else if (Number(aC.percentage) !== Number(bC.percentage)) cls = 'cmp-diff-changed';
+          const aPct = aC ? Number(aC.percentage).toFixed(2) : '—';
+          const bPct = bC ? Number(bC.percentage).toFixed(2) : '—';
+          return `
+            <tr class="${cls}">
+              <td>${escapeHTML(k)}</td>
+              <td style="text-align:right;">${aPct}</td>
+              <td style="text-align:right;">${bPct}</td>
+              <td style="color:var(--text-3); font-size:0.82rem;">${escapeHTML((aC?.function || bC?.function || ''))}</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('cmp-content').innerHTML = `
+          <div class="cmp-grid" style="margin-bottom:18px;">
+            <div class="card" style="padding:16px;">
+              <strong style="color:var(--primary);">A:</strong> ${escapeHTML(a.name || '')}
+              <div style="color:var(--text-3); font-size:0.82rem;">${(a.components || []).length} ingredients · trust ${a.trust_score || 0}</div>
+            </div>
+            <div class="card" style="padding:16px;">
+              <strong style="color:var(--secondary);">B:</strong> ${escapeHTML(b.name || '')}
+              <div style="color:var(--text-3); font-size:0.82rem;">${(b.components || []).length} ingredients · trust ${b.trust_score || 0}</div>
+            </div>
+          </div>
+          <div style="margin-bottom:12px; display:flex; gap:14px; font-size:0.82rem; color:var(--text-3);">
+            <span><span class="cmp-diff-added" style="padding:1px 6px;">added</span> in A only</span>
+            <span><span class="cmp-diff-removed" style="padding:1px 6px;">removed</span> in B only</span>
+            <span><span class="cmp-diff-changed" style="padding:1px 6px;">changed</span> percent differs</span>
+          </div>
+          <table>
+            <thead>
+              <tr><th>Ingredient</th><th style="text-align:right;">A %</th><th style="text-align:right;">B %</th><th>Function</th></tr>
+            </thead>
+            <tbody>${rows || '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-3);">No ingredients to compare.</td></tr>'}</tbody>
+          </table>
+        `;
+      }
+
+      // ─── Toolbar wiring ──────────────────────────────────────────
+      document.getElementById('search-input').addEventListener('input', (e) => {
+        searchTerm = e.target.value;
+        renderFormulas();
+      });
+      document.getElementById('sort-select').addEventListener('change', (e) => {
+        sortBy = e.target.value;
+        renderFormulas();
+      });
+
+      // ─── Helpers ─────────────────────────────────────────────────
+      function escapeHTML(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+      function formatDate(iso) {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        if (isNaN(d.getTime())) return '—';
+        const diff = (Date.now() - d.getTime()) / 1000;
+        if (diff < 60) return 'just now';
+        if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+        if (diff < 86400 * 30) return Math.floor(diff / 86400) + 'd ago';
+        return d.toISOString().slice(0, 10);
+      }
+    })();
+  </script>
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
+</body>
+</html>
