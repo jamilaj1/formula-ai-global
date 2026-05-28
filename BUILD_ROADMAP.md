@@ -8,7 +8,41 @@
 
 ## 🎯 Currently Working On
 
-**Phase 2 — FIRST REVENUE is DONE.** Moving on to **Phase 3 (Enterprise B2B Foundation)**.
+**Phases 1–4 + 7 are DONE.** Holding before Phase 5 / 6 / 8 because they
+need owner-supplied content (lead-magnet PDFs, LinkedIn posts, Ghana
+supplier list). Phase 9 (technical moat) is the next safe-to-ship
+candidate when the owner gives the green light.
+
+Phase 3 closed 2026-05-28 — enterprise B2B foundation live:
+- enterprise_details + enterprise_leads tables (RLS: anon INSERT,
+  signed-in user SELECT-own, pg_net trigger emails owner on each lead).
+- enterprise.html with hero, 6 capability cards, $500/mo from-pricing,
+  contact form posting to /be/enterprise/lead.
+- about.html founder authority: LinkedIn CTA + 6-card "Career
+  highlights" section (2000+ t/mo, DosLunas plant, 40+ categories,
+  4 countries, 3381 curated formulas, SFDA/SASO/GSO/EU/FDA wins).
+- Site-wide: Enterprise nav link in 29 pages.
+
+Phase 4 closed 2026-05-28 — Formula Workspace (retention):
+- user_formulas extended with `project` (TEXT) + `tags` (TEXT[] + GIN
+  index) + `user_formula_projects` view for sidebar grouping.
+- workspace.html: project sidebar, tag filter, search/sort, edit
+  modal (JSON components editor), delete, PDF export, compare two
+  formulas side-by-side with added/removed/changed-percent diff.
+- Worker /library/projects + /library/{id}/pdf endpoints.
+- FastAPI /api/v2/library/{id}/pdf renders A4 spec sheet with
+  reportlab — title, meta, description, notes, ingredients table
+  with running total, process conditions, properties, disclaimer.
+
+Phase 7 closed 2026-05-28 — daily-use calculators:
+- Single calculators.html page with 5 tabs.
+- Batch cost, lab→production scale-up (multi-unit), surfactant
+  blend HLB → application band, buffer-aware pH correction with
+  acid/base mismatch detection.
+- SDS generator is a stub today — sends serious requests to the
+  Quick Diagnostic consulting package ($1,000, 48h SLA).
+- Pure client-side JS; no recipe ever leaves the browser unless
+  saved to Workspace.
 
 Phase 2 closed 2026-05-28 — consulting service is live end-to-end:
 - `consulting.html` — 3 packages, bilingual, FAQ schema, intake form.
