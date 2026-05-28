@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
-  <link rel="stylesheet" href="./assets/styles.css?v=30" />
+  <link rel="stylesheet" href="./assets/styles.css?v=31" />
   <link rel="canonical" href="https://jamilformula.com/consulting.html" />
 
   <!-- FAQ schema — mirrors the visible FAQ section. Surfaces rich
@@ -470,9 +470,9 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=30"></script>
-  <script type="module" src="./assets/auth.js?v=30"></script>
-  <script type="module" src="./assets/supabase-client.js?v=30"></script>
+  <script src="./assets/app.js?v=31"></script>
+  <script type="module" src="./assets/auth.js?v=31"></script>
+  <script type="module" src="./assets/supabase-client.js?v=31"></script>
   <script>
     // Phase 2.2: intake form now posts to the real Worker endpoint
     // (/be/consulting/intake) which inserts into consultation_requests
@@ -520,10 +520,24 @@
           const out = await r.json().catch(() => ({}));
 
           if (r.ok && out.ok) {
-            showStatus(
-              '✓ Brief received. We\'ll reply within 24 hours with a secure payment link and the expected delivery date. Check your inbox (including spam) for a confirmation.',
-              'success'
-            );
+            // For Quick + Full the price is fixed → offer Pay Now immediately.
+            // Custom waits for a discovery call so the owner can scope it.
+            if (out.package === 'quick' || out.package === 'full') {
+              const amount = out.amount_usd ? `$${Number(out.amount_usd).toLocaleString()}` : '';
+              showStatus(
+                `✓ Brief received. To start work, please pay ${amount} via Paystack — we deliver as soon as the payment confirms.<br><br>` +
+                `<button id="pay-now-btn" class="btn btn-primary" data-id="${out.id}">Pay ${amount} securely now</button> ` +
+                `<button id="pay-later-btn" class="btn btn-ghost">I'll pay later via email link</button>`,
+                'success'
+              );
+              wirePayButtons();
+            } else {
+              // Custom Project — no instant payment.
+              showStatus(
+                '✓ Brief received. Custom Project pricing is finalised on a 30-minute discovery call. We\'ll email you within 24 hours to book it.',
+                'success'
+              );
+            }
             form.reset();
           } else if (r.status === 429) {
             showStatus(
@@ -580,6 +594,74 @@
           if (sel) sel.value = a.dataset.consultPackage;
         });
       });
+
+      // ─── Pay-now flow (Phase 2.5) ────────────────────────────────────
+      function wirePayButtons() {
+        const pn = document.getElementById('pay-now-btn');
+        const pl = document.getElementById('pay-later-btn');
+        if (pn) {
+          pn.addEventListener('click', async () => {
+            const requestId = pn.dataset.id;
+            pn.disabled = true;
+            const oldText = pn.textContent;
+            pn.textContent = 'Opening Paystack…';
+            try {
+              const r = await fetch(`${WORKER_BASE}/be/consulting/pay`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: requestId }),
+              });
+              const out = await r.json().catch(() => ({}));
+              if (r.ok && out.url) {
+                window.location.href = out.url;        // → Paystack hosted page
+              } else {
+                pn.disabled = false;
+                pn.textContent = oldText;
+                showStatus(
+                  `Couldn\'t start payment (${out.error || r.status}). Please email us and we\'ll send a link manually.`,
+                  'error'
+                );
+              }
+            } catch (err) {
+              pn.disabled = false;
+              pn.textContent = oldText;
+              showStatus(`Network error: ${err.message}`, 'error');
+            }
+          });
+        }
+        if (pl) {
+          pl.addEventListener('click', () => {
+            showStatus(
+              '✓ No problem. We\'ll email you a Paystack link from <strong>signups@jamilformula.com</strong> within 24 hours. You can reply to that email any time with questions before paying.',
+              'success'
+            );
+          });
+        }
+      }
+
+      // ─── Post-payment landing (?paid=<id>) ───────────────────────────
+      // Paystack redirects here on success. The webhook has already
+      // flipped status='paid' (or will within seconds). Show a polished
+      // thank-you state at the top of the page.
+      (function () {
+        const params = new URLSearchParams(location.search);
+        const paidId = params.get('paid');
+        if (!paidId) return;
+        const banner = document.createElement('div');
+        banner.style.cssText =
+          'position:fixed; top:80px; left:50%; transform:translateX(-50%); ' +
+          'z-index:100; max-width:560px; width:calc(100% - 32px); ' +
+          'background:rgba(0,255,136,0.12); color:var(--primary); ' +
+          'border:1px solid rgba(0,255,136,0.3); border-radius:12px; ' +
+          'padding:16px 20px; box-shadow:0 8px 30px rgba(0,0,0,0.3);';
+        banner.innerHTML =
+          '<strong>✓ Payment received — thank you!</strong><br>' +
+          'Your report is now in our queue. You\'ll receive an email when ' +
+          'the signed PDF is ready (typically 48 hours for Quick Diagnostic, ' +
+          '7–10 days for Full Formulation). ' +
+          '<a href="./consulting.html" style="color:inherit; text-decoration:underline;">Dismiss</a>';
+        document.body.appendChild(banner);
+      })();
     })();
   </script>
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>

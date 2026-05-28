@@ -139,6 +139,29 @@ export async function handlePaystackWebhook(request, env) {
     eventType === 'subscription.create' ||
     eventType === 'invoice.payment_succeeded'
   ) {
+    // ─── Phase 2.5: consulting one-time charge ───────────────────
+    // If the metadata has consulting_id, this was a one-time consulting
+    // payment, NOT a subscription. We mark the consultation_requests
+    // row as paid + record the reference, which automatically unlocks
+    // the "Generate AI draft" button in admin.html.
+    const consultingId =
+      data.metadata?.consulting_id ||
+      data.metadata?.custom_fields?.find?.((f) => f.variable_name === 'consulting_id')?.value ||
+      null;
+    if (consultingId && eventType === 'charge.success') {
+      await sbService(env, `/consultation_requests?id=eq.${consultingId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          status: 'paid',
+          paystack_reference: data.reference || null,
+        }),
+      });
+      // Consulting payment doesn't touch profiles — we're done.
+      return new Response('ok', { status: 200, headers: corsHeaders });
+    }
+
+    // ─── Existing subscription flow ──────────────────────────────
     const userId = data.metadata?.user_id || data.customer?.metadata?.user_id || null;
     const plan =
       data.metadata?.plan ||

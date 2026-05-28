@@ -2505,6 +2505,18 @@ async function handlePaystackWebhook(request, env) {
     return null;
   };
   if (eventType === "charge.success" || eventType === "subscription.create" || eventType === "invoice.payment_succeeded") {
+    const consultingId = data.metadata?.consulting_id || data.metadata?.custom_fields?.find?.((f) => f.variable_name === "consulting_id")?.value || null;
+    if (consultingId && eventType === "charge.success") {
+      await sbService(env, `/consultation_requests?id=eq.${consultingId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({
+          status: "paid",
+          paystack_reference: data.reference || null
+        })
+      });
+      return new Response("ok", { status: 200, headers: corsHeaders });
+    }
     const userId = data.metadata?.user_id || data.customer?.metadata?.user_id || null;
     const plan = data.metadata?.plan || planNameToKey(data.plan?.name) || planNameToKey(data.plan_object?.name) || "professional";
     if (userId) {
@@ -2752,6 +2764,7 @@ async function runDailyCostReport(env) {
 // worker-src/handlers/consulting.js
 var PACKAGES = /* @__PURE__ */ new Set(["quick", "full", "custom"]);
 var PACKAGE_USD = { quick: 1e3, full: 2500, custom: 5e3 };
+var PAYSTACK_API2 = "https://api.paystack.co";
 function clean(value, maxLen) {
   const s = String(value ?? "").normalize("NFKC").trim();
   return maxLen ? s.slice(0, maxLen) : s;
@@ -2875,6 +2888,92 @@ async function handleConsultingDraft(request, auth, env) {
   } catch (err) {
     return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
   }
+}
+async function handleConsultingPay(request, auth, env) {
+  if (!env.PAYSTACK_SECRET_KEY) {
+    return json({ error: "paystack_not_configured" }, 503);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest("missing_id");
+  const ip = clientIP(request);
+  const rl = await rateLimit(env, {
+    bucket: `consult-pay:${ip}`,
+    limit: 6,
+    window: 60 * 10
+    // 6 attempts per 10 minutes — enough for retries,
+    // tight enough to stop someone trying to brute-force ids.
+  });
+  if (!rl.ok) return rateLimitResponse(rl, "too_many_pay_attempts");
+  const r = await sbService(env, `/consultation_requests?id=eq.${encodeURIComponent(id)}&select=id,email,package,product_type,status,amount_usd,paystack_reference&limit=1`);
+  if (!r.ok) {
+    return json({ error: "db_error", detail: (await r.text()).slice(0, 200) }, 500);
+  }
+  const rows = await r.json();
+  const row = rows?.[0];
+  if (!row) return json({ error: "request_not_found" }, 404);
+  if (row.status === "paid" || row.status === "drafting" || row.status === "review" || row.status === "delivered") {
+    return json({ error: "already_paid", status: row.status }, 409);
+  }
+  if (row.status === "cancelled") {
+    return json({ error: "cancelled" }, 409);
+  }
+  if (row.package === "custom") {
+    return json({
+      error: "custom_needs_discovery_call",
+      detail: "Custom Project pricing is set after the discovery call. We will email you a payment link once we agree on scope."
+    }, 409);
+  }
+  const amount_usd = Number(row.amount_usd || PACKAGE_USD[row.package] || 0);
+  if (amount_usd <= 0) return json({ error: "invalid_amount" }, 500);
+  const origin = request.headers.get("Origin") || "https://jamilformula.com";
+  const callback_url = `${origin}/consulting.html?paid=${encodeURIComponent(id)}`;
+  const payload = {
+    email: row.email,
+    amount: amount_usd * 100,
+    currency: "USD",
+    callback_url,
+    metadata: {
+      // The webhook handler keys off `consulting_id` to know this is a
+      // consulting one-time charge (NOT a subscription) and updates
+      // `consultation_requests.status` accordingly.
+      consulting_id: row.id,
+      package: row.package,
+      product_type: row.product_type
+    }
+  };
+  const pr = await fetch(`${PAYSTACK_API2}/transaction/initialize`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${env.PAYSTACK_SECRET_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+  if (!pr.ok) {
+    const detail = (await pr.text()).slice(0, 300);
+    console.error("[consulting.pay] paystack init failed", pr.status, detail);
+    return json({ error: "paystack_error", detail }, 502);
+  }
+  const pdata = await pr.json();
+  if (!pdata.status) {
+    return json({ error: "paystack_failed", detail: pdata.message || "" }, 502);
+  }
+  await sbService(env, `/consultation_requests?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ paystack_reference: pdata.data.reference })
+  });
+  return json({
+    url: pdata.data.authorization_url,
+    reference: pdata.data.reference,
+    amount_usd
+  });
 }
 
 // worker-src/index.js
@@ -3025,6 +3124,8 @@ async function handleRequest(request, env, ctx) {
       return await handleConsultingList(auth, env);
     if (path === "/be/consulting/draft" && request.method === "POST")
       return await handleConsultingDraft(request, auth, env);
+    if (path === "/be/consulting/pay" && request.method === "POST")
+      return await handleConsultingPay(request, auth, env);
     if (path === "/paystack/checkout" && request.method === "POST")
       return await handlePaystackCheckout(request, auth, env);
     if (path === "/paystack/verify" && request.method === "GET")
