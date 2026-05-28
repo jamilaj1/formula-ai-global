@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
-  <link rel="stylesheet" href="./assets/styles.css?v=26" />
+  <link rel="stylesheet" href="./assets/styles.css?v=30" />
   <style>
     .admin-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 24px; }
     .admin-stat { background: var(--bg-glass); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
@@ -32,6 +32,24 @@
     .pill-master   { background: rgba(192,132,252,0.14); color: #c084fc; }
     .owner-only-msg { padding: 60px 20px; text-align: center; color: var(--text-2); }
     .csv-link { color: var(--secondary); font-size: 0.88rem; }
+    /* Phase 2.4 — admin tabs + consulting layout */
+    .admin-tabs { display: flex; gap: 4px; margin-bottom: 22px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+    .admin-tab { background: transparent; border: none; padding: 10px 18px; color: var(--text-3); font: inherit; font-weight: 600; font-size: 0.92rem; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .admin-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .pill-status     { font-size: 0.72rem; }
+    .pill-intake     { background: rgba(255,200,80,0.15); color: #ffc850; }
+    .pill-paid       { background: rgba(0,255,136,0.14); color: var(--primary); }
+    .pill-drafting   { background: rgba(180,180,255,0.14); color: #b4b4ff; }
+    .pill-review     { background: rgba(0,212,255,0.14); color: var(--secondary); }
+    .pill-delivered  { background: rgba(160,255,160,0.14); color: #a0ffa0; }
+    .pill-cancelled  { background: rgba(255,100,100,0.12); color: #ff7070; }
+    .consult-row { padding: 16px 20px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: start; }
+    .consult-row:hover { background: var(--bg-glass-2, rgba(255,255,255,0.02)); }
+    .consult-meta { color: var(--text-3); font-size: 0.82rem; }
+    .consult-brief { color: var(--text-2); font-size: 0.88rem; margin-top: 8px; max-height: 4.5em; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+    .consult-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: end; }
+    .consult-actions .btn { padding: 6px 12px; font-size: 0.82rem; }
+    #consult-detail textarea { width: 100%; min-height: 400px; font-family: ui-monospace, Menlo, monospace; font-size: 0.85rem; line-height: 1.5; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-2, #0c1226); color: var(--text); resize: vertical; }
   </style>
 </head>
 <body>
@@ -73,6 +91,17 @@
           </div>
         </div>
 
+        <!-- Tabs ─────────────────────────────────────────────────────── -->
+        <div class="admin-tabs" role="tablist">
+          <button class="admin-tab active" data-tab="signups" role="tab">Signups</button>
+          <button class="admin-tab" data-tab="consulting" role="tab">
+            Consulting
+            <span id="consult-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
+          </button>
+        </div>
+
+        <!-- ──────────────────────────── Tab: Signups ──────────────────────────── -->
+        <div id="tab-signups">
         <!-- Aggregate stats ─────────────────────────────────────────── -->
         <div class="admin-grid" id="stats-grid">
           <!-- populated by JS -->
@@ -119,6 +148,47 @@
         <p style="color: var(--text-3); font-size: 0.82rem; margin-top: 18px;">
           Server-side gate: every RPC checks <code>auth.uid()</code> against the owner email. Anyone else who lands on this URL sees "Owner only".
         </p>
+        </div><!-- /#tab-signups -->
+
+        <!-- ─────────────────────────── Tab: Consulting ─────────────────────────── -->
+        <div id="tab-consulting" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size: 1.3rem; margin: 0 0 4px;">Consulting requests</h2>
+              <p style="color: var(--text-3); margin: 0; font-size: 0.88rem;">Briefs submitted via <a href="./consulting.html" style="color: var(--secondary);">/consulting.html</a>. Click a row to generate the AI draft.</p>
+            </div>
+            <button id="consult-refresh" class="btn btn-ghost">Refresh</button>
+          </div>
+
+          <!-- Mini-stats: count per status -->
+          <div class="admin-grid" id="consult-stats" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+            <!-- populated by JS -->
+          </div>
+
+          <!-- Two-column layout: list (left) + detail/draft (right) -->
+          <div style="display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap:18px; align-items:start;">
+
+            <!-- Left: list of requests -->
+            <div class="card" style="padding:0; overflow:hidden;">
+              <div style="padding: 14px 20px; border-bottom: 1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+                <h3 style="font-size: 0.95rem; margin: 0;">All requests</h3>
+                <span id="consult-count" style="color: var(--text-3); font-size: 0.82rem;"></span>
+              </div>
+              <div id="consult-list" style="max-height: 72vh; overflow-y: auto;">
+                <div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div>
+              </div>
+            </div>
+
+            <!-- Right: detail + draft editor -->
+            <div id="consult-detail" class="card" style="padding: 20px; min-height: 400px;">
+              <div style="text-align:center; color:var(--text-3); padding:60px 20px;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="margin:0 auto 12px; display:block; opacity:0.4;"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                <p style="margin:0;">Select a request from the left.</p>
+              </div>
+            </div>
+
+          </div>
+        </div><!-- /#tab-consulting -->
       </div>
 
     </div>
@@ -133,8 +203,8 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=26"></script>
-  <script type="module" src="./assets/auth.js?v=26"></script>
+  <script src="./assets/app.js?v=30"></script>
+  <script type="module" src="./assets/auth.js?v=30"></script>
   <script>
     (function () {
       let tries = 0;
@@ -310,6 +380,267 @@
         const s = String(v);
         if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
         return s;
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // Phase 2.4 — Consulting tab
+      // ════════════════════════════════════════════════════════════════
+      const WORKER_BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+      const PKG_LABEL = { quick: 'Quick Diagnostic', full: 'Full Formulation', custom: 'Custom Project' };
+      const PKG_PRICE = { quick: '$1,000', full: '$2,500', custom: '$5,000+' };
+      let consultRows = [];
+      let selectedConsultId = null;
+
+      // Tab switching
+      document.querySelectorAll('.admin-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.tab;
+          document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b === btn));
+          document.getElementById('tab-signups').style.display    = (target === 'signups')    ? '' : 'none';
+          document.getElementById('tab-consulting').style.display = (target === 'consulting') ? '' : 'none';
+          if (target === 'consulting' && !consultRows.length) loadConsulting();
+        });
+      });
+
+      // Allow URL hash to land directly on the consulting tab + a specific request.
+      // e.g. /admin.html#consulting/<request-id>  (matches the link in the owner email).
+      (function () {
+        const h = (location.hash || '').replace(/^#/, '');
+        if (h.startsWith('consulting')) {
+          const tabBtn = document.querySelector('[data-tab="consulting"]');
+          if (tabBtn) tabBtn.click();
+          const id = h.split('/')[1];
+          if (id) setTimeout(() => openConsult(id), 800);  // wait for list to load
+        }
+      })();
+
+      document.getElementById('consult-refresh')?.addEventListener('click', loadConsulting);
+
+      async function loadConsulting() {
+        const list = document.getElementById('consult-list');
+        list.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div>';
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/consulting/list`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          if (!r.ok) {
+            const detail = await r.text();
+            list.innerHTML = `<div style="padding:30px; color:#ff7070;">Failed (${r.status}): ${escapeHTML(detail.slice(0,200))}</div>`;
+            return;
+          }
+          const data = await r.json();
+          consultRows = data.requests || [];
+          renderConsultStats(consultRows);
+          renderConsultList(consultRows);
+          updateConsultBadge(consultRows);
+        } catch (err) {
+          list.innerHTML = `<div style="padding:30px; color:#ff7070;">Network error: ${escapeHTML(err.message)}</div>`;
+        }
+      }
+
+      function updateConsultBadge(rows) {
+        const open = rows.filter(r => r.status === 'intake' || r.status === 'paid' || r.status === 'review').length;
+        const badge = document.getElementById('consult-badge');
+        if (open > 0) {
+          badge.style.display = 'inline-block';
+          badge.textContent = String(open);
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+
+      function renderConsultStats(rows) {
+        const counts = { intake: 0, paid: 0, drafting: 0, review: 0, delivered: 0, cancelled: 0 };
+        let totalUsd = 0;
+        for (const r of rows) {
+          counts[r.status] = (counts[r.status] || 0) + 1;
+          if (r.status === 'paid' || r.status === 'delivered') totalUsd += Number(r.amount_usd || 0);
+        }
+        const cards = [
+          { label: 'Total briefs',    v: rows.length },
+          { label: 'Awaiting payment', v: counts.intake },
+          { label: 'Paid / drafting', v: counts.paid + counts.drafting },
+          { label: 'Awaiting review', v: counts.review },
+          { label: 'Delivered',       v: counts.delivered },
+          { label: 'Revenue (paid)',  v: '$' + totalUsd.toLocaleString() },
+        ];
+        document.getElementById('consult-stats').innerHTML = cards.map(c => `
+          <div class="admin-stat">
+            <div class="label">${escapeHTML(c.label)}</div>
+            <div class="value">${typeof c.v === 'string' ? escapeHTML(c.v) : Number(c.v).toLocaleString()}</div>
+          </div>
+        `).join('');
+      }
+
+      function renderConsultList(rows) {
+        document.getElementById('consult-count').textContent = `${rows.length} request${rows.length === 1 ? '' : 's'}`;
+        const list = document.getElementById('consult-list');
+        if (!rows.length) {
+          list.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-3);">No requests yet. The first will land here when a visitor submits the brief on consulting.html.</div>';
+          return;
+        }
+        list.innerHTML = rows.map(r => `
+          <div class="consult-row" data-id="${escapeHTML(r.id)}" ${selectedConsultId === r.id ? 'style="background:var(--bg-glass);"' : ''}>
+            <div style="min-width:0;">
+              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                <strong style="font-size:0.95rem;">${escapeHTML(r.product_type || '(no product type)')}</strong>
+                <span class="pill pill-status pill-${escapeHTML(r.status)}">${escapeHTML(r.status)}</span>
+              </div>
+              <div class="consult-meta">${escapeHTML(PKG_LABEL[r.package] || r.package)} · ${escapeHTML(PKG_PRICE[r.package] || '')} · ${formatWhen(r.created_at)}</div>
+              <div class="consult-meta">${escapeHTML(r.email)}${r.company ? ' · ' + escapeHTML(r.company) : ''}</div>
+              <div class="consult-brief">${escapeHTML(r.brief || '')}</div>
+            </div>
+            <div class="consult-actions">
+              <button class="btn btn-ghost consult-open" data-id="${escapeHTML(r.id)}">View</button>
+            </div>
+          </div>
+        `).join('');
+        list.querySelectorAll('.consult-open, .consult-row').forEach(el => {
+          el.addEventListener('click', (e) => {
+            const id = el.dataset.id || e.currentTarget.closest('.consult-row')?.dataset.id;
+            if (id) openConsult(id);
+          });
+        });
+      }
+
+      function openConsult(id) {
+        selectedConsultId = id;
+        const row = consultRows.find(r => r.id === id);
+        const detail = document.getElementById('consult-detail');
+        if (!row) {
+          detail.innerHTML = `<div style="color:#ff7070;">Request ${escapeHTML(id)} not found.</div>`;
+          return;
+        }
+
+        // Highlight in list
+        document.querySelectorAll('.consult-row').forEach(el => {
+          el.style.background = (el.dataset.id === id) ? 'var(--bg-glass)' : '';
+        });
+
+        const hasDraft = !!row.ai_draft_md_url;
+        const canDraft = (row.status === 'paid' || row.status === 'intake' || row.status === 'review');
+        detail.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:start; gap:12px; flex-wrap:wrap; margin-bottom:14px;">
+            <div style="min-width:0;">
+              <h3 style="margin:0 0 4px; font-size:1.1rem;">${escapeHTML(row.product_type)}</h3>
+              <div style="color:var(--text-3); font-size:0.85rem;">
+                ${escapeHTML(PKG_LABEL[row.package] || row.package)} · ${escapeHTML(PKG_PRICE[row.package] || '')}
+                · <span class="pill pill-status pill-${escapeHTML(row.status)}">${escapeHTML(row.status)}</span>
+              </div>
+            </div>
+            <div style="text-align:end; font-size:0.82rem; color:var(--text-3);">
+              ${formatWhen(row.created_at)}<br>
+              <code style="font-size:0.7rem;">${escapeHTML(row.id)}</code>
+            </div>
+          </div>
+
+          <table style="width:100%; font-size:0.88rem; margin-bottom:14px;">
+            <tr><td style="color:var(--text-3); padding:4px 8px 4px 0; width:120px;">Email</td><td><a href="mailto:${escapeHTML(row.email)}" style="color:var(--secondary);">${escapeHTML(row.email)}</a></td></tr>
+            <tr><td style="color:var(--text-3); padding:4px 8px 4px 0;">Company</td><td>${escapeHTML(row.company || '(not provided)')}</td></tr>
+            <tr><td style="color:var(--text-3); padding:4px 8px 4px 0;">Market</td><td>${escapeHTML(row.market)}</td></tr>
+            <tr><td style="color:var(--text-3); padding:4px 8px 4px 0;">Amount</td><td>$${Number(row.amount_usd || 0).toLocaleString()}</td></tr>
+          </table>
+
+          <details style="margin-bottom:14px;" ${hasDraft ? '' : 'open'}>
+            <summary style="cursor:pointer; color:var(--text-2); font-weight:600;">Client brief</summary>
+            <div style="white-space:pre-wrap; background:var(--bg-glass); padding:14px; border-radius:8px; margin-top:8px; font-size:0.9rem; line-height:1.6;">${escapeHTML(row.brief)}</div>
+          </details>
+
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+            ${canDraft ? `<button id="consult-draft-btn" class="btn btn-primary">${hasDraft ? 'Regenerate AI draft' : 'Generate AI draft'}</button>` : ''}
+            ${hasDraft ? `<button id="consult-loaddraft-btn" class="btn btn-ghost">Load draft</button>` : ''}
+            ${row.status === 'review' && hasDraft ? `<button id="consult-approve-btn" class="btn btn-ghost" title="Phase 2.5 will wire this to Paystack + email PDF">Approve &amp; deliver (2.5)</button>` : ''}
+          </div>
+
+          <div id="consult-draft-status" style="display:none; padding:12px; border-radius:8px; margin-bottom:12px;"></div>
+
+          <div id="consult-draft-pane" style="display:none;">
+            <h4 style="margin:0 0 8px; font-size:0.95rem;">AI draft (Markdown — edit before approval)</h4>
+            <textarea id="consult-draft-md" spellcheck="false"></textarea>
+            <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+              <button id="consult-savemd-btn" class="btn btn-ghost">Save edits (2.5)</button>
+              <span id="consult-mdsize" style="color:var(--text-3); font-size:0.78rem; align-self:center;"></span>
+            </div>
+          </div>
+        `;
+
+        document.getElementById('consult-draft-btn')?.addEventListener('click', () => generateDraft(id));
+        document.getElementById('consult-loaddraft-btn')?.addEventListener('click', () => loadDraft(id));
+
+        // Auto-load existing draft on open.
+        if (hasDraft) loadDraft(id);
+      }
+
+      async function generateDraft(id) {
+        const btn = document.getElementById('consult-draft-btn');
+        const status = document.getElementById('consult-draft-status');
+        const oldText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'Running 6 agents… (5–30s)';
+        status.style.display = 'block';
+        status.style.background = 'rgba(0,212,255,0.08)';
+        status.style.color = 'var(--secondary)';
+        status.textContent = 'Orchestrator running on Render backend. This typically takes 5–30 seconds.';
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/consulting/draft`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ id, force: true }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            status.style.background = 'rgba(255,80,80,0.1)';
+            status.style.color = '#ff7070';
+            status.textContent = `Failed (${r.status}): ${data.detail || data.error || 'unknown error'}`;
+            btn.disabled = false;
+            btn.textContent = oldText;
+            return;
+          }
+          status.style.background = 'rgba(0,255,136,0.1)';
+          status.style.color = 'var(--primary)';
+          status.textContent = '✓ Draft generated. Loading…';
+          // Refresh list, re-open detail with new state, then load the markdown.
+          await loadConsulting();
+          openConsult(id);
+        } catch (err) {
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = `Network error: ${err.message}`;
+          btn.disabled = false;
+          btn.textContent = oldText;
+        }
+      }
+
+      async function loadDraft(id) {
+        const pane = document.getElementById('consult-draft-pane');
+        const ta = document.getElementById('consult-draft-md');
+        const size = document.getElementById('consult-mdsize');
+        if (!pane) return;
+        pane.style.display = 'block';
+        ta.value = 'Loading draft…';
+        try {
+          const row = consultRows.find(r => r.id === id);
+          if (!row?.ai_draft_md_url) {
+            ta.value = '(no draft URL on row)';
+            return;
+          }
+          // Signed Supabase URL — fetch directly.
+          const r = await fetch(row.ai_draft_md_url);
+          if (!r.ok) {
+            ta.value = `(fetch failed: HTTP ${r.status})`;
+            return;
+          }
+          const md = await r.text();
+          ta.value = md;
+          size.textContent = `${md.length.toLocaleString()} chars`;
+        } catch (err) {
+          ta.value = `(error: ${err.message})`;
+        }
       }
     })();
   </script>
