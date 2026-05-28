@@ -30,11 +30,15 @@ function anonymizeIp(ip) {
     return "";
   }
 }
+function cleanSecret(s) {
+  if (typeof s !== "string") return "";
+  return s.replace(/^[\u{FEFF}\u{200B}\s]+/u, "").replace(/\s+$/, "");
+}
 function getConfig(env) {
   return {
-    bsToken: env.BETTER_STACK_TOKEN || "",
-    bsHost: (env.BETTER_STACK_HOST || "https://in.logs.betterstack.com").replace(/\/+$/, ""),
-    sentryDsn: env.SENTRY_DSN || "",
+    bsToken: cleanSecret(env.BETTER_STACK_TOKEN),
+    bsHost: cleanSecret(env.BETTER_STACK_HOST || "https://in.logs.betterstack.com").replace(/\/+$/, ""),
+    sentryDsn: cleanSecret(env.SENTRY_DSN),
     name: env.SERVICE_NAME || "formula-ai-worker",
     envName: env.SERVICE_ENV || "production"
   };
@@ -91,13 +95,8 @@ async function shipError(env, err, ctx, extra = {}) {
 }
 async function shipSentry(env, err, ctx, extra = {}) {
   const cfg = getConfig(env);
-  console.log("[sentry] shipSentry called, dsn_present=", !!cfg.sentryDsn, "dsn_len=", (cfg.sentryDsn || "").length);
   const dsn = parseSentryDsn(cfg.sentryDsn);
-  if (!dsn) {
-    console.error("[sentry] DSN missing or unparseable; skipping");
-    return;
-  }
-  console.log("[sentry] envelope target:", dsn.envelopeUrl);
+  if (!dsn) return;
   const eventId = crypto.randomUUID().replace(/-/g, "");
   const now = (/* @__PURE__ */ new Date()).toISOString();
   const event = {
@@ -151,8 +150,6 @@ ${itemPayload}
     if (!r.ok) {
       const txt = (await r.text()).slice(0, 300);
       console.error("[sentry] POST failed", r.status, txt);
-    } else {
-      console.log("[sentry] event delivered", eventId, "status", r.status);
     }
     return r;
   }).catch((err2) => {
@@ -2752,6 +2749,103 @@ async function runDailyCostReport(env) {
   }
 }
 
+// worker-src/handlers/consulting.js
+var PACKAGES = /* @__PURE__ */ new Set(["quick", "full", "custom"]);
+var PACKAGE_USD = { quick: 1e3, full: 2500, custom: 5e3 };
+function clean(value, maxLen) {
+  const s = String(value ?? "").normalize("NFKC").trim();
+  return maxLen ? s.slice(0, maxLen) : s;
+}
+var EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+async function handleConsultingIntake(request, auth, env) {
+  const ip = clientIP(request);
+  const rl = await rateLimit(env, {
+    bucket: `consult-intake:${ip}`,
+    limit: 3,
+    window: 60 * 60
+  });
+  if (!rl.ok) return rateLimitResponse(rl, "too_many_intake_submissions");
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const pkg = clean(body.package, 16).toLowerCase();
+  if (!PACKAGES.has(pkg)) return badRequest("invalid_package");
+  const email = clean(body.email, 320).toLowerCase();
+  if (!EMAIL_RE.test(email)) return badRequest("invalid_email");
+  const product_type = clean(body.product_type, 200);
+  const market = clean(body.market, 200);
+  const brief = clean(body.brief, 6e3);
+  const company = clean(body.company, 200) || null;
+  if (!product_type || !market || !brief) return badRequest("missing_fields");
+  const row = {
+    email,
+    company,
+    package: pkg,
+    product_type,
+    market,
+    brief,
+    amount_usd: PACKAGE_USD[pkg],
+    status: "intake"
+  };
+  if (auth?.kind === "user" && auth.userId) row.user_id = auth.userId;
+  const r = await sbService(env, "/consultation_requests", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "return=representation"
+    },
+    body: JSON.stringify(row)
+  });
+  if (!r.ok) {
+    const detail = (await r.text()).slice(0, 300);
+    console.error("[consulting.intake] db insert failed", r.status, detail);
+    return json({ error: "db_error", detail }, 500);
+  }
+  const arr = await r.json();
+  const id = arr?.[0]?.id || null;
+  return json({ ok: true, id, package: pkg, amount_usd: PACKAGE_USD[pkg] });
+}
+var OWNER_EMAIL = "jamilaj1@gmail.com";
+async function handleConsultingList(auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: "forbidden" }, 403);
+  }
+  const r = await sbService(
+    env,
+    "/consultation_requests?select=id,email,company,package,product_type,market,brief,status,amount_usd,paystack_reference,ai_draft_md_url,final_pdf_url,revisions_used,created_at,updated_at&order=created_at.desc&limit=200"
+  );
+  if (!r.ok) {
+    return json({ error: "db_error", detail: (await r.text()).slice(0, 300) }, 500);
+  }
+  return json({ requests: await r.json() });
+}
+async function handleConsultingDraft(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: "forbidden" }, 403);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest("missing_id");
+  const updateR = await sbService(env, `/consultation_requests?id=eq.${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({ status: "drafting" })
+  });
+  if (!updateR.ok) {
+    return json({ error: "db_error", detail: (await updateR.text()).slice(0, 300) }, 500);
+  }
+  console.log("[consulting.draft] TODO Phase 2.3: call orchestrator for", id);
+  return json({ ok: true, id, status: "drafting", note: "orchestrator integration pending (Phase 2.3)" });
+}
+
 // worker-src/index.js
 init_observability();
 var SERVICE_VERSION = "Formula AI Brain v8";
@@ -2894,6 +2988,12 @@ async function handleRequest(request, env, ctx) {
       return await handleSafety(request, auth, env);
     if (path === "/lab" && request.method === "POST")
       return await handleLab(request, auth, env);
+    if (path === "/be/consulting/intake" && request.method === "POST")
+      return await handleConsultingIntake(request, auth, env);
+    if (path === "/be/consulting/list" && request.method === "GET")
+      return await handleConsultingList(auth, env);
+    if (path === "/be/consulting/draft" && request.method === "POST")
+      return await handleConsultingDraft(request, auth, env);
     if (path === "/paystack/checkout" && request.method === "POST")
       return await handlePaystackCheckout(request, auth, env);
     if (path === "/paystack/verify" && request.method === "GET")

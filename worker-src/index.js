@@ -88,6 +88,11 @@ import {
 import { handleChemProxy } from './handlers/chem.js';
 import { handleBackendProxy } from './handlers/backend_proxy.js';
 import { runDailyCostReport } from './handlers/cost_report.js';
+import {
+  handleConsultingIntake,
+  handleConsultingList,
+  handleConsultingDraft,
+} from './handlers/consulting.js';
 import { withObservability } from './observability.js';
 
 const SERVICE_VERSION = 'Formula AI Brain v8';
@@ -260,6 +265,14 @@ async function handleRequest(request, env, ctx) {
         return await handleSafety(request, auth, env);
       if (path === '/lab' && request.method === 'POST')
         return await handleLab(request, auth, env);
+
+      // Consulting (Phase 2). Public intake + owner-only admin endpoints.
+      if (path === '/be/consulting/intake' && request.method === 'POST')
+        return await handleConsultingIntake(request, auth, env);
+      if (path === '/be/consulting/list' && request.method === 'GET')
+        return await handleConsultingList(auth, env);
+      if (path === '/be/consulting/draft' && request.method === 'POST')
+        return await handleConsultingDraft(request, auth, env);
 
       // Payments (Paystack primary, Stripe legacy)
       if (path === '/paystack/checkout' && request.method === 'POST')

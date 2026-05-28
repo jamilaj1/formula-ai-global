@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Inter:wght@400;600;700;800;900&display=swap" /></noscript>
-  <link rel="stylesheet" href="./assets/styles.css?v=25" />
+  <link rel="stylesheet" href="./assets/styles.css?v=26" />
   <link rel="canonical" href="https://jamilformula.com/consulting.html" />
 
   <!-- FAQ schema — mirrors the visible FAQ section. Surfaces rich
@@ -470,28 +470,30 @@
     </div>
   </footer>
 
-  <script src="./assets/app.js?v=25"></script>
-  <script type="module" src="./assets/auth.js?v=25"></script>
-  <script type="module" src="./assets/supabase-client.js?v=25"></script>
+  <script src="./assets/app.js?v=26"></script>
+  <script type="module" src="./assets/auth.js?v=26"></script>
+  <script type="module" src="./assets/supabase-client.js?v=26"></script>
   <script>
-    // Phase 2.1: intake form posts to a placeholder endpoint until 2.2
-    // wires the consultation_requests table + Worker handler. For now,
-    // we collect the brief and tell the visitor we'll be in touch. The
-    // payload structure already matches the planned table schema so the
-    // Phase 2.2 swap is one URL change.
+    // Phase 2.2: intake form now posts to the real Worker endpoint
+    // (/be/consulting/intake) which inserts into consultation_requests
+    // and fires a Resend email to the owner via the pg_net trigger.
+    //
+    // A mailto: fallback is kept as the LAST line of defence so a
+    // Worker outage still gets us the lead.
     (function () {
       const form = document.getElementById('consulting-intake');
       const status = document.getElementById('intake-status');
       if (!form) return;
 
+      // Worker base URL. Same origin as everything else in the app —
+      // this matches assets/supabase-client.js's FAI_WORKER_BASE.
+      const WORKER_BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         const data = Object.fromEntries(new FormData(form).entries());
         if (!data.package || !data.product_type || !data.market || !data.brief || !data.email) {
-          status.style.display = 'block';
-          status.style.background = '#fee';
-          status.style.color = '#900';
-          status.textContent = 'Please fill all required fields.';
+          showStatus('Please fill all required fields.', 'error');
           return;
         }
 
@@ -500,42 +502,74 @@
         btn.disabled = true;
         btn.textContent = 'Sending…';
 
-        // Pre-fill clicked package if visitor used a "Start now" button.
+        // Include the user's auth token if they are signed in, so the
+        // row gets linked to their account. Anon submissions still go
+        // through — the table policy allows INSERT for anon.
+        const headers = { 'Content-Type': 'application/json' };
         try {
-          const intent = sessionStorage.getItem('fai_consult_intent');
-          if (intent && !data.package) data.package = intent;
+          const token = window.FAI_AUTH?.session?.access_token;
+          if (token) headers.Authorization = `Bearer ${token}`;
         } catch (_) { /* ignore */ }
 
-        // Phase 2.2 will replace this with a real Worker POST.
-        // For now, log + email-via-mailto fallback so brave testers
-        // can still reach us today.
-        console.log('[consulting-intake] payload', data);
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/consulting/intake`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(data),
+          });
+          const out = await r.json().catch(() => ({}));
 
-        // Compose a mailto fallback so the brief is never lost while
-        // the Worker endpoint is in flight.
-        const body =
-          `New consulting inquiry\n\n` +
-          `Package: ${data.package}\n` +
-          `Product type: ${data.product_type}\n` +
-          `Market: ${data.market}\n` +
-          `Company: ${data.company || '(not provided)'}\n` +
-          `Email: ${data.email}\n\n` +
-          `Brief:\n${data.brief}`;
-        const subject = `[Consulting] ${data.package} — ${data.product_type}`;
-        const mailto = `mailto:jamilaj1@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
-        setTimeout(() => {
-          status.style.display = 'block';
-          status.style.background = 'rgba(0, 255, 136, 0.1)';
-          status.style.color = 'var(--primary)';
-          status.innerHTML =
-            '✓ Brief received. We\'ll reply within 24 hours with a secure payment link and timeline. ' +
-            `If you don\'t hear back, <a href="${mailto}" style="color: var(--primary); text-decoration: underline;">click here to email us directly</a>.`;
+          if (r.ok && out.ok) {
+            showStatus(
+              '✓ Brief received. We\'ll reply within 24 hours with a secure payment link and the expected delivery date. Check your inbox (including spam) for a confirmation.',
+              'success'
+            );
+            form.reset();
+          } else if (r.status === 429) {
+            showStatus(
+              'You\'ve submitted several briefs recently. Please wait an hour and try again, or email us directly: ' + mailtoFallback(data),
+              'error'
+            );
+          } else {
+            showStatus(
+              `We couldn\'t save your brief automatically (error: ${out.error || r.status}). ` +
+              `Please email us directly: ${mailtoFallback(data)}`,
+              'error'
+            );
+          }
+        } catch (err) {
+          showStatus(
+            `Network error. Please email us directly: ${mailtoFallback(data)}`,
+            'error'
+          );
+        } finally {
           btn.disabled = false;
           btn.innerHTML = oldHtml;
-          form.reset();
-        }, 600);
+        }
       });
+
+      function showStatus(html, kind) {
+        status.style.display = 'block';
+        if (kind === 'success') {
+          status.style.background = 'rgba(0, 255, 136, 0.1)';
+          status.style.color = 'var(--primary)';
+        } else {
+          status.style.background = 'rgba(255, 80, 80, 0.1)';
+          status.style.color = '#ff5050';
+        }
+        status.innerHTML = html;
+      }
+
+      function mailtoFallback(data) {
+        const body =
+          `New consulting inquiry\n\n` +
+          `Package: ${data.package}\nProduct: ${data.product_type}\n` +
+          `Market: ${data.market}\nCompany: ${data.company || '(not provided)'}\n` +
+          `Email: ${data.email}\n\nBrief:\n${data.brief}`;
+        const subject = `[Consulting] ${data.package} — ${data.product_type}`;
+        const mailto = `mailto:jamilaj1@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        return `<a href="${mailto}" style="color: inherit; text-decoration: underline;">click here</a>`;
+      }
 
       // When a visitor clicks "Start now" on a package, scroll to form +
       // remember which package they picked so the dropdown can be pre-filled.
