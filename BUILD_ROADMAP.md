@@ -44,6 +44,28 @@ Phase 7 closed 2026-05-28 — daily-use calculators:
 - Pure client-side JS; no recipe ever leaves the browser unless
   saved to Workspace.
 
+Phase 2 fully closed 2026-05-28 — consulting service is live end-to-end,
+INCLUDING the Approve & deliver loop:
+- `POST /api/v2/consulting/{id}/deliver` on the FastAPI backend renders
+  the (possibly-edited) markdown to a polished A4 PDF via reportlab,
+  uploads to the private `consulting-drafts` bucket under `final/`,
+  signs a 30-day URL, and emails the client via Resend with the PDF as
+  a base64 attachment. On success the row flips to status='delivered'
+  with `final_pdf_url` populated.
+- `POST /api/v2/consulting/{id}/resend` re-emails the SAME final PDF
+  without re-rendering — used when the client says "I lost the email".
+- Worker proxies: `/be/consulting/deliver` + `/be/consulting/resend`,
+  owner-only (auth.email gate + x-formula-internal secret), mirror the
+  draft endpoint's pattern.
+- admin.html "Consulting" tab now has real "Approve & deliver to
+  client", "Resend email", "Re-render & re-deliver" (force=true), and
+  "View final PDF" buttons — replacing the Phase 2.5 placeholder. The
+  textarea contents are forwarded as `markdown_override` so owner edits
+  go straight into the PDF in a single click.
+- Requires Render env var `RESEND_API_KEY` (and optionally
+  `RESEND_FROM_EMAIL` + `OWNER_EMAIL` to override the defaults
+  `signups@jamilformula.com` / `jamilaj1@gmail.com`).
+
 Phase 2 closed 2026-05-28 — consulting service is live end-to-end:
 - `consulting.html` — 3 packages, bilingual, FAQ schema, intake form.
 - `consultation_requests` table + RLS + pg_net Resend email trigger
@@ -494,6 +516,14 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `formula-ai-chem.onrender.com/health`); Worker version
   `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
   committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-28 — **Phase 2 close-of-loop ✅ DONE.** Approve & deliver +
+  Resend wired end-to-end. `/api/v2/consulting/{id}/deliver` on FastAPI
+  renders markdown → PDF (reportlab block parser, custom for the shape
+  produced by `_render_markdown`), uploads to `consulting-drafts/{id}/final/`,
+  emails the client via Resend with the PDF as a base64 attachment, and
+  flips status to 'delivered'. `/resend` re-attaches the existing PDF
+  without re-rendering. Worker proxies + admin.html buttons all live.
+  Requires Render env var `RESEND_API_KEY`. Phase 2 is now 100% closed.
 - 2026-05-25 — **Step 1.2 ✅ DONE.** Claude cost guards live. Migration
   `2026-05-25_claude_cost_guards.sql` adds tokens/cost columns + view + RPCs;
   `lib/claude.js` does plan-aware Sonnet/Haiku selection + auto-fallback;

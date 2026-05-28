@@ -94,6 +94,8 @@ import {
   handleConsultingIntake,
   handleConsultingList,
   handleConsultingDraft,
+  handleConsultingDeliver,
+  handleConsultingResend,
   handleConsultingPay,
 } from './handlers/consulting.js';
 import {
@@ -289,6 +291,10 @@ async function handleRequest(request, env, ctx) {
         return await handleConsultingList(auth, env);
       if (path === '/be/consulting/draft' && request.method === 'POST')
         return await handleConsultingDraft(request, auth, env);
+      if (path === '/be/consulting/deliver' && request.method === 'POST')
+        return await handleConsultingDeliver(request, auth, env);
+      if (path === '/be/consulting/resend' && request.method === 'POST')
+        return await handleConsultingResend(request, auth, env);
       if (path === '/be/consulting/pay' && request.method === 'POST')
         return await handleConsultingPay(request, auth, env);
 

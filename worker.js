@@ -2951,6 +2951,79 @@ async function handleConsultingDraft(request, auth, env) {
     return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
   }
 }
+async function handleConsultingDeliver(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: "forbidden" }, 403);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest("missing_id");
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  if (!backendUrl) return json({ error: "backend_not_configured" }, 500);
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || "";
+  if (!internalSecret) {
+    console.warn("[consulting.deliver] BACKEND_INTERNAL_SECRET missing \u2014 call will be rejected");
+  }
+  const md = typeof body.markdown_override === "string" ? body.markdown_override.slice(0, 2e5) : null;
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/consulting/${encodeURIComponent(id)}/deliver`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-formula-internal": internalSecret
+      },
+      body: JSON.stringify({
+        markdown_override: md,
+        force: !!body.force
+      })
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      return json({ error: "backend_error", status: br.status, detail: data.detail || "" }, br.status >= 500 ? 502 : br.status);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
+}
+async function handleConsultingResend(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: "forbidden" }, 403);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest("missing_id");
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  if (!backendUrl) return json({ error: "backend_not_configured" }, 500);
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || "";
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/consulting/${encodeURIComponent(id)}/resend`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-formula-internal": internalSecret
+      },
+      body: "{}"
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      return json({ error: "backend_error", status: br.status, detail: data.detail || "" }, br.status >= 500 ? 502 : br.status);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
+}
 async function handleConsultingPay(request, auth, env) {
   if (!env.PAYSTACK_SECRET_KEY) {
     return json({ error: "paystack_not_configured" }, 503);
@@ -3305,6 +3378,10 @@ async function handleRequest(request, env, ctx) {
       return await handleConsultingList(auth, env);
     if (path === "/be/consulting/draft" && request.method === "POST")
       return await handleConsultingDraft(request, auth, env);
+    if (path === "/be/consulting/deliver" && request.method === "POST")
+      return await handleConsultingDeliver(request, auth, env);
+    if (path === "/be/consulting/resend" && request.method === "POST")
+      return await handleConsultingResend(request, auth, env);
     if (path === "/be/consulting/pay" && request.method === "POST")
       return await handleConsultingPay(request, auth, env);
     if (path === "/be/enterprise/lead" && request.method === "POST")

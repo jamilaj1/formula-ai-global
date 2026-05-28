@@ -550,16 +550,18 @@
           <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
             ${canDraft ? `<button id="consult-draft-btn" class="btn btn-primary">${hasDraft ? 'Regenerate AI draft' : 'Generate AI draft'}</button>` : ''}
             ${hasDraft ? `<button id="consult-loaddraft-btn" class="btn btn-ghost">Load draft</button>` : ''}
-            ${row.status === 'review' && hasDraft ? `<button id="consult-approve-btn" class="btn btn-ghost" title="Phase 2.5 will wire this to Paystack + email PDF">Approve &amp; deliver (2.5)</button>` : ''}
+            ${row.status === 'review' && hasDraft ? `<button id="consult-deliver-btn" class="btn btn-primary" title="Render the markdown as a PDF and email it to the client">Approve &amp; deliver to client</button>` : ''}
+            ${row.status === 'delivered' ? `<button id="consult-resend-btn" class="btn btn-ghost" title="Re-send the same PDF that was emailed before">Resend email</button>` : ''}
+            ${row.status === 'delivered' ? `<button id="consult-redeliver-btn" class="btn btn-ghost" title="Re-render PDF from current markdown and re-email (force=true)">Re-render &amp; re-deliver</button>` : ''}
+            ${row.final_pdf_url ? `<a class="btn btn-ghost" href="${escapeHTML(row.final_pdf_url)}" target="_blank" rel="noopener">View final PDF</a>` : ''}
           </div>
 
           <div id="consult-draft-status" style="display:none; padding:12px; border-radius:8px; margin-bottom:12px;"></div>
 
           <div id="consult-draft-pane" style="display:none;">
-            <h4 style="margin:0 0 8px; font-size:0.95rem;">AI draft (Markdown — edit before approval)</h4>
+            <h4 style="margin:0 0 8px; font-size:0.95rem;">AI draft (Markdown — edit before approval; edits are sent as-is)</h4>
             <textarea id="consult-draft-md" spellcheck="false"></textarea>
             <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-              <button id="consult-savemd-btn" class="btn btn-ghost">Save edits (2.5)</button>
               <span id="consult-mdsize" style="color:var(--text-3); font-size:0.78rem; align-self:center;"></span>
             </div>
           </div>
@@ -567,6 +569,9 @@
 
         document.getElementById('consult-draft-btn')?.addEventListener('click', () => generateDraft(id));
         document.getElementById('consult-loaddraft-btn')?.addEventListener('click', () => loadDraft(id));
+        document.getElementById('consult-deliver-btn')?.addEventListener('click', () => deliverConsult(id, { force: false }));
+        document.getElementById('consult-redeliver-btn')?.addEventListener('click', () => deliverConsult(id, { force: true }));
+        document.getElementById('consult-resend-btn')?.addEventListener('click', () => resendConsult(id));
 
         // Auto-load existing draft on open.
         if (hasDraft) loadDraft(id);
@@ -640,6 +645,138 @@
           size.textContent = `${md.length.toLocaleString()} chars`;
         } catch (err) {
           ta.value = `(error: ${err.message})`;
+        }
+      }
+
+      /**
+       * Approve & deliver: send the (possibly-edited) markdown to the
+       * Worker, which forwards to FastAPI for PDF render + Resend email.
+       *
+       * opts.force = true is used for "Re-render & re-deliver" on rows
+       * that are already in 'delivered' status.
+       */
+      async function deliverConsult(id, opts = {}) {
+        const status = document.getElementById('consult-draft-status');
+        const ta = document.getElementById('consult-draft-md');
+        const deliverBtn = document.getElementById('consult-deliver-btn');
+        const redeliverBtn = document.getElementById('consult-redeliver-btn');
+        const triggeredBtn = opts.force ? redeliverBtn : deliverBtn;
+        const oldText = triggeredBtn?.textContent;
+
+        // Confirm before sending — this writes to the client's inbox.
+        const row = consultRows.find(r => r.id === id);
+        const who = row ? `${row.email} (${PKG_LABEL[row.package] || row.package})` : id;
+        const verb = opts.force ? 'Re-render and re-email' : 'Render the PDF and email';
+        if (!window.confirm(`${verb} the report to ${who}?`)) return;
+
+        const markdownOverride = (ta?.value || '').trim();
+        if (markdownOverride.length < 40) {
+          status.style.display = 'block';
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = 'Draft is empty or too short — click "Load draft" first.';
+          return;
+        }
+
+        if (triggeredBtn) {
+          triggeredBtn.disabled = true;
+          triggeredBtn.textContent = opts.force ? 'Re-rendering…' : 'Rendering + sending…';
+        }
+        status.style.display = 'block';
+        status.style.background = 'rgba(0,212,255,0.08)';
+        status.style.color = 'var(--secondary)';
+        status.textContent = 'Rendering PDF and emailing the client (takes a few seconds)…';
+
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/consulting/deliver`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              id,
+              markdown_override: markdownOverride,
+              force: !!opts.force,
+            }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            status.style.background = 'rgba(255,80,80,0.1)';
+            status.style.color = '#ff7070';
+            status.textContent = `Failed (${r.status}): ${data.detail || data.error || 'unknown error'}`;
+            if (triggeredBtn) {
+              triggeredBtn.disabled = false;
+              triggeredBtn.textContent = oldText;
+            }
+            return;
+          }
+          status.style.background = 'rgba(0,255,136,0.1)';
+          status.style.color = 'var(--primary)';
+          const emailId = data.email_id ? ` (Resend id: ${data.email_id})` : '';
+          status.textContent = `✓ Delivered to ${row ? row.email : 'client'}${emailId}.`;
+          await loadConsulting();
+          openConsult(id);
+        } catch (err) {
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = `Network error: ${err.message}`;
+          if (triggeredBtn) {
+            triggeredBtn.disabled = false;
+            triggeredBtn.textContent = oldText;
+          }
+        }
+      }
+
+      /**
+       * Resend: re-attaches the SAME final PDF that's already on the row
+       * and re-emails the client. No render, no status change — useful
+       * when the client says they lost the email.
+       */
+      async function resendConsult(id) {
+        const status = document.getElementById('consult-draft-status');
+        const btn = document.getElementById('consult-resend-btn');
+        const oldText = btn?.textContent;
+
+        const row = consultRows.find(r => r.id === id);
+        const who = row ? row.email : id;
+        if (!window.confirm(`Resend the existing PDF to ${who}?`)) return;
+
+        if (btn) { btn.disabled = true; btn.textContent = 'Resending…'; }
+        status.style.display = 'block';
+        status.style.background = 'rgba(0,212,255,0.08)';
+        status.style.color = 'var(--secondary)';
+        status.textContent = 'Re-emailing the final PDF…';
+
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/consulting/resend`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ id }),
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            status.style.background = 'rgba(255,80,80,0.1)';
+            status.style.color = '#ff7070';
+            status.textContent = `Failed (${r.status}): ${data.detail || data.error || 'unknown error'}`;
+            if (btn) { btn.disabled = false; btn.textContent = oldText; }
+            return;
+          }
+          status.style.background = 'rgba(0,255,136,0.1)';
+          status.style.color = 'var(--primary)';
+          const emailId = data.email_id ? ` (Resend id: ${data.email_id})` : '';
+          status.textContent = `✓ Resent to ${who}${emailId}.`;
+          if (btn) { btn.disabled = false; btn.textContent = oldText; }
+        } catch (err) {
+          status.style.background = 'rgba(255,80,80,0.1)';
+          status.style.color = '#ff7070';
+          status.textContent = `Network error: ${err.message}`;
+          if (btn) { btn.disabled = false; btn.textContent = oldText; }
         }
       }
     })();

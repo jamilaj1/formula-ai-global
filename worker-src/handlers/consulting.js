@@ -207,6 +207,106 @@ export async function handleConsultingDraft(request, auth, env) {
 }
 
 /**
+ * POST /be/consulting/deliver
+ *
+ * Body: { id, markdown_override?, force? }
+ * Returns: { ok, status, final_pdf_url, email_id }
+ *
+ * Admin-only. Triggers the close-of-loop delivery: render markdown → PDF,
+ * upload to storage, email the client via Resend, flip the row to
+ * 'delivered'. The owner can pass the freshly-edited markdown straight
+ * from the admin textarea so we never round-trip via storage in the same
+ * click (avoids the "I just edited but PDF used the old draft" bug).
+ */
+export async function handleConsultingDeliver(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: 'forbidden' }, 403);
+  }
+  let body;
+  try { body = await request.json(); } catch { return badRequest('invalid_json'); }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest('missing_id');
+
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  if (!backendUrl) return json({ error: 'backend_not_configured' }, 500);
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+  if (!internalSecret) {
+    console.warn('[consulting.deliver] BACKEND_INTERNAL_SECRET missing — call will be rejected');
+  }
+
+  // Cap the markdown forwarded to the backend at ~200 KB. The admin
+  // textarea has no enforced length, but a 200 KB consulting PDF is
+  // already unusually long and anything larger is almost certainly a
+  // paste accident.
+  const md = typeof body.markdown_override === 'string'
+    ? body.markdown_override.slice(0, 200_000)
+    : null;
+
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/consulting/${encodeURIComponent(id)}/deliver`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-formula-internal': internalSecret,
+      },
+      body: JSON.stringify({
+        markdown_override: md,
+        force: !!body.force,
+      }),
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      return json({ error: 'backend_error', status: br.status, detail: data.detail || '' }, br.status >= 500 ? 502 : br.status);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}
+
+/**
+ * POST /be/consulting/resend
+ *
+ * Body: { id }
+ * Returns: { ok, email_id }
+ *
+ * Admin-only. Re-emails the SAME final PDF that's already on the row.
+ * Used when the client says "I lost the email, can you resend?". Doesn't
+ * touch the status (still 'delivered') and doesn't re-render the PDF.
+ */
+export async function handleConsultingResend(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL) {
+    return json({ error: 'forbidden' }, 403);
+  }
+  let body;
+  try { body = await request.json(); } catch { return badRequest('invalid_json'); }
+  const id = clean(body.id, 64);
+  if (!id) return badRequest('missing_id');
+
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  if (!backendUrl) return json({ error: 'backend_not_configured' }, 500);
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/consulting/${encodeURIComponent(id)}/resend`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-formula-internal': internalSecret,
+      },
+      body: '{}',
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      return json({ error: 'backend_error', status: br.status, detail: data.detail || '' }, br.status >= 500 ? 502 : br.status);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}
+
+/**
  * POST /be/consulting/pay
  *
  * Body: { id }                  — consultation_requests.id
