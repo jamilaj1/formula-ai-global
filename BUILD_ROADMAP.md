@@ -8,7 +8,39 @@
 
 ## 🎯 Currently Working On
 
-**Phase 1 — HARDENING is DONE.** Moving on to **Phase 2 (First Revenue)**.
+**Phase 2 — FIRST REVENUE is DONE.** Moving on to **Phase 3 (Enterprise B2B Foundation)**.
+
+Phase 2 closed 2026-05-28 — consulting service is live end-to-end:
+- `consulting.html` — 3 packages, bilingual, FAQ schema, intake form.
+- `consultation_requests` table + RLS + pg_net Resend email trigger
+  (owner gets a notification the moment a brief lands).
+- Cloudflare Worker `/be/consulting/intake|list|draft|pay` —
+  thin auth + routing layer that forwards heavy work to FastAPI.
+- FastAPI `/api/v2/consulting/draft/{id}` runs the 6-agent
+  orchestrator, renders Markdown matching the deliverable promised
+  on consulting.html, uploads to private Supabase Storage bucket
+  `consulting-drafts`, sets a 7-day signed URL on the row.
+- `admin.html` has a new "Consulting" tab: two-pane layout with
+  request list (left), full detail + draft editor (right), badge
+  with count of open requests, deep-link `#consulting/<id>` from the
+  owner-notification email.
+- Paystack one-time charge per package via `/be/consulting/pay` —
+  visitor submits the brief, instantly gets "Pay $X now" button,
+  hosted Paystack URL, webhook flips status to 'paid' which unlocks
+  the "Generate AI draft" button in admin. Custom Project does NOT
+  get instant-pay (discovery call required).
+- Positioning fix: deliverable is English-first ("global standard in
+  industrial chemistry"); translation to any language available on
+  request. Earlier "Arabic or English" copy was making us look like a
+  regional MENA shop and undersold the brand.
+- FTP-chroot lesson: the deploy workflow had been silently writing
+  every CI deploy into a nested `public_html/public_html/public_html/`
+  directory the live HTTP server never read; live site stayed on the
+  25-May manual upload for 3 days through 5 successful Action runs.
+  Fix in commit e79b40a: `server-dir: ./` because the FTP user is
+  chroot'd INSIDE public_html already. Always sanity-check live with
+  `curl -I` against the just-deployed file size, not just by trusting
+  CI green.
 
 Step 1.4 closed 2026-05-26 — push-to-deploy CI is live:
 - `.github/workflows/deploy.yml` runs on every push to main. Two parallel
