@@ -2842,8 +2842,39 @@ async function handleConsultingDraft(request, auth, env) {
   if (!updateR.ok) {
     return json({ error: "db_error", detail: (await updateR.text()).slice(0, 300) }, 500);
   }
-  console.log("[consulting.draft] TODO Phase 2.3: call orchestrator for", id);
-  return json({ ok: true, id, status: "drafting", note: "orchestrator integration pending (Phase 2.3)" });
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  if (!backendUrl) {
+    return json({ error: "backend_not_configured" }, 500);
+  }
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || "";
+  if (!internalSecret) {
+    console.warn("[consulting.draft] BACKEND_INTERNAL_SECRET missing \u2014 call will be rejected");
+  }
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/consulting/draft/${encodeURIComponent(id)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-formula-internal": internalSecret
+      },
+      body: JSON.stringify({ force: !!body.force })
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      await sbService(env, `/consultation_requests?id=eq.${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "review",
+          owner_notes: `Draft failed at backend: ${data.detail || br.status}`
+        })
+      });
+      return json({ error: "backend_error", status: br.status, detail: data.detail || "" }, 502);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
 }
 
 // worker-src/index.js

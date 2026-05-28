@@ -131,11 +131,17 @@ export async function handleConsultingList(auth, env) {
  * POST /be/consulting/draft
  * Admin-only. Triggers the AI draft for a given consultation_request id.
  *
- * Phase 2.3 will replace the stub here with a real call to the FastAPI
- * orchestrator (backend/agents/orchestrator.py). For now this endpoint
- * exists so the admin UI in Phase 2.4 has a button to wire up; it
- * transitions the row from 'paid' to 'drafting' and stores a placeholder
- * markdown URL.
+ * Phase 2.3: this now POSTs to the FastAPI backend on Render
+ * (CHEM_BACKEND_URL), which runs Orchestrator.formulate() with the
+ * request brief and stores the resulting markdown in Supabase Storage.
+ * The Worker is the public gate; the FastAPI does the heavy lifting.
+ *
+ * Why split this way:
+ *   - Cloudflare Workers can't import `anthropic` SDK (Node only) or
+ *     RDKit/numpy. The chem backend already has all of them.
+ *   - The Worker stays a thin auth + routing layer.
+ *   - Defence-in-depth: FastAPI also checks an internal shared secret
+ *     header so it can't be called directly from the public internet.
  */
 export async function handleConsultingDraft(request, auth, env) {
   if (!auth || auth.email !== OWNER_EMAIL) {
@@ -146,7 +152,9 @@ export async function handleConsultingDraft(request, auth, env) {
   const id = clean(body.id, 64);
   if (!id) return badRequest('missing_id');
 
-  // Mark as drafting first so the admin sees immediate feedback.
+  // Mark as drafting first so the admin sees immediate feedback while
+  // the orchestrator runs (typically 3-8 seconds, but Sonnet on Full
+  // packages can take 20+ if the formula is complex).
   const updateR = await sbService(env, `/consultation_requests?id=eq.${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', Prefer: 'return=representation' },
@@ -156,11 +164,42 @@ export async function handleConsultingDraft(request, auth, env) {
     return json({ error: 'db_error', detail: (await updateR.text()).slice(0, 300) }, 500);
   }
 
-  // Phase 2.3 swap-in point: this is where we POST to the FastAPI
-  // orchestrator with the request brief and store its markdown output
-  // in Supabase Storage. For now we leave a tombstone so the UI works
-  // end-to-end and the swap is one function call.
-  console.log('[consulting.draft] TODO Phase 2.3: call orchestrator for', id);
+  // Forward to the FastAPI orchestrator. The shared secret stops anyone
+  // who finds the public Render URL from running the orchestrator
+  // directly — only requests signed by THIS Worker get through.
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  if (!backendUrl) {
+    return json({ error: 'backend_not_configured' }, 500);
+  }
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+  if (!internalSecret) {
+    console.warn('[consulting.draft] BACKEND_INTERNAL_SECRET missing — call will be rejected');
+  }
 
-  return json({ ok: true, id, status: 'drafting', note: 'orchestrator integration pending (Phase 2.3)' });
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/consulting/draft/${encodeURIComponent(id)}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-formula-internal': internalSecret,
+      },
+      body: JSON.stringify({ force: !!body.force }),
+    });
+    const data = await br.json().catch(() => ({}));
+    if (!br.ok) {
+      // Roll status back to 'paid' (or 'intake') so the admin can retry.
+      await sbService(env, `/consultation_requests?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: 'review',
+          owner_notes: `Draft failed at backend: ${data.detail || br.status}`,
+        }),
+      });
+      return json({ error: 'backend_error', status: br.status, detail: data.detail || '' }, 502);
+    }
+    return json({ ok: true, ...data });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
 }
