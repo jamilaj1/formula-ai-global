@@ -44,6 +44,56 @@ Phase 7 closed 2026-05-28 — daily-use calculators:
 - Pure client-side JS; no recipe ever leaves the browser unless
   saved to Workspace.
 
+Phase 9.7 shipped 2026-05-29 — Test coverage expansion (+97 tests):
+- vitest unit tests for the three Worker libs the chat/search/insights
+  paths depend on every single request:
+    * tests/lib/cache.test.js      — buildCacheKey determinism, KV put/get
+      round-trip, TTL clamping (60s minimum, 86400s default), fail-soft
+      when RATELIMIT_KV is unbound, swallowed KV errors. (17 tests)
+    * tests/lib/ratelimit.test.js  — fixed-window counter, per-bucket
+      isolation, Retry-After / X-RateLimit-* headers, CF-Connecting-IP
+      resolution, negative-limit clamp, fail-open without KV. (13 tests)
+    * tests/lib/claude.test.js     — plan→model routing (paid → Sonnet,
+      free → Haiku, case-insensitive), 429/529/503 Sonnet→Haiku
+      fallback, no fallback from 500, no fallback when starting from
+      Haiku, cost_usd computation rounded to 6 dp, JSON extraction
+      from text/code-fence blocks. (35 tests)
+- vitest tests for the consulting handlers (the revenue path):
+    * tests/handlers/consulting.test.js — intake validation (invalid
+      package/email/missing fields), email lowercase, amount_usd
+      stamping per package, signed-in user_id attachment, 3-per-hour
+      rate limit, deliver owner gate + markdown size cap + backend
+      error propagation, resend owner gate + URL routing, pay
+      custom-needs-discovery / already-paid / missing-key branches.
+      (25 tests)
+- pytest tests for the backend rendering paths:
+    * backend/tests/test_consulting_render.py — _render_markdown
+      sections per package, proposal ingredient table rendering,
+      alternative-formulation Option N labelling, safety/cost agent
+      block, inline bold/italic/code HTML, PDF round-trip, table
+      rendering, blockquote, _safe_pdf_filename strips unsafe chars
+      and lowercases. (20 tests)
+    * backend/tests/test_library_pdf.py — _render_pdf minimal row,
+      full component table, process_conditions + properties, malformed
+      percentage (caught a real bug — see below). (12 tests)
+
+Bug found and fixed during 9.7 (proof the coverage was needed):
+- backend/app/api/v2/library_pdf.py: the cell formatter `f"{float(pct):.2f}"`
+  was unguarded, so a malformed `percentage: "not a number"` from a
+  user_formulas row would crash the entire PDF render with ValueError.
+  The accumulator above it was already in a try/except, so the author
+  had clearly intended to be defensive — they just missed the cell
+  line. Extracted a small `_fmt_pct()` helper that mirrors the
+  accumulator's pattern. Lockdown test
+  `test_render_pdf_with_malformed_percentage_doesnt_crash` would have
+  caught any future regression.
+
+Net: 90 new Worker tests + 32 new backend tests = 122 new assertions,
+total suite now 135 vitest + 60 pytest. Coverage of the lib layer is
+near-complete; the Phase 9.1 vector.js path is still untested (next
+iteration). Pre-existing test_health.py failures are unrelated to 9.7
+and were not introduced here.
+
 Phase 9.6 shipped 2026-05-29 — CSP tighten (unsafe-eval removed):
 - Audited every committed `.js` and inline `<script>` across the repo
   with `rg '\beval\s*\(|new\s+Function|Function\s*\(\s*["'\''`]'`. Zero
@@ -566,6 +616,13 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `formula-ai-chem.onrender.com/health`); Worker version
   `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
   committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-29 — **Phase 9.7 ✅ DONE.** +97 new test assertions across
+  the Worker libs (cache/ratelimit/claude), the consulting handler,
+  and the backend rendering paths (consulting markdown + library PDF).
+  Caught and fixed one real bug along the way — unguarded `float(pct)`
+  in library_pdf.py that would crash the spec-sheet PDF on a malformed
+  percentage. vitest now passes 135/135 locally; pytest passes all
+  the consulting + library + agents + pubchem tests. Moving on.
 - 2026-05-29 — **Phase 9.6 ✅ DONE.** `'unsafe-eval'` removed from
   `.htaccess` CSP after an audit confirmed zero eval/new Function/
   Function('…') usage across all committed `.js` and inline `<script>`

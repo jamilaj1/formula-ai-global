@@ -145,6 +145,18 @@ def _render_pdf(formula: dict[str, Any]) -> bytes:
         headers = ["#", "Ingredient", "%", "CAS", "Function"]
         rows = [[Paragraph(h, head_style) for h in headers]]
         total_pct = 0.0
+
+        def _fmt_pct(p: Any) -> str:
+            """Best-effort numeric → '12.34'. Returns '—' on malformed input
+            so a single bad row never crashes the whole PDF render — caught
+            by Phase 9.7's test_render_pdf_with_malformed_percentage."""
+            if p is None:
+                return "—"
+            try:
+                return f"{float(p):.2f}"
+            except (TypeError, ValueError):
+                return "—"
+
         for i, c in enumerate(components, 1):
             pct = c.get("percentage") if isinstance(c, dict) else None
             try:
@@ -154,7 +166,7 @@ def _render_pdf(formula: dict[str, Any]) -> bytes:
             rows.append([
                 Paragraph(str(i), cell_style),
                 Paragraph(_safe((c or {}).get("name_en") or (c or {}).get("name")), cell_style),
-                Paragraph(f"{float(pct):.2f}" if pct is not None else "—", cell_style),
+                Paragraph(_fmt_pct(pct), cell_style),
                 Paragraph(_safe((c or {}).get("cas_number")), cell_style),
                 Paragraph(_safe((c or {}).get("function")), cell_style),
             ])
