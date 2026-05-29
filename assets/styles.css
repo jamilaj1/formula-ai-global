@@ -438,7 +438,12 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   min-width: 0;
 }
 
-.nav-links a {
+.nav-links > li {
+  position: relative;
+}
+
+.nav-links a,
+.nav-dropdown-toggle {
   color: var(--text-2);
   font-size: 0.9rem;
   font-weight: 600;
@@ -446,17 +451,29 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   position: relative;
   white-space: nowrap;
   transition: color 0.15s ease;
+  /* Button reset so .nav-dropdown-toggle matches the anchor look */
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.nav-links a:hover {
+.nav-links a:hover,
+.nav-dropdown-toggle:hover {
   color: var(--text-1);
 }
 
-.nav-links a.active {
+.nav-links a.active,
+.nav-dropdown-toggle.active {
   color: var(--primary);
 }
 /* Premium underline on the active item */
-.nav-links a.active::after {
+.nav-links a.active::after,
+.nav-dropdown-toggle.active::after {
   content: "";
   position: absolute;
   left: 0;
@@ -467,17 +484,88 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
   background: var(--grad-primary, linear-gradient(135deg, #00ff88, #00d4ff));
 }
 
-/* The full nav (up to 10 items + 2 CTAs) only fits on wide screens.
-   Anything narrower → clean hamburger menu instead of an overlapping
-   cheap mess. This is the premium behaviour (one tidy row OR a tidy
-   menu — never collision). */
-@media (min-width: 1367px) and (max-width: 1560px) {
-  .nav-links { gap: 13px; }
-  .nav-links a { font-size: 0.82rem; }
-  .logo { font-size: 1.2rem; }
-  .nav-cta .btn { padding: 9px 14px; font-size: 0.85rem; }
+/* ────────── Tools dropdown ──────────────────────────────────────────
+   Single dropdown that holds 17 secondary tools so the navbar stays at
+   6 primary items (Home · Tools ▾ · Consulting · Enterprise · Pricing ·
+   About). Floats below the toggle on desktop; expands inline when the
+   hamburger menu is open on mobile. */
+.nav-dropdown-toggle .nav-caret {
+  width: 14px;
+  height: 14px;
+  transition: transform 0.2s ease;
 }
-@media (max-width: 1366px) {
+
+.nav-dropdown.open .nav-dropdown-toggle .nav-caret {
+  transform: rotate(180deg);
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 16px);
+  left: 0;
+  min-width: 240px;
+  max-height: min(70vh, 520px);
+  overflow-y: auto;
+  background: rgba(5, 8, 24, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px;
+  list-style: none;
+  margin: 0;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
+  z-index: 110;
+}
+
+.nav-dropdown.open .nav-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s;
+}
+
+.nav-dropdown-menu li { margin: 0; }
+
+.nav-dropdown-menu a {
+  display: block;
+  padding: 9px 12px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-2);
+  border-radius: 8px;
+  transition: background 0.15s ease, color 0.15s ease;
+  white-space: nowrap;
+}
+
+.nav-dropdown-menu a:hover {
+  background: var(--bg-card);
+  color: var(--text-1);
+}
+
+.nav-dropdown-menu a.active {
+  background: rgba(0, 255, 136, 0.08);
+  color: var(--primary);
+}
+
+.nav-dropdown-menu a.active::after { display: none; }
+
+/* RTL: anchor the dropdown to the toggle's right edge */
+[dir="rtl"] .nav-dropdown-menu {
+  left: auto;
+  right: 0;
+}
+
+/* The full nav (6 primary items + Tools dropdown) fits on every real
+   laptop. Hamburger only kicks in below 900px (tablets / phones), so
+   1366px+ laptops always see the clean inline nav — no collision, no
+   compressed "Pricing⌣us" overflow we had with the old 12-13 item
+   layout. */
+@media (max-width: 900px) {
   .nav-links {
     display: none;
     position: fixed;
@@ -493,15 +581,48 @@ h4 { font-size: clamp(1.1rem, 2vw, 1.4rem); }
     border-radius: 16px;
     padding: 14px;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+    max-height: calc(100vh - 96px);
+    overflow-y: auto;
   }
   .nav-links.open { display: flex; }
-  .nav-links a {
+  .nav-links a,
+  .nav-dropdown-toggle {
     font-size: 0.95rem;
     padding: 12px 14px;
     border-radius: 10px;
+    width: 100%;
+    justify-content: space-between;
   }
-  .nav-links a:hover { background: var(--bg-card); }
-  .nav-links a.active::after { display: none; }
+  .nav-links a:hover,
+  .nav-dropdown-toggle:hover { background: var(--bg-card); }
+  .nav-links a.active::after,
+  .nav-dropdown-toggle.active::after { display: none; }
+
+  /* Mobile dropdown: expand inline, no floating panel */
+  .nav-dropdown-menu {
+    position: static;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    box-shadow: none;
+    border: none;
+    background: rgba(255, 255, 255, 0.025);
+    border-radius: 10px;
+    margin: 4px 0 8px;
+    padding: 6px;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease;
+  }
+  .nav-dropdown.open .nav-dropdown-menu {
+    max-height: 60vh;
+    overflow-y: auto;
+  }
+  .nav-dropdown-menu a {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
   .nav-toggle { display: flex !important; }
   .nav-cta { display: none; }
 }

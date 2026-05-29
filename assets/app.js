@@ -25,6 +25,52 @@ if (navToggle && navLinks) {
   });
 }
 
+// Nav dropdown (Tools ▾). Click-toggle so the menu doesn't open on
+// every accidental mouseover and so it works identically on touch
+// devices. Closes on outside click + Escape.
+const navDropdowns = document.querySelectorAll('.nav-dropdown');
+if (navDropdowns.length) {
+  const closeAll = (except) => {
+    navDropdowns.forEach(dd => {
+      if (dd === except) return;
+      dd.classList.remove('open');
+      dd.querySelector('.nav-dropdown-toggle')?.setAttribute('aria-expanded', 'false');
+    });
+  };
+
+  navDropdowns.forEach(dd => {
+    const toggle = dd.querySelector('.nav-dropdown-toggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const willOpen = !dd.classList.contains('open');
+      closeAll(dd);
+      dd.classList.toggle('open', willOpen);
+      toggle.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
+    });
+    // Clicking a link inside the dropdown closes the dropdown AND the
+    // mobile drawer (the nav-toggle handler above only watches direct
+    // .nav-links > a, not nested dropdown links).
+    dd.querySelectorAll('a').forEach(a => {
+      a.addEventListener('click', () => {
+        dd.classList.remove('open');
+        toggle.setAttribute('aria-expanded', 'false');
+        navLinks?.classList.remove('open');
+      });
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    let inside = false;
+    navDropdowns.forEach(dd => { if (dd.contains(e.target)) inside = true; });
+    if (!inside) closeAll(null);
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAll(null);
+  });
+}
+
 // Scroll reveal animations
 const revealItems = document.querySelectorAll('.reveal');
 if (revealItems.length) {
