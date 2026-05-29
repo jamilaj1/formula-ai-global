@@ -20,6 +20,7 @@ import { json, badRequest } from '../lib/responses.js';
 // side and never leaks the service-role key to the browser.
 import { sbService } from '../lib/supabase.js';
 import { claudeCall, modelForPlan } from '../lib/claude.js';
+import { semanticSearchFormulas } from '../lib/vector.js';
 import { dailyLimitFor } from '../config.js';
 import { getDailyUsage, recordUsage } from '../auth.js';
 
@@ -203,7 +204,42 @@ async function executeChatTool(toolName, toolInput, env, auth) {
     const select =
       'id,name,name_en,category,sub_category,form_type,trust_score,source_title,source_year';
 
-    // Build a list of candidate search terms — every meaningful word, plus the full phrase.
+    const seen = new Set();
+    const all = [];
+
+    // ── Pass 1: semantic (vector) search ─────────────────────────────
+    // Phase 9.1 — if OPENAI_API_KEY is set on the Worker, embed the
+    // query via OpenAI text-embedding-3-small and pull the top-k most
+    // similar formulas via the match_formulas RPC. These are returned
+    // FIRST so Claude prefers semantically-on-point hits over generic
+    // ILIKE matches. When the key is unset, this returns [] and we
+    // silently fall through to the original ILIKE behaviour — zero
+    // downside, only an upside on hard-to-keyword queries like
+    // "something that cuts oily residue without leaving a film".
+    let vectorHits = [];
+    try {
+      vectorHits = await semanticSearchFormulas(rawQuery, env, {
+        topK: Math.min(limit + 4, 12),
+        minSimilarity: 0.30,
+      });
+    } catch (err) {
+      console.warn('[chat.search_formulas] vector pass error:', err?.message || err);
+      vectorHits = [];
+    }
+    for (const row of vectorHits) {
+      // RPC respects the same column shape as the ILIKE select above
+      // (the migration was written to match), so no remapping needed.
+      if (toolInput.category && row.category !== toolInput.category) continue;
+      if (!seen.has(row.id)) {
+        seen.add(row.id);
+        all.push(row);
+      }
+    }
+    const vectorCount = all.length;
+
+    // ── Pass 2: ILIKE keyword variants (original Phase 1.2 behaviour)
+    // Build a list of candidate search terms — every meaningful word
+    // plus the full phrase. Keeps exact-name hits Claude wants to see.
     const stop = new Set([
       'the', 'a', 'an', 'for', 'with', 'of', 'in', 'to', 'and', 'or', 'on', 'from',
       'high', 'low', 'quality', 'economical', 'natural', 'herbal', 'pure', 'best', 'good',
@@ -217,8 +253,6 @@ async function executeChatTool(toolName, toolInput, env, auth) {
     if (rawQuery.length >= 3) variants.push(rawQuery);
     for (const w of words) if (!variants.includes(w)) variants.push(w);
 
-    const seen = new Set();
-    const all = [];
     let attemptedCategoryFallback = false;
 
     for (const v of variants) {
@@ -265,6 +299,7 @@ async function executeChatTool(toolName, toolInput, env, auth) {
       count: all.length,
       tried_variants: variants,
       category_fallback_used: attemptedCategoryFallback,
+      vector_hits: vectorCount,   // observability: how many of the returned rows came from semantic search
     };
   }
 

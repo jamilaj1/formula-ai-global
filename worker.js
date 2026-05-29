@@ -850,6 +850,69 @@ Form type: ${formula.form_type || "liquid"}`;
   return runJsonCall(env, auth, "/lab", LAB_SYSTEM, userText, 600);
 }
 
+// worker-src/lib/vector.js
+var OPENAI_EMBED_URL = "https://api.openai.com/v1/embeddings";
+var DEFAULT_MODEL = "text-embedding-3-small";
+async function embedQuery(query, env) {
+  if (!env?.OPENAI_API_KEY) return null;
+  const text = String(query || "").trim();
+  if (!text || text.length > 4e3) return null;
+  try {
+    const r = await fetch(OPENAI_EMBED_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: env.OPENAI_EMBED_MODEL || DEFAULT_MODEL,
+        input: text
+      })
+    });
+    if (!r.ok) {
+      console.warn("[vector.embed] OpenAI", r.status, (await r.text()).slice(0, 200));
+      return null;
+    }
+    const data = await r.json();
+    const v = data?.data?.[0]?.embedding;
+    return Array.isArray(v) && v.length === 1536 ? v : null;
+  } catch (err) {
+    console.warn("[vector.embed] network error:", err?.message || err);
+    return null;
+  }
+}
+async function matchFormulas(embedding, env, opts = {}) {
+  if (!Array.isArray(embedding) || embedding.length !== 1536) return null;
+  const topK = Math.max(1, Math.min(opts.topK ?? 10, 25));
+  const minSim = Math.max(0, Math.min(opts.minSimilarity ?? 0.3, 0.99));
+  try {
+    const r = await sbService(env, "/rpc/match_formulas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query_embedding: embedding,
+        top_k: topK,
+        min_similarity: minSim
+      })
+    });
+    if (!r.ok) {
+      console.warn("[vector.match] RPC", r.status, (await r.text()).slice(0, 200));
+      return null;
+    }
+    const rows = await r.json();
+    return Array.isArray(rows) ? rows : null;
+  } catch (err) {
+    console.warn("[vector.match] error:", err?.message || err);
+    return null;
+  }
+}
+async function semanticSearchFormulas(query, env, opts = {}) {
+  const v = await embedQuery(query, env);
+  if (!v) return [];
+  const rows = await matchFormulas(v, env, opts);
+  return Array.isArray(rows) ? rows : [];
+}
+
 // worker-src/handlers/chat.js
 var CHAT_SYSTEM_PROMPT = `You are Formula AI, an expert chemical formulator. You have access to a database of 3,381 verified chemical formulas across 40 industries (cosmetics, cleaning, disinfectants, pharmaceuticals, automotive, agriculture, industrial, etc.).
 
@@ -1013,6 +1076,26 @@ async function executeChatTool(toolName, toolInput, env, auth) {
     if (!rawQuery) return { error: "empty_query", rows: [] };
     const limit = Math.min(Math.max(parseInt(toolInput.limit) || 8, 1), 12);
     const select = "id,name,name_en,category,sub_category,form_type,trust_score,source_title,source_year";
+    const seen = /* @__PURE__ */ new Set();
+    const all = [];
+    let vectorHits = [];
+    try {
+      vectorHits = await semanticSearchFormulas(rawQuery, env, {
+        topK: Math.min(limit + 4, 12),
+        minSimilarity: 0.3
+      });
+    } catch (err) {
+      console.warn("[chat.search_formulas] vector pass error:", err?.message || err);
+      vectorHits = [];
+    }
+    for (const row of vectorHits) {
+      if (toolInput.category && row.category !== toolInput.category) continue;
+      if (!seen.has(row.id)) {
+        seen.add(row.id);
+        all.push(row);
+      }
+    }
+    const vectorCount = all.length;
     const stop = /* @__PURE__ */ new Set([
       "the",
       "a",
@@ -1040,8 +1123,6 @@ async function executeChatTool(toolName, toolInput, env, auth) {
     const variants = [];
     if (rawQuery.length >= 3) variants.push(rawQuery);
     for (const w of words) if (!variants.includes(w)) variants.push(w);
-    const seen = /* @__PURE__ */ new Set();
-    const all = [];
     let attemptedCategoryFallback = false;
     for (const v of variants) {
       const safe = v.replace(/[%_,()*]/g, "").trim();
@@ -1084,7 +1165,9 @@ async function executeChatTool(toolName, toolInput, env, auth) {
       rows: all.slice(0, limit),
       count: all.length,
       tried_variants: variants,
-      category_fallback_used: attemptedCategoryFallback
+      category_fallback_used: attemptedCategoryFallback,
+      vector_hits: vectorCount
+      // observability: how many of the returned rows came from semantic search
     };
   }
   if (toolName === "get_formula_details") {

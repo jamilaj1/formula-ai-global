@@ -44,6 +44,41 @@ Phase 7 closed 2026-05-28 — daily-use calculators:
 - Pure client-side JS; no recipe ever leaves the browser unless
   saved to Workspace.
 
+Phase 9.1 shipped 2026-05-29 — Vector DB + RAG augmentation:
+- pgvector extension + `formulas.embedding vector(1536)` column +
+  HNSW index. RPC `public.match_formulas(query_embedding, top_k,
+  min_similarity)` is SECURITY DEFINER + REVOKE EXECUTE FROM PUBLIC so
+  only the Worker (service_role) can call it — same anti-scraping
+  pattern as Phase 1.1's direct-SELECT lockdown.
+- `scripts/embed_formulas.py` — resumable backfill that reads
+  `formula_embedding_progress` view, builds a short string per row
+  (name + sub_category + top-5 components by %), embeds via OpenAI
+  text-embedding-3-small (1536 dims), and PATCHes the rows. ~$0.04 of
+  OpenAI credit for the whole 3,381-row backfill, runs in 3-4 minutes
+  from a laptop. Re-running is safe — it skips already-embedded rows.
+- `worker-src/lib/vector.js` — `embedQuery()` + `matchFormulas()` +
+  one-call `semanticSearchFormulas()`. Every export returns null/[]
+  on any failure (network, missing key, RPC fault) and never throws,
+  so the chat tool degrades gracefully to ILIKE-only when OpenAI is
+  unreachable or OPENAI_API_KEY is unset.
+- `worker-src/handlers/chat.js` — the `search_formulas` tool now runs
+  a vector pass FIRST (top-10 with cosine ≥ 0.30) and then merges
+  with the existing ILIKE variants. Returns `vector_hits` in the tool
+  result so we can see in logs how often semantic search carried the
+  query. Backward-compatible: with no OPENAI_API_KEY set, behaviour
+  is identical to today.
+
+Owner actions required to fully activate 9.1:
+  1. Paste `database/migrations/2026-05-29_vector_search.sql` into
+     Supabase SQL Editor (Role: postgres). Idempotent.
+  2. In Cloudflare Workers dashboard for `formula-ai-brain`, add
+     secret `OPENAI_API_KEY = sk-…` (get it from platform.openai.com
+     → API keys). Until this secret is set, the chat tool keeps
+     working but the vector pass is a no-op.
+  3. Run `python scripts/embed_formulas.py` once locally with
+     SUPABASE_URL + SUPABASE_SERVICE_KEY + OPENAI_API_KEY in env.
+     Watch the % progress in stdout; budget ~$0.04 + 4 minutes.
+
 Phase 2 fully closed 2026-05-28 — consulting service is live end-to-end,
 INCLUDING the Approve & deliver loop:
 - `POST /api/v2/consulting/{id}/deliver` on the FastAPI backend renders
@@ -516,6 +551,19 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `formula-ai-chem.onrender.com/health`); Worker version
   `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
   committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-29 — **Phase 9.1 ✅ DONE.** Vector DB + RAG augmentation shipped.
+  Migration `2026-05-29_vector_search.sql` adds pgvector + embedding
+  column + HNSW + the `match_formulas` RPC + a `formula_embedding_progress`
+  view. `scripts/embed_formulas.py` backfills the column via OpenAI
+  text-embedding-3-small in batches of 100 (~$0.04 + ~4 min for 3,381
+  rows). `worker-src/lib/vector.js` wraps the OpenAI embed + the RPC
+  with graceful null/empty fallbacks. `worker-src/handlers/chat.js`
+  search_formulas tool now runs semantic-first then ILIKE — the result
+  payload exposes `vector_hits` for observability. Owner actions to
+  fully activate listed at the top of the "Currently Working On"
+  section. Backward-compatible: with OPENAI_API_KEY unset the tool
+  works exactly like before. Moving pointer to Phase 9.6 (CSP) or
+  9.7 (tests) — whichever Jamil picks next.
 - 2026-05-28 — **Phase 2 close-of-loop ✅ DONE.** Approve & deliver +
   Resend wired end-to-end. `/api/v2/consulting/{id}/deliver` on FastAPI
   renders markdown → PDF (reportlab block parser, custom for the shape
