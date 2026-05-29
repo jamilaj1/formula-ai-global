@@ -145,6 +145,19 @@ with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
         z.write(sm, "sitemap.xml")
         entries.append("sitemap.xml")
 
+    # Infrastructure files at the repo root. These were historically uploaded
+    # by hand once and forgotten — which left them silently out-of-sync after
+    # every git push. Phase 9.6 (CSP tighten) caught this: a .htaccess edit
+    # was committed but never reached the live server, so 'unsafe-eval'
+    # stayed in the CSP header for hours. Include all three here so every
+    # deploy carries the canonical version. `os.path.isfile()` guards keep
+    # the script working in checkouts that don't have them yet.
+    for fname in (".htaccess", "robots.txt", "manifest.json"):
+        p = os.path.join(ROOT, fname)
+        if os.path.isfile(p):
+            z.write(p, fname)
+            entries.append(fname)
+
 backslash = [e for e in entries if "\\" in e]
 print(f"zip: {zip_path}")
 print(f"entries: {len(entries)}  backslash entries: {len(backslash)}")
