@@ -44,6 +44,21 @@ Phase 7 closed 2026-05-28 — daily-use calculators:
 - Pure client-side JS; no recipe ever leaves the browser unless
   saved to Workspace.
 
+Phase 9.6 shipped 2026-05-29 — CSP tighten (unsafe-eval removed):
+- Audited every committed `.js` and inline `<script>` across the repo
+  with `rg '\beval\s*\(|new\s+Function|Function\s*\(\s*["'\''`]'`. Zero
+  hits in our 11 assets/*.js files and all 33 root *.html inline
+  scripts. The only third-party JS we load (@supabase/supabase-js@2
+  from esm.sh) is documented as eval-free.
+- `.htaccess`: dropped `'unsafe-eval'` from script-src. Header note in
+  the file explains how the audit was done so the next person doesn't
+  re-add it speculatively. Kept `'unsafe-inline'` for now — that's a
+  separate tightening with CSP-nonces (future phase).
+- Net effect: a CSP-aware browser will now refuse to execute eval()
+  or new Function('…') even if an XSS vector smuggled one in. One
+  more layer of defence on top of Phase 1.1 (server gate) and 1.2
+  (cost guards).
+
 Phase 9.1 shipped 2026-05-29 — Vector DB + RAG augmentation:
 - pgvector extension + `formulas.embedding vector(1536)` column +
   HNSW index. RPC `public.match_formulas(query_embedding, top_k,
@@ -551,6 +566,13 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `formula-ai-chem.onrender.com/health`); Worker version
   `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
   committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-29 — **Phase 9.6 ✅ DONE.** `'unsafe-eval'` removed from
+  `.htaccess` CSP after an audit confirmed zero eval/new Function/
+  Function('…') usage across all committed `.js` and inline `<script>`
+  blocks (11 assets/*.js + 33 root *.html, plus the supabase-js@2
+  third-party we load). One-line CSP change + a header comment in
+  the file explaining the audit so it doesn't get re-added by accident.
+  Defence-in-depth on top of Phase 1.1/1.2.
 - 2026-05-29 — **Phase 9.1 ✅ DONE.** Vector DB + RAG augmentation shipped.
   Migration `2026-05-29_vector_search.sql` adds pgvector + embedding
   column + HNSW + the `match_formulas` RPC + a `formula_embedding_progress`
