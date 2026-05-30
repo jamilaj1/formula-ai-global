@@ -56,7 +56,7 @@ import { resolveCaller } from './auth.js';
 import { handleSearch } from './handlers/search.js';
 import { handleUsage } from './handlers/usage.js';
 import { handleSafety, handleLab } from './handlers/insights.js';
-import { handleChat, handleListSessions, handleLoadMessages } from './handlers/chat.js';
+import { handleChat, handleListSessions, handleLoadMessages, handleChatExport } from './handlers/chat.js';
 import {
   handleSaveFormula,
   handleMyFormulas,
@@ -233,6 +233,10 @@ async function handleRequest(request, env, ctx) {
         return await handleListSessions(auth, env);
       if (path === '/chat/messages' && request.method === 'GET')
         return await handleLoadMessages(url, auth, env);
+
+      // Phase 9.4 — export one chat session as Markdown or PDF
+      if (path === '/chat/export' && request.method === 'GET')
+        return await handleChatExport(url, auth, env);
 
       // Personal library (Phase 4 + 13)
       if (path === '/save_formula' && request.method === 'POST')

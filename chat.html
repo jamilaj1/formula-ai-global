@@ -377,7 +377,20 @@
             <div class="title" id="chat-title" data-i18n-ar="مساعدك الكيميائي">Your chemistry assistant</div>
             <div class="sub" data-i18n-ar="آلاف الفورمولات · صناعات متعددة · يجيب بلغتك">Thousands of formulas · many industries · answers in your language</div>
           </div>
-          <span id="chat-usage" class="chat-usage-pill"></span>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <!-- Phase 9.4 — export current session. Disabled until a session is loaded. -->
+            <button type="button" id="chat-export-md" class="btn btn-ghost" style="padding:8px 12px; font-size:0.82rem;" disabled
+                    title="Download this chat as Markdown" data-i18n-attr="title"
+                    data-i18n-title-ar="نزّل هذه المحادثة كـ Markdown">
+              <span data-i18n-ar="MD">⬇ MD</span>
+            </button>
+            <button type="button" id="chat-export-pdf" class="btn btn-ghost" style="padding:8px 12px; font-size:0.82rem;" disabled
+                    title="Download this chat as PDF" data-i18n-attr="title"
+                    data-i18n-title-ar="نزّل هذه المحادثة كـ PDF">
+              <span data-i18n-ar="PDF">⬇ PDF</span>
+            </button>
+            <span id="chat-usage" class="chat-usage-pill"></span>
+          </div>
         </div>
 
         <div id="chat-feed" class="chat-feed">

@@ -535,6 +535,171 @@ export async function handleListSessions(auth, env) {
   }
 }
 
+/* ─── /chat/export — Markdown + PDF download (Phase 9.4) ───────── */
+
+/**
+ * Render one chat_messages row as a Markdown turn. Strips empty text,
+ * indents formula references (so they sit visually under the answer),
+ * and skips tool-only blocks the user never sees.
+ */
+function _formatChatRowMd(row) {
+  if (!row || (row.role !== 'user' && row.role !== 'assistant')) return null;
+  const t = (row.content && row.content.text) || '';
+  if (!t.trim()) return null;
+  const ts = row.created_at
+    ? new Date(row.created_at).toISOString().replace('T', ' ').slice(0, 19) + ' UTC'
+    : '';
+  const speaker = row.role === 'user' ? 'You' : 'Formula AI';
+  const lines = [`## ${speaker} · ${ts}`, '', t.trim()];
+  const refs = (row.content && row.content.formula_refs) || [];
+  if (Array.isArray(refs) && refs.length) {
+    lines.push('');
+    lines.push('**Formulas referenced**');
+    for (const r of refs) {
+      const trust = r.trust ? ` · trust ${r.trust}/100` : '';
+      lines.push(`- ${r.name || '(unnamed)'}${trust}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+/**
+ * Render the whole conversation as a Markdown document.
+ *   Title + meta block at the top, then ## turns in chronological order,
+ *   then a closing footer that names the platform so the export is
+ *   self-attributing if the user shares it.
+ */
+function renderChatMarkdown(session, messages) {
+  const title = (session && session.title) || 'Chat';
+  const created = session && session.created_at
+    ? new Date(session.created_at).toISOString().slice(0, 10)
+    : '';
+  const updated = session && session.updated_at
+    ? new Date(session.updated_at).toISOString().slice(0, 10)
+    : '';
+  const turns = (Array.isArray(messages) ? messages : [])
+    .map(_formatChatRowMd)
+    .filter(Boolean);
+  const out = [
+    `# ${title}`,
+    '',
+    `**Session:** \`${session?.id || ''}\`  `,
+    created ? `**Started:** ${created}  ` : '',
+    updated ? `**Updated:** ${updated}  ` : '',
+    `**Turns:** ${turns.length}`,
+    '',
+    '---',
+    '',
+    ...turns.flatMap(t => [t, '']),
+    '---',
+    '',
+    '_Exported from Formula AI Global — jamilformula.com_',
+  ].filter(s => s !== '');
+  return out.join('\n');
+}
+
+/** Build a Content-Disposition filename safe for HTTP headers. */
+function _safeAttachmentName(base, ext) {
+  const clean = String(base || 'chat')
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9._-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'chat';
+  return `${clean}.${ext}`;
+}
+
+/**
+ * GET /chat/export?session_id=<uuid>&format=md|pdf
+ *
+ * Markdown branch: rendered entirely in the Worker — zero backend hop,
+ * sub-100ms for typical sessions, single round trip for the browser.
+ *
+ * PDF branch: render Markdown locally → POST to FastAPI's
+ * /api/v2/chat/render-pdf which reuses the consulting-deliver markdown
+ * → reportlab parser (already proven on a $5k-package deliverable).
+ *
+ * Auth: same ownership check as handleLoadMessages — signed-in user
+ * must own the session. Guests are blocked.
+ */
+export async function handleChatExport(url, auth, env) {
+  const sessionId = url.searchParams.get('session_id');
+  if (!sessionId) return badRequest('missing_session_id');
+  const format = (url.searchParams.get('format') || 'md').toLowerCase();
+  if (format !== 'md' && format !== 'pdf') return badRequest('invalid_format');
+
+  if (!auth || auth.kind !== 'user') {
+    return json({ error: 'auth_required' }, 401);
+  }
+
+  // 1. Ownership check + session metadata fetch in one call.
+  const sessR = await sbService(
+    env,
+    `/chat_sessions?id=eq.${encodeURIComponent(sessionId)}&user_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,created_at,updated_at&limit=1`
+  );
+  if (!sessR.ok) return json({ error: 'db_error' }, 500);
+  const sessRows = await sessR.json();
+  if (!Array.isArray(sessRows) || !sessRows.length) {
+    return json({ error: 'not_found' }, 404);
+  }
+  const session = sessRows[0];
+
+  // 2. Messages — limit 500 turns to keep the export bounded.
+  const msgR = await sbService(
+    env,
+    `/chat_messages?session_id=eq.${encodeURIComponent(sessionId)}&role=in.(user,assistant)&select=role,content,created_at&order=created_at.asc&limit=500`
+  );
+  if (!msgR.ok) return json({ error: 'db_error' }, 500);
+  const messages = await msgR.json();
+
+  const md = renderChatMarkdown(session, messages);
+  const filename = _safeAttachmentName(session.title || 'chat', format);
+
+  if (format === 'md') {
+    return new Response(md, {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/markdown; charset=utf-8',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'private, no-store',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  // PDF branch — forward markdown to FastAPI for reportlab render.
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  if (!backendUrl) return json({ error: 'backend_not_configured' }, 500);
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/chat/render-pdf`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-formula-internal': env.BACKEND_INTERNAL_SECRET || '',
+      },
+      body: JSON.stringify({ markdown: md, title: session.title || 'Chat' }),
+    });
+    if (!br.ok) {
+      const detail = (await br.text()).slice(0, 300);
+      return json({ error: 'backend_error', detail }, br.status >= 500 ? 502 : br.status);
+    }
+    const pdfBytes = await br.arrayBuffer();
+    return new Response(pdfBytes, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Cache-Control': 'private, no-store',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}
+
+// Exported so tests can exercise the renderer without a real session.
+export { renderChatMarkdown as _renderChatMarkdownForTesting };
+
 /* ─── /chat/messages ─────────────────────────────────────────── */
 
 export async function handleLoadMessages(url, auth, env) {

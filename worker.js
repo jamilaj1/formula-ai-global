@@ -1361,6 +1361,116 @@ async function handleListSessions(auth, env) {
     return json({ sessions: [] });
   }
 }
+function _formatChatRowMd(row) {
+  if (!row || row.role !== "user" && row.role !== "assistant") return null;
+  const t = row.content && row.content.text || "";
+  if (!t.trim()) return null;
+  const ts = row.created_at ? new Date(row.created_at).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "";
+  const speaker = row.role === "user" ? "You" : "Formula AI";
+  const lines = [`## ${speaker} \xB7 ${ts}`, "", t.trim()];
+  const refs = row.content && row.content.formula_refs || [];
+  if (Array.isArray(refs) && refs.length) {
+    lines.push("");
+    lines.push("**Formulas referenced**");
+    for (const r of refs) {
+      const trust = r.trust ? ` \xB7 trust ${r.trust}/100` : "";
+      lines.push(`- ${r.name || "(unnamed)"}${trust}`);
+    }
+  }
+  return lines.join("\n");
+}
+function renderChatMarkdown(session, messages) {
+  const title = session && session.title || "Chat";
+  const created = session && session.created_at ? new Date(session.created_at).toISOString().slice(0, 10) : "";
+  const updated = session && session.updated_at ? new Date(session.updated_at).toISOString().slice(0, 10) : "";
+  const turns = (Array.isArray(messages) ? messages : []).map(_formatChatRowMd).filter(Boolean);
+  const out = [
+    `# ${title}`,
+    "",
+    `**Session:** \`${session?.id || ""}\`  `,
+    created ? `**Started:** ${created}  ` : "",
+    updated ? `**Updated:** ${updated}  ` : "",
+    `**Turns:** ${turns.length}`,
+    "",
+    "---",
+    "",
+    ...turns.flatMap((t) => [t, ""]),
+    "---",
+    "",
+    "_Exported from Formula AI Global \u2014 jamilformula.com_"
+  ].filter((s) => s !== "");
+  return out.join("\n");
+}
+function _safeAttachmentName(base, ext) {
+  const clean3 = String(base || "chat").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "chat";
+  return `${clean3}.${ext}`;
+}
+async function handleChatExport(url, auth, env) {
+  const sessionId = url.searchParams.get("session_id");
+  if (!sessionId) return badRequest("missing_session_id");
+  const format = (url.searchParams.get("format") || "md").toLowerCase();
+  if (format !== "md" && format !== "pdf") return badRequest("invalid_format");
+  if (!auth || auth.kind !== "user") {
+    return json({ error: "auth_required" }, 401);
+  }
+  const sessR = await sbService(
+    env,
+    `/chat_sessions?id=eq.${encodeURIComponent(sessionId)}&user_id=eq.${encodeURIComponent(auth.userId)}&select=id,title,created_at,updated_at&limit=1`
+  );
+  if (!sessR.ok) return json({ error: "db_error" }, 500);
+  const sessRows = await sessR.json();
+  if (!Array.isArray(sessRows) || !sessRows.length) {
+    return json({ error: "not_found" }, 404);
+  }
+  const session = sessRows[0];
+  const msgR = await sbService(
+    env,
+    `/chat_messages?session_id=eq.${encodeURIComponent(sessionId)}&role=in.(user,assistant)&select=role,content,created_at&order=created_at.asc&limit=500`
+  );
+  if (!msgR.ok) return json({ error: "db_error" }, 500);
+  const messages = await msgR.json();
+  const md = renderChatMarkdown(session, messages);
+  const filename = _safeAttachmentName(session.title || "chat", format);
+  if (format === "md") {
+    return new Response(md, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/markdown; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "private, no-store",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
+  }
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  if (!backendUrl) return json({ error: "backend_not_configured" }, 500);
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/chat/render-pdf`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-formula-internal": env.BACKEND_INTERNAL_SECRET || ""
+      },
+      body: JSON.stringify({ markdown: md, title: session.title || "Chat" })
+    });
+    if (!br.ok) {
+      const detail = (await br.text()).slice(0, 300);
+      return json({ error: "backend_error", detail }, br.status >= 500 ? 502 : br.status);
+    }
+    const pdfBytes = await br.arrayBuffer();
+    return new Response(pdfBytes, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "private, no-store",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
+}
 async function handleLoadMessages(url, auth, env) {
   const sessionId = url.searchParams.get("session_id");
   if (!sessionId) return badRequest("missing_session_id");
@@ -3545,6 +3655,8 @@ async function handleRequest(request, env, ctx) {
       return await handleListSessions(auth, env);
     if (path === "/chat/messages" && request.method === "GET")
       return await handleLoadMessages(url, auth, env);
+    if (path === "/chat/export" && request.method === "GET")
+      return await handleChatExport(url, auth, env);
     if (path === "/save_formula" && request.method === "POST")
       return await handleSaveFormula(request, auth, env);
     if (path === "/my_formulas" && request.method === "GET")
