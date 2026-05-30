@@ -66,6 +66,8 @@ import {
   handleLibraryDelete,
   handleLibraryProjects,
   handleLibraryPdf,
+  handleLibraryImportPreview,
+  handleLibraryImportCommit,
 } from './handlers/library.js';
 import { handleExtract } from './handlers/extract.js';
 import {
@@ -248,6 +250,11 @@ async function handleRequest(request, env, ctx) {
       // Phase 4: list distinct projects for the workspace sidebar.
       if (path === '/library/projects' && request.method === 'GET')
         return await handleLibraryProjects(auth, env);
+      // Phase 9.3: CSV / XLSX bulk import for enterprise onboarding.
+      if (path === '/library/import/preview' && request.method === 'POST')
+        return await handleLibraryImportPreview(request, auth, env);
+      if (path === '/library/import/commit' && request.method === 'POST')
+        return await handleLibraryImportCommit(request, auth, env);
       // Phase 4.4: PDF export (must match BEFORE the generic /library/:id)
       if (path.startsWith('/library/') && path.endsWith('/pdf') && request.method === 'GET') {
         const inner = path.slice('/library/'.length, -('/pdf'.length));

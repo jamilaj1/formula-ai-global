@@ -187,6 +187,115 @@ export async function handleLibraryDelete(id, auth, env) {
  * user_id explicitly so the backend can scope the row lookup (defence
  * in depth on top of the Worker's own auth.userId check).
  */
+/* ─── /library/import/preview + /commit  (Phase 9.3) ────────────── */
+
+/**
+ * Forward the multipart upload to FastAPI for parsing + per-row
+ * validation. The Worker is the auth gate; the parser lives on Render
+ * because openpyxl (Python) is the only sane way to read .xlsx and
+ * Workers can't ship a streaming XLSX decoder.
+ *
+ * We also stamp the signed-in user_id as a form field so the FastAPI
+ * side has it for the eventual commit insert.
+ */
+export async function handleLibraryImportPreview(request, auth, env) {
+  if (auth.kind !== 'user') return unauthorized();
+
+  const ctype = request.headers.get('content-type') || '';
+  if (!ctype.includes('multipart/form-data')) {
+    return badRequest('expected_multipart');
+  }
+
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+  if (!backendUrl || !internalSecret) {
+    return json({ error: 'backend_not_configured' }, 503);
+  }
+
+  // Take the file out of the inbound FormData, then build a fresh
+  // FormData with the file + user_id. This guarantees user_id is set by
+  // the Worker (not trustable from the client) before the FastAPI side
+  // ever sees it.
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return badRequest('invalid_multipart');
+  }
+  const file = form.get('file');
+  if (!file || typeof file === 'string') return badRequest('missing_file');
+
+  const out = new FormData();
+  out.append('file', file, file.name || 'upload.csv');
+  out.append('user_id', auth.userId);
+
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/library/import/preview`, {
+      method: 'POST',
+      headers: { 'x-formula-internal': internalSecret },
+      body: out,
+    });
+    const text = await br.text();
+    if (!br.ok) {
+      let detail = text.slice(0, 400);
+      try { detail = JSON.parse(text).detail || detail; } catch { /* not JSON */ }
+      return json({ error: 'backend_error', status: br.status, detail }, br.status >= 500 ? 502 : br.status);
+    }
+    // Re-emit the response straight through. The backend's JSON shape
+    // is already what the browser expects.
+    return new Response(text, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}
+
+/**
+ * Take the rows previously validated by /preview and ask FastAPI to
+ * insert them. The body shape is `{ rows: [...] }`; we add `user_id`
+ * server-side so a client can never insert on someone else's behalf.
+ */
+export async function handleLibraryImportCommit(request, auth, env) {
+  if (auth.kind !== 'user') return unauthorized();
+
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+  if (!backendUrl || !internalSecret) {
+    return json({ error: 'backend_not_configured' }, 503);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return badRequest('invalid_json'); }
+  if (!Array.isArray(body.rows) || !body.rows.length) return badRequest('empty_rows');
+  if (body.rows.length > 2000) return json({ error: 'too_many_rows' }, 413);
+
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/library/import/commit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-formula-internal': internalSecret,
+      },
+      body: JSON.stringify({ user_id: auth.userId, rows: body.rows }),
+    });
+    const text = await br.text();
+    if (!br.ok) {
+      let detail = text.slice(0, 400);
+      try { detail = JSON.parse(text).detail || detail; } catch { /* not JSON */ }
+      return json({ error: 'backend_error', status: br.status, detail }, br.status >= 500 ? 502 : br.status);
+    }
+    return new Response(text, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}
+
+
 export async function handleLibraryPdf(id, auth, env) {
   if (auth.kind !== 'user') return unauthorized();
   if (!id) return badRequest('missing_id');

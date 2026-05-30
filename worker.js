@@ -1629,6 +1629,92 @@ async function handleLibraryDelete(id, auth, env) {
   if (!r.ok) return json({ error: "delete_failed" }, 500);
   return json({ deleted: true });
 }
+async function handleLibraryImportPreview(request, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const ctype = request.headers.get("content-type") || "";
+  if (!ctype.includes("multipart/form-data")) {
+    return badRequest("expected_multipart");
+  }
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || "";
+  if (!backendUrl || !internalSecret) {
+    return json({ error: "backend_not_configured" }, 503);
+  }
+  let form;
+  try {
+    form = await request.formData();
+  } catch {
+    return badRequest("invalid_multipart");
+  }
+  const file = form.get("file");
+  if (!file || typeof file === "string") return badRequest("missing_file");
+  const out = new FormData();
+  out.append("file", file, file.name || "upload.csv");
+  out.append("user_id", auth.userId);
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/library/import/preview`, {
+      method: "POST",
+      headers: { "x-formula-internal": internalSecret },
+      body: out
+    });
+    const text = await br.text();
+    if (!br.ok) {
+      let detail = text.slice(0, 400);
+      try {
+        detail = JSON.parse(text).detail || detail;
+      } catch {
+      }
+      return json({ error: "backend_error", status: br.status, detail }, br.status >= 500 ? 502 : br.status);
+    }
+    return new Response(text, {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
+}
+async function handleLibraryImportCommit(request, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const backendUrl = env.CHEM_BACKEND_URL || "";
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || "";
+  if (!backendUrl || !internalSecret) {
+    return json({ error: "backend_not_configured" }, 503);
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  if (!Array.isArray(body.rows) || !body.rows.length) return badRequest("empty_rows");
+  if (body.rows.length > 2e3) return json({ error: "too_many_rows" }, 413);
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, "")}/api/v2/library/import/commit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-formula-internal": internalSecret
+      },
+      body: JSON.stringify({ user_id: auth.userId, rows: body.rows })
+    });
+    const text = await br.text();
+    if (!br.ok) {
+      let detail = text.slice(0, 400);
+      try {
+        detail = JSON.parse(text).detail || detail;
+      } catch {
+      }
+      return json({ error: "backend_error", status: br.status, detail }, br.status >= 500 ? 502 : br.status);
+    }
+    return new Response(text, {
+      status: 200,
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+    });
+  } catch (err) {
+    return json({ error: "backend_unreachable", detail: err?.message || "" }, 502);
+  }
+}
 async function handleLibraryPdf(id, auth, env) {
   if (auth.kind !== "user") return unauthorized();
   if (!id) return badRequest("missing_id");
@@ -3665,6 +3751,10 @@ async function handleRequest(request, env, ctx) {
       return await handleLibraryList(auth, env, url);
     if (path === "/library/projects" && request.method === "GET")
       return await handleLibraryProjects(auth, env);
+    if (path === "/library/import/preview" && request.method === "POST")
+      return await handleLibraryImportPreview(request, auth, env);
+    if (path === "/library/import/commit" && request.method === "POST")
+      return await handleLibraryImportCommit(request, auth, env);
     if (path.startsWith("/library/") && path.endsWith("/pdf") && request.method === "GET") {
       const inner = path.slice("/library/".length, -"/pdf".length);
       return await handleLibraryPdf(inner, auth, env);
