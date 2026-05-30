@@ -44,6 +44,46 @@ Phase 7 closed 2026-05-28 — daily-use calculators:
 - Pure client-side JS; no recipe ever leaves the browser unless
   saved to Workspace.
 
+Phase 9.5 shipped 2026-05-29 — Financials dashboard in admin.html:
+- `worker-src/handlers/admin.js` — `handleAdminFinancials(auth, env)`,
+  owner-only (auth.email gate). Parallel PostgREST queries fan-out
+  to count plan distribution (5 plans × HEAD-style count=exact),
+  total signups, last-30d signups, paid+delivered consulting revenue,
+  and Claude est_cost_usd over 30 days. Aggregates locally and
+  returns one JSON with: MRR, ARR, active paid users, total signups,
+  new signups 30d, revenue mix (subscription vs consulting 30d),
+  consulting lifetime revenue (paid + delivered), Claude operational
+  cost + call count + cache hit ratio, gross margin %, ARPU,
+  LTV (ARPU × 12-month assumed lifetime), conversion %, and the
+  assumption block (plan prices + CAC notice).
+- Worker route `GET /be/admin/financials` registered in
+  worker-src/index.js right after the consulting routes.
+- admin.html: new "Financials" tab next to Signups + Consulting.
+  Six headline cards (MRR / ARR / Active paid / Total signups /
+  Revenue 30d / Gross margin), four unit-economics cards (ARPU /
+  LTV / CAC=— / Signup→paid %), revenue-mix horizontal stacked bar,
+  plan-distribution per-row bars (enterprise → free, longest first),
+  consulting lifetime card (paid / delivered / total), Claude
+  operational cost card (spend / calls / cache hit), assumption
+  footnote. No chart library — pure HTML + inline styles, so the
+  Phase 9.6 CSP (no unsafe-eval) stays clean.
+- 13 vitest assertions in tests/handlers/admin.test.js — auth gate,
+  MRR formula, ARPU/LTV math, division-by-zero guards, consulting
+  status sums, cache hit ratio, gross margin formula, conversion %,
+  assumption block shape.
+
+What's not in 9.5 (intentionally deferred)
+  - True CAC. Requires ad spend → leads attribution. Tied to Phase 5
+    (lead-gen) — when we have a marketing channel we can measure
+    spend per signup acquired and surface CAC properly.
+  - True LTV. Requires actual churn data, which needs 6+ months of
+    paid-plan cohorts to be meaningful. Today's LTV is the honest
+    "ARPU × 12" annual-value estimate.
+  - Time-series charts (signups per day, MRR over months). The
+    dashboard is point-in-time today; trend charts are a future iter
+    once we've decided whether to invest in chart.js or build SVG
+    sparklines by hand.
+
 Phase 9.7 shipped 2026-05-29 — Test coverage expansion (+97 tests):
 - vitest unit tests for the three Worker libs the chat/search/insights
   paths depend on every single request:
@@ -616,6 +656,18 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
   `formula-ai-chem.onrender.com/health`); Worker version
   `984a61c9-56d2-4741-a743-4463cb31a123`. Both free tiers — $0
   committed. Moving pointer to **1.4** (one-command auto-deploy CI).
+- 2026-05-29 — **Phase 9.5 ✅ DONE.** Financials tab in admin.html
+  shipped. One Worker endpoint `/be/admin/financials` (owner-only,
+  parallel PostgREST aggregations) returns MRR/ARR/LTV/ARPU + plan
+  distribution + consulting lifetime revenue + Claude operational
+  cost + gross margin + conversion %. New admin tab renders 6
+  headline cards + 4 unit-economics cards + 2 CSS bar charts +
+  consulting + ops sections, all CSP-clean (no eval, no external
+  chart lib). 13 vitest assertions in tests/handlers/admin.test.js
+  cover auth gate, MRR formula, division-by-zero guards, gross-
+  margin formula, consulting status sums, cache-hit ratio,
+  assumption block shape. CAC + true churn-based LTV deferred to
+  Phase 5 lead-gen (CAC) and 6+ months of cohort data (LTV).
 - 2026-05-29 — **Phase 9.7 ✅ DONE.** +97 new test assertions across
   the Worker libs (cache/ratelimit/claude), the consulting handler,
   and the backend rendering paths (consulting markdown + library PDF).

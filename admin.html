@@ -98,6 +98,7 @@
             Consulting
             <span id="consult-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
           </button>
+          <button class="admin-tab" data-tab="financials" role="tab">Financials</button>
         </div>
 
         <!-- ──────────────────────────── Tab: Signups ──────────────────────────── -->
@@ -189,6 +190,64 @@
 
           </div>
         </div><!-- /#tab-consulting -->
+
+        <!-- ─────────────────────────── Tab: Financials ─────────────────────────── -->
+        <div id="tab-financials" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:18px;">
+            <div>
+              <h2 style="font-size: 1.3rem; margin: 0 0 4px;">Financials</h2>
+              <p style="color: var(--text-3); margin: 0; font-size: 0.88rem;">
+                MRR · ARR · LTV · plan distribution · operational cost. Numbers refresh on demand.
+              </p>
+            </div>
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span id="fin-updated" style="color:var(--text-3); font-size:0.78rem;"></span>
+              <button id="fin-refresh" class="btn btn-ghost">Refresh</button>
+            </div>
+          </div>
+
+          <div id="fin-loading" style="padding:40px; text-align:center; color:var(--text-3);">Loading…</div>
+          <div id="fin-error" style="display:none; padding:14px 18px; background:rgba(255,80,80,0.08); border-radius:10px; color:#ff7070; margin-bottom:14px;"></div>
+
+          <div id="fin-body" style="display:none;">
+            <!-- Headline cards ──────────────────────────────────────────── -->
+            <div class="admin-grid" id="fin-cards"></div>
+
+            <!-- Unit economics row ──────────────────────────────────────── -->
+            <div class="admin-grid" id="fin-unit-economics" style="margin-top:14px;"></div>
+
+            <!-- Revenue mix + plan distribution side-by-side ────────────── -->
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:24px;">
+              <div class="card">
+                <h3 style="font-size:1rem; margin:0 0 6px;">Revenue mix — last 30 days</h3>
+                <p style="color:var(--text-3); margin:0 0 14px; font-size:0.82rem;">Recurring (MRR) vs one-time consulting brought in over the trailing 30-day window.</p>
+                <div id="fin-revmix"></div>
+              </div>
+              <div class="card">
+                <h3 style="font-size:1rem; margin:0 0 6px;">Plan distribution</h3>
+                <p style="color:var(--text-3); margin:0 0 14px; font-size:0.82rem;">All signups by their current plan. Paid plans drive MRR.</p>
+                <div id="fin-plans"></div>
+              </div>
+            </div>
+
+            <!-- Consulting lifetime ─────────────────────────────────────── -->
+            <div class="card" style="margin-top:18px;">
+              <h3 style="font-size:1rem; margin:0 0 6px;">Consulting revenue — lifetime</h3>
+              <p style="color:var(--text-3); margin:0 0 14px; font-size:0.82rem;">Every brief that has been paid or delivered since launch.</p>
+              <div id="fin-consult"></div>
+            </div>
+
+            <!-- Operational cost ────────────────────────────────────────── -->
+            <div class="card" style="margin-top:18px;">
+              <h3 style="font-size:1rem; margin:0 0 6px;">Claude operational cost — last 30 days</h3>
+              <p style="color:var(--text-3); margin:0 0 14px; font-size:0.82rem;">Anthropic API spend feeding into gross-margin calc. Cache hits ride free.</p>
+              <div id="fin-ops"></div>
+            </div>
+
+            <!-- Assumptions footer ──────────────────────────────────────── -->
+            <p id="fin-assumptions" style="margin-top:22px; color:var(--text-3); font-size:0.78rem; line-height:1.7;"></p>
+          </div>
+        </div><!-- /#tab-financials -->
       </div>
 
     </div>
@@ -390,6 +449,8 @@
       const PKG_PRICE = { quick: '$1,000', full: '$2,500', custom: '$5,000+' };
       let consultRows = [];
       let selectedConsultId = null;
+      let finLoaded = false;
+      let finData = null;
 
       // Tab switching
       document.querySelectorAll('.admin-tab').forEach(btn => {
@@ -398,7 +459,9 @@
           document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b === btn));
           document.getElementById('tab-signups').style.display    = (target === 'signups')    ? '' : 'none';
           document.getElementById('tab-consulting').style.display = (target === 'consulting') ? '' : 'none';
+          document.getElementById('tab-financials').style.display = (target === 'financials') ? '' : 'none';
           if (target === 'consulting' && !consultRows.length) loadConsulting();
+          if (target === 'financials' && !finLoaded) loadFinancials();
         });
       });
 
@@ -778,6 +841,212 @@
           status.textContent = `Network error: ${err.message}`;
           if (btn) { btn.disabled = false; btn.textContent = oldText; }
         }
+      }
+
+      // ════════════════════════════════════════════════════════════════
+      // Phase 9.5 — Financials tab
+      // ════════════════════════════════════════════════════════════════
+
+      const PLAN_COLORS = {
+        free:         'rgba(255,255,255,0.18)',
+        starter:      'rgba(255,255,255,0.32)',
+        professional: 'var(--secondary)',
+        business:     '#a78bfa',
+        enterprise:   'var(--primary)',
+      };
+
+      document.getElementById('fin-refresh')?.addEventListener('click', () => loadFinancials(true));
+
+      function fmtUSD(n) {
+        if (n == null) return '—';
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '—';
+        return '$' + v.toLocaleString(undefined, { maximumFractionDigits: 0 });
+      }
+      function fmtUSDPrecise(n) {
+        if (n == null) return '—';
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '—';
+        return '$' + v.toLocaleString(undefined, { maximumFractionDigits: 2 });
+      }
+      function fmtPct(n) {
+        if (n == null) return '—';
+        const v = Number(n);
+        if (!Number.isFinite(v)) return '—';
+        return v.toFixed(1) + '%';
+      }
+      function fmtInt(n) {
+        return Number(n || 0).toLocaleString();
+      }
+
+      async function loadFinancials(force = false) {
+        const loadingEl = document.getElementById('fin-loading');
+        const errorEl   = document.getElementById('fin-error');
+        const bodyEl    = document.getElementById('fin-body');
+        const refreshBtn = document.getElementById('fin-refresh');
+        if (!loadingEl) return;
+        if (finLoaded && !force && finData) {
+          renderFinancials(finData);
+          return;
+        }
+
+        loadingEl.style.display = 'block';
+        errorEl.style.display   = 'none';
+        bodyEl.style.display    = 'none';
+        refreshBtn?.setAttribute('disabled', 'true');
+
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/admin/financials`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) {
+            errorEl.textContent = `Failed (${r.status}): ${data.detail || data.error || 'unknown error'}`;
+            errorEl.style.display = 'block';
+            loadingEl.style.display = 'none';
+            return;
+          }
+          finData = data;
+          finLoaded = true;
+          renderFinancials(data);
+        } catch (err) {
+          errorEl.textContent = `Network error: ${err.message}`;
+          errorEl.style.display = 'block';
+          loadingEl.style.display = 'none';
+        } finally {
+          refreshBtn?.removeAttribute('disabled');
+        }
+      }
+
+      function renderFinancials(d) {
+        document.getElementById('fin-loading').style.display = 'none';
+        document.getElementById('fin-body').style.display    = '';
+
+        const updated = d.generated_at ? new Date(d.generated_at).toLocaleString() : '';
+        document.getElementById('fin-updated').textContent =
+          updated ? `Last refresh: ${updated}` : '';
+
+        // ── Headline cards ──────────────────────────────────────────
+        const headline = [
+          { label: 'MRR',             v: fmtUSD(d.mrr_usd),         sub: 'recurring monthly' },
+          { label: 'ARR',             v: fmtUSD(d.arr_usd),         sub: 'MRR × 12' },
+          { label: 'Active paid',     v: fmtInt(d.active_paid_users), sub: 'paid plan holders' },
+          { label: 'Total signups',   v: fmtInt(d.total_signups),   sub: `+${fmtInt(d.new_signups_30d)} in 30d` },
+          { label: 'Revenue 30d',     v: fmtUSD(d.revenue_30d?.total), sub: 'sub + consulting' },
+          { label: 'Gross margin',    v: fmtPct(d.gross_margin_pct), sub: 'after Claude cost' },
+        ];
+        document.getElementById('fin-cards').innerHTML = headline.map(c => `
+          <div class="admin-stat">
+            <div class="label">${escapeHTML(c.label)}</div>
+            <div class="value">${escapeHTML(c.v)}</div>
+            <div style="color:var(--text-3); font-size:0.72rem; margin-top:4px;">${escapeHTML(c.sub)}</div>
+          </div>
+        `).join('');
+
+        // ── Unit economics ──────────────────────────────────────────
+        const cacNote = d.assumptions?.cac_notice || 'CAC not tracked yet';
+        const unit = [
+          { label: 'ARPU',           v: fmtUSDPrecise(d.arpu_usd),  sub: 'avg revenue per paying user / month' },
+          { label: 'LTV',            v: fmtUSD(d.ltv_usd),          sub: `assuming ${d.assumptions?.lifetime_months_for_ltv ?? 12}-month lifetime` },
+          { label: 'CAC',            v: '—',                        sub: cacNote },
+          { label: 'Signup → paid',  v: fmtPct(d.conversion_pct),   sub: 'conversion rate' },
+        ];
+        document.getElementById('fin-unit-economics').innerHTML = unit.map(c => `
+          <div class="admin-stat">
+            <div class="label">${escapeHTML(c.label)}</div>
+            <div class="value">${escapeHTML(c.v)}</div>
+            <div style="color:var(--text-3); font-size:0.72rem; margin-top:4px;">${escapeHTML(c.sub)}</div>
+          </div>
+        `).join('');
+
+        // ── Revenue mix bar (30d) ───────────────────────────────────
+        const sub30 = Number(d.revenue_30d?.subscription || 0);
+        const con30 = Number(d.revenue_30d?.consulting   || 0);
+        const tot30 = Math.max(1, sub30 + con30);   // avoid /0
+        const subPct = (sub30 / tot30) * 100;
+        const conPct = (con30 / tot30) * 100;
+        document.getElementById('fin-revmix').innerHTML = `
+          <div style="display:flex; height:34px; border-radius:8px; overflow:hidden; background:var(--bg-glass);">
+            ${sub30 > 0 ? `<div title="Subscription ${fmtUSD(sub30)}" style="width:${subPct.toFixed(1)}%; background:var(--secondary); color:var(--bg-1); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;">${subPct >= 8 ? 'Sub ' + subPct.toFixed(0) + '%' : ''}</div>` : ''}
+            ${con30 > 0 ? `<div title="Consulting ${fmtUSD(con30)}" style="width:${conPct.toFixed(1)}%; background:var(--primary); color:var(--bg-1); display:flex; align-items:center; justify-content:center; font-size:0.8rem; font-weight:700;">${conPct >= 8 ? 'Consulting ' + conPct.toFixed(0) + '%' : ''}</div>` : ''}
+          </div>
+          <div style="display:flex; gap:18px; margin-top:12px; font-size:0.85rem;">
+            <div><span style="display:inline-block; width:10px; height:10px; background:var(--secondary); border-radius:2px; margin-right:6px;"></span>Subscription <strong>${fmtUSD(sub30)}</strong></div>
+            <div><span style="display:inline-block; width:10px; height:10px; background:var(--primary); border-radius:2px; margin-right:6px;"></span>Consulting <strong>${fmtUSD(con30)}</strong></div>
+          </div>
+        `;
+
+        // ── Plan distribution horizontal bars ───────────────────────
+        const planDist = d.plan_distribution || {};
+        const planOrder = ['enterprise', 'business', 'professional', 'starter', 'free'];
+        const maxCount = Math.max(1, ...planOrder.map(p => Number(planDist[p] || 0)));
+        const prices = d.assumptions?.plan_prices || {};
+        document.getElementById('fin-plans').innerHTML = planOrder.map(p => {
+          const n = Number(planDist[p] || 0);
+          const w = (n / maxCount) * 100;
+          const price = prices[p] ? `$${prices[p]}/mo` : 'free';
+          const subRev = prices[p] ? fmtUSD(n * prices[p]) : '';
+          return `
+            <div style="margin-bottom:10px;">
+              <div style="display:flex; justify-content:space-between; font-size:0.82rem; margin-bottom:4px;">
+                <span style="color:var(--text-2); text-transform:capitalize;">${escapeHTML(p)} <span style="color:var(--text-3); font-size:0.74rem;">(${escapeHTML(price)})</span></span>
+                <span style="color:var(--text-1); font-weight:600;">${fmtInt(n)}${subRev ? ' · ' + subRev + '/mo' : ''}</span>
+              </div>
+              <div style="height:8px; background:var(--bg-glass); border-radius:4px; overflow:hidden;">
+                <div style="height:100%; width:${w.toFixed(1)}%; background:${PLAN_COLORS[p] || 'var(--text-3)'}; transition: width 0.3s ease;"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // ── Consulting lifetime card ────────────────────────────────
+        const cr = d.consulting_revenue || {};
+        document.getElementById('fin-consult').innerHTML = `
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">Paid (awaiting delivery)</div>
+              <div style="font-size:1.4rem; font-weight:700; color:var(--text-1); margin-top:4px;">${fmtUSD(cr.paid)}</div>
+            </div>
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">Delivered</div>
+              <div style="font-size:1.4rem; font-weight:700; color:var(--primary); margin-top:4px;">${fmtUSD(cr.delivered)}</div>
+            </div>
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">Lifetime total</div>
+              <div style="font-size:1.4rem; font-weight:700; color:var(--secondary); margin-top:4px;">${fmtUSD(cr.total)}</div>
+            </div>
+          </div>
+        `;
+
+        // ── Operational cost (Claude) ───────────────────────────────
+        document.getElementById('fin-ops').innerHTML = `
+          <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:14px;">
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">Spend (30d)</div>
+              <div style="font-size:1.4rem; font-weight:700; color:#ff7070; margin-top:4px;">${fmtUSDPrecise(d.claude_cost_30d)}</div>
+            </div>
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">API calls (30d)</div>
+              <div style="font-size:1.4rem; font-weight:700; color:var(--text-1); margin-top:4px;">${fmtInt(d.claude_calls_30d)}</div>
+            </div>
+            <div>
+              <div style="color:var(--text-3); font-size:0.78rem;">Cache hit rate</div>
+              <div style="font-size:1.4rem; font-weight:700; color:var(--primary); margin-top:4px;">${fmtPct(d.claude_cache_hit_pct)}</div>
+            </div>
+          </div>
+        `;
+
+        // ── Assumptions footnote ────────────────────────────────────
+        const ap = d.assumptions || {};
+        const priceStrs = Object.entries(ap.plan_prices || {})
+          .map(([k, v]) => `${k} $${v}`)
+          .join(' · ');
+        document.getElementById('fin-assumptions').innerHTML = [
+          `<strong>Assumptions:</strong> Plan prices ${escapeHTML(priceStrs)}`,
+          `LTV uses a ${ap.lifetime_months_for_ltv || 12}-month assumed customer lifetime — replace with real churn data once 6+ months of cohorts are available.`,
+          escapeHTML(ap.cac_notice || ''),
+        ].join('. ');
       }
     })();
   </script>

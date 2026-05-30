@@ -98,6 +98,7 @@ import {
   handleConsultingResend,
   handleConsultingPay,
 } from './handlers/consulting.js';
+import { handleAdminFinancials } from './handlers/admin.js';
 import {
   handleEnterpriseLead,
   handleEnterpriseList,
@@ -297,6 +298,11 @@ async function handleRequest(request, env, ctx) {
         return await handleConsultingResend(request, auth, env);
       if (path === '/be/consulting/pay' && request.method === 'POST')
         return await handleConsultingPay(request, auth, env);
+
+      // Phase 9.5 — owner-only financial dashboard (MRR / ARR / LTV /
+      // plan distribution / Claude operational cost / gross margin).
+      if (path === '/be/admin/financials' && request.method === 'GET')
+        return await handleAdminFinancials(auth, env);
 
       // Enterprise B2B (Phase 3). Public lead intake + owner-only admin.
       if (path === '/be/enterprise/lead' && request.method === 'POST')
