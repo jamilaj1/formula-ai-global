@@ -8,10 +8,19 @@
 
 ## 🎯 Currently Working On
 
-**Phases 1–4 + 7 are DONE.** Holding before Phase 5 / 6 / 8 because they
-need owner-supplied content (lead-magnet PDFs, LinkedIn posts, Ghana
-supplier list). Phase 9 (technical moat) is the next safe-to-ship
-candidate when the owner gives the green light.
+**Phases 1–4 + 7 + ALL of 9 are DONE.** Holding before Phase 5 / 6 / 8
+because they need owner-supplied content (lead-magnet PDFs, LinkedIn
+posts, a global supplier roster). Phase 9 technical moat is fully
+shipped (9.1 vector RAG, 9.2 teams, 9.3 import, 9.4 chat export,
+9.5 financials, 9.6 CSP, 9.7 tests).
+
+POSITIONING (owner directive, 2026-06-01): Formula AI Global is a
+**global** brand — suppliers, buyers, and users are worldwide from day
+one. Do NOT scope any feature, supplier network, or marketplace to a
+single country. Ghana is where the founder's DosLunas plant physically
+operates (a credibility asset on about.html) and where the Paystack
+merchant account is registered (a billing fact) — neither limits the
+product's global reach. See memory: strategy-global-not-regional.
 
 Phase 3 closed 2026-05-28 — enterprise B2B foundation live:
 - enterprise_details + enterprise_leads tables (RLS: anon INSERT,
@@ -605,11 +614,15 @@ To finish 1.3 (see PHASE 1 §1.3 below for full spec):
 - Form writes to `procurement_requests`; pings Jamil.
 
 ### 8.2 — Manual matchmaking workflow ⬜
-- Jamil contacts supplier; gets quote; emails buyer with margin built in.
+- Jamil contacts a supplier (anywhere in the world); gets quote; emails
+  buyer with margin built in.
 - Track every request in admin.html with status + commission earned.
 
 ### 8.3 — Supplier directory page ⬜
-- Public-facing list of vetted suppliers (begins with Jamil's Ghana network).
+- Public-facing list of vetted suppliers — GLOBAL from the start, not
+  scoped to any one country. Onboard suppliers wherever they are
+  (Asia, Europe, Africa, the Americas). The founder's existing
+  contacts are a seed, never a ceiling.
 
 ### 8.4 — Commission tracking dashboard ⬜
 - MRR/commission breakdown in admin.html.
