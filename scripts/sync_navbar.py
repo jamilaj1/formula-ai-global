@@ -80,11 +80,17 @@ TOOLS: list[tuple[str, str, str]] = [
 # a different navbar (handoff §4) — leave it alone.
 SKIP = {"admin.html"}
 
-# Match the inlined navbar with leading whitespace + closing tag. DOTALL so
-# multi-line content between <ul> and </ul> matches.
-NAV_RE = re.compile(
-    r'([ \t]*)<ul class="nav-links">.*?</ul>',
-    re.DOTALL,
+# Pattern to FIND the start of the inlined navbar — leading whitespace
+# captured for indent.
+NAV_START_RE = re.compile(
+    r'(?P<indent>[ \t]*)<ul class="nav-links">',
+)
+# We also want to swallow any orphan `</li>` + extra `<li>...</li>` +
+# stray `</ul>` left behind from earlier broken sync runs (the dropdown
+# regression). Stop only when the navbar is followed by the next REAL
+# element in the navbar shell — nav-tools or nav-cta or the hamburger.
+NAV_TAIL_STOP_RE = re.compile(
+    r'<div class="nav-(?:tools|cta)"|<button class="nav-toggle"',
 )
 
 
@@ -139,14 +145,33 @@ def patch_file(path: str) -> str:
     with open(path, "r", encoding="utf-8") as f:
         src = f.read()
 
-    match = NAV_RE.search(src)
-    if not match:
+    start_m = NAV_START_RE.search(src)
+    if not start_m:
         return "nomatch"
+    start = start_m.start()
+    indent = start_m.group("indent")
 
-    indent = match.group(1)
-    new_block = render_nav(basename, indent)
+    # Find where the nav-links block ends — i.e. the next real navbar
+    # sibling (nav-tools, nav-cta, or the mobile-menu button). Any
+    # stray `</li>` / `<li>...</li>` / `</ul>` between the inner
+    # dropdown closer and that boundary is the corruption we want to
+    # swallow on this re-sync.
+    tail_m = NAV_TAIL_STOP_RE.search(src, start_m.end())
+    if not tail_m:
+        return "nomatch"
+    # Roll back from the tail anchor to the end of the previous line so
+    # the existing indentation of the next sibling is preserved.
+    cut = tail_m.start()
+    # Step back over whitespace so the replacement ends right after the
+    # outer </ul>.
+    while cut > 0 and src[cut - 1] in (" ", "\t"):
+        cut -= 1
+    if cut > 0 and src[cut - 1] == "\n":
+        # Keep the newline — we'll re-emit it inside the new block.
+        pass
 
-    new_src = src[: match.start()] + new_block + src[match.end():]
+    new_block = render_nav(basename, indent) + "\n" + indent
+    new_src = src[:start] + new_block + src[cut:]
 
     if new_src == src:
         return "noop"
