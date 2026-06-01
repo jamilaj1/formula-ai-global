@@ -145,5 +145,5 @@ Frontend → http://localhost:3000
 
 Built by Jamil Abduljalil — 25+ years in industrial chemistry across multiple
 countries, currently overseeing operations producing over 2,000 tons/month and
-founder of DosLunas (50+ tons/month).
+founder of DosLunas (50+ tons/day).
 Powered by Claude (Anthropic), Supabase, and the open-source chemistry community.

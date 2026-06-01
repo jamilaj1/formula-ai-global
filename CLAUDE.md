@@ -33,9 +33,10 @@
    - Domain: `jamilformula.com`
    - **Experience: 25+ years in industrial chemistry across multiple countries.**
    - **Currently managing a chemical operation producing ~2,000 tons/month.**
-   - **Founder and owner of DosLunas — own chemical plant producing 50+ tons/month.**
-   - Total operational chemistry footprint under Jamil: **~2,050 tons/month**
-     across multiple countries — a credential most R&D-only AI startups
+   - **Founder and owner of DosLunas — own chemical plant producing 50+ tons/DAY.**
+   - Operational chemistry footprint under Jamil: ~2,000+ tons/month of
+     overseen operations PLUS his own DosLunas plant at 50+ tons/day —
+     a credential most R&D-only AI startups
      can't match. Use this as the credibility anchor on marketing copy.
 
 9. **Style:** Professional, global. No country-specific assumptions in defaults. The site targets a worldwide audience.

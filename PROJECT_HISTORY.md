@@ -441,8 +441,8 @@ Process:
 **Jamil Abduljalil**
 - 25+ years of hands-on industrial chemistry across multiple countries
 - Currently overseeing chemical manufacturing operations producing **2,000+ tons/month**
-- Founder & owner of **DosLunas** — own chemical plant producing **50+ tons/month**
-- Total operational footprint: ~2,050 tons/month — a credential rare in AI-first founders
+- Founder & owner of **DosLunas** — own chemical plant producing **50+ tons/day**
+- Operational footprint: 2,000+ tons/month overseen + his own DosLunas plant at 50+ tons/day — a credential rare in AI-first founders
 - Email: jamilaj1@gmail.com
 - Site: jamilformula.com
 
