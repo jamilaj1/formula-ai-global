@@ -1,9 +1,14 @@
 # PROJECT_CONTEXT.md — Formula AI Global
 
-> **Master reference.** Hand this to any engineer and they can continue
-> without wasting the owner's time. Covers everything from foundation to
-> the current moment (2026-05-14), plus an honest evaluation and the
-> forward roadmap.
+> ⚠️ **SUPERSEDED (2026-06-01).** The current complete master — with the
+> BUILD_ROADMAP folded in and all of Phase 9 (vector RAG, teams, import,
+> export, financials, CSP, tests) + the global-brand positioning + the
+> DosLunas 50+ t/DAY correction — is **`PROJECT_CONTEXT_2026-06-01.md`**.
+> Read that first. This file is kept for history (state as of 2026-05-14).
+
+> **Master reference (historical, 2026-05-14).** Covers foundation through
+> the full production deployment + security fixes, plus an honest
+> evaluation and the then-forward roadmap.
 
 ---
 
