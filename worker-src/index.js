@@ -102,6 +102,7 @@ import {
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
 import { handleCommunityStats } from './handlers/stats.js';
+import { handleClientError } from './handlers/client_error.js';
 import {
   handleTestimonialSubmit,
   handleTestimonialsApproved,
@@ -246,6 +247,9 @@ async function handleRequest(request, env, ctx) {
       if (path === '/usage') return await handleUsage(auth, env);
       // Public community counter for the campaign landing page (cached 5min).
       if (path === '/stats/community') return await handleCommunityStats(env);
+      // E5 — real-user (browser) error capture → Sentry + Better Stack.
+      if (path === '/be/client-error' && request.method === 'POST')
+        return await handleClientError(request, env);
       // Real social proof (D3): public approved wall + user submit + owner moderation.
       if (path === '/be/testimonials/approved' && request.method === 'GET')
         return await handleTestimonialsApproved(env);

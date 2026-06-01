@@ -3583,6 +3583,52 @@ async function handleCommunityStats(env) {
   return json(payload);
 }
 
+// worker-src/handlers/client_error.js
+init_observability();
+function cap(s, n) {
+  return String(s ?? "").slice(0, n);
+}
+var NO_CONTENT = () => new Response(null, { status: 204, headers: { "Access-Control-Allow-Origin": "*" } });
+async function handleClientError(request, env) {
+  const ip = clientIP(request);
+  const rl = await rateLimit(env, { bucket: `clienterr:${ip}`, limit: 30, window: 60 });
+  if (!rl.ok) return NO_CONTENT();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return NO_CONTENT();
+  }
+  const message = cap(body.message, 500).trim();
+  if (!message) return NO_CONTENT();
+  if (message === "Script error." || message === "ResizeObserver loop limit exceeded") {
+    return NO_CONTENT();
+  }
+  const syntheticErr = {
+    name: "ClientError",
+    message,
+    stack: cap(body.stack, 4e3) || null
+  };
+  try {
+    await shipError(
+      env,
+      syntheticErr,
+      { source: "client" },
+      {
+        kind: "client_error",
+        page: cap(body.page || body.source, 300),
+        line: body.line || null,
+        col: body.col || null,
+        ua: cap(body.ua, 300),
+        ip_prefix: ip.split(".").slice(0, 2).join(".") + ".x.x"
+        // GDPR-light
+      }
+    );
+  } catch {
+  }
+  return NO_CONTENT();
+}
+
 // worker-src/handlers/testimonials.js
 var OWNER_EMAIL3 = "jamilaj1@gmail.com";
 var APPROVED_CACHE_KEY = "cache:testimonials:approved";
@@ -4176,6 +4222,8 @@ async function handleRequest(request, env, ctx) {
     if (path === "/search") return await handleSearch(url, auth, env, request);
     if (path === "/usage") return await handleUsage(auth, env);
     if (path === "/stats/community") return await handleCommunityStats(env);
+    if (path === "/be/client-error" && request.method === "POST")
+      return await handleClientError(request, env);
     if (path === "/be/testimonials/approved" && request.method === "GET")
       return await handleTestimonialsApproved(env);
     if (path === "/be/testimonial/submit" && request.method === "POST")

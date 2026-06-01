@@ -2,6 +2,43 @@
    Formula AI Global - Interactive Scripts
    ============================================ */
 
+// ── Client-side error capture (E5) ──────────────────────────────────
+// Report real browser errors to the Worker (→ Sentry + Better Stack) so
+// we discover what breaks in users' browsers, not just on the server.
+// Capped client-side (max 5 reports/page) + server-side (30/min/IP).
+(function () {
+  const WORKER = 'https://formula-ai-brain.jamilaj1.workers.dev';
+  let sent = 0;
+  function report(message, stack, source, line, col) {
+    if (sent >= 5 || !message) return;       // don't flood from a loop
+    sent++;
+    try {
+      fetch(WORKER + '/be/client-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: String(message).slice(0, 500),
+          stack: stack ? String(stack).slice(0, 4000) : null,
+          source: source || '',
+          line: line || null,
+          col: col || null,
+          page: location.pathname + location.search,
+          ua: navigator.userAgent
+        }),
+        keepalive: true                       // survive page unload
+      }).catch(function () {});
+    } catch (e) { /* never let reporting throw */ }
+  }
+  window.addEventListener('error', function (e) {
+    report(e.message, e.error && e.error.stack, e.filename, e.lineno, e.colno);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    const r = e.reason;
+    report('Unhandled promise rejection: ' + (r && r.message ? r.message : r),
+           r && r.stack, '', null, null);
+  });
+})();
+
 // Navigation scroll effect
 const navbar = document.querySelector('.navbar');
 if (navbar) {
