@@ -22,6 +22,23 @@ operates (a credibility asset on about.html) and where the Paystack
 merchant account is registered (a billing fact) — neither limits the
 product's global reach. See memory: strategy-global-not-regional.
 
+FACT NOTE (owner correction, 2026-06-01): DosLunas plant output is
+**50+ tons/DAY** (~1,500 t/mo), NOT 50+ tons/month. The separate
+"~2,000 tons/month" figure (multi-country operations Jamil oversees)
+is correctly monthly. about.html shows "50+ tons/day" only.
+
+### ⚠️ OUTSTANDING OWNER ACTIONS (only one left)
+1. **Run the teams migration** — paste
+   `database/migrations/2026-05-30_teams.sql` into Supabase SQL Editor
+   (Role: postgres). Until then `team.html` errors (tables missing).
+   Everything else (9.1 vector, consulting deliver, etc.) is already
+   activated.
+
+Already done by owner: workspace migration (4.x), vector migration +
+OpenAI key + 3,381-row embedding backfill (9.1), RESEND_API_KEY on
+Render (consulting deliver). Routine reminder: after any deploy, purge
+LSCache in hPanel → Cache Manager (or wait 1h) to see HTML changes live.
+
 Phase 3 closed 2026-05-28 — enterprise B2B foundation live:
 - enterprise_details + enterprise_leads tables (RLS: anon INSERT,
   signed-in user SELECT-own, pg_net trigger emails owner on each lead).
@@ -673,6 +690,36 @@ explicit owner permission (per `feedback-evaluate-other-ai.md`).
 
 ## ⏱️ Owner update log (append below as steps complete)
 
+- 2026-06-01 — **Fact + positioning corrections (owner).** (1) DosLunas
+  output corrected to 50+ tons/DAY across about.html (EN+AR) + all docs;
+  misleading "~2,050 t/mo total" reframed. (2) Global-brand directive:
+  de-regionalised contact.html + programs.html copy, reframed Phase 8 +
+  handoff to a worldwide supplier roster. Commits 117cbf6, 0c5d7a8.
+- 2026-06-01 — **Phase 9.2 ✅ DONE.** Multi-seat enterprise teams.
+  Migration 2026-05-30_teams.sql (teams + team_members + team_invitations
+  + RLS + auto-accept-on-signup + Resend invite trigger + RPCs). Worker
+  /be/team/* (list, create, members, invite, invitations, accept, leave,
+  remove). team.html + accept-invite.html. 22 vitest. Commit 486dfdb.
+  ⚠️ OWNER: run the migration in Supabase before team.html works.
+- 2026-06-01 — **Navbar sync parser hardened.** The dropdown introduced
+  a nested </ul> that the lazy regex mis-matched, leaving orphan links
+  on re-sync. Rewrote to scan to the next real navbar sibling. Commit
+  d5049b9.
+- 2026-05-29 — **Phase 9.3 ✅ DONE.** CSV/XLSX bulk import. FastAPI
+  /api/v2/library/import/{preview,commit} (openpyxl + csv, 5MB/2000-row
+  caps, per-row validation). Worker proxies stamp user_id from JWT.
+  workspace.html Import modal. 9 vitest + 18 pytest. Commit de26302.
+- 2026-05-29 — **Phase 9.4 ✅ DONE.** Chat history export. Worker
+  /chat/export?format=md|pdf (owner-of-session gate); MD in-Worker, PDF
+  via FastAPI /api/v2/chat/render-pdf reusing the consulting reportlab
+  parser. Export buttons in chat header. 13 vitest + 7 pytest. Commit
+  da4a8a9.
+- 2026-05-29 — **Navbar full redesign ✅.** 33 pages unified to 6 primary
+  items + a Tools dropdown (17 links); hamburger breakpoint 1366→900px;
+  scripts/sync_navbar.py as single source of truth. Fixed duplicate
+  Consulting/Enterprise links. Commits fff81a2, 2c60915, 950db65.
+- 2026-05-28 — **Phase 2 fully closed ✅.** Approve & deliver loop:
+  markdown→PDF→Resend→delivered + resend + re-render. Commit f663ed9.
 - 2026-05-22 — Roadmap created. Currently on **1.1**.
 - 2026-05-25 — **Step 1.1 ✅ DONE.** Server-side gate + RLS + anti-scraping
   rate limit deployed end-to-end. SQL migration ran clean; KV namespace
