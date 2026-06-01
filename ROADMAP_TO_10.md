@@ -27,9 +27,26 @@ Shipped this push-cycle (all live, 210/210 tests):
 - Earlier: full growth kit (10 video scripts, 12 FB posts, welcome.html,
   /stats/community counter, UTM tracking).
 
+- **E5** client-side error capture (window.error/unhandledrejection →
+  Worker → Sentry + Better Stack). Live.
+- **E2** VERIFIED already done — docs.html is a real 510-line, 8-section
+  API/getting-started page (the "thin" note was stale from the
+  2026-05-14 context). No rebuild needed.
+
 Owner migrations pending (graceful-degrade until run): testimonials +
 signups_by_day. Still owner-only: record videos, post on FB, collect real
 testimonials, global supplier roster.
+
+### ⏸️ Point of diminishing technical returns (2026-06-01)
+The buildable, data-backed, unblocked work is essentially exhausted. What
+remains is either (a) blocked on owner data/execution, or (b) low-value
+gold-plating. Honest recommendation: **stop building, start launching.**
+The product has decisively crossed the launch threshold; the only thing
+between here and real traction is execution (run the 2 migrations, record
+video #1, post the first FB post). Remaining minor build items if ever
+wanted: E1 mobile-QA (needs a real device to verify), D2 activation
+tracking, F2 enterprise leave-behind PDF, C1 once chemicals_database is
+populated.
 
 Remaining AI-buildable (next candidates): E5 client-side error tracking,
 E2 real docs page, D2 activation tracking, E1 mobile QA, F2 enterprise
