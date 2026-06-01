@@ -350,8 +350,73 @@
     </div>
   </section>
 
+  <!-- Share your experience (D3 — real testimonial capture) -->
+  <section style="padding: 0 0 50px;">
+    <div class="container">
+      <div class="card reveal" id="testimonial-card" style="max-width: 760px; margin: 0 auto; padding: 26px;">
+        <h2 style="font-size: 1.2rem; margin: 0 0 6px;" data-i18n-ar="هل ساعدتك Formula AI؟">Has Formula AI helped you?</h2>
+        <p style="color: var(--text-3); margin: 0 0 16px; font-size: 0.9rem;" data-i18n-ar="شارك تجربتك في جملة أو جملتين. بعد مراجعتنا، قد تظهر شهادتك على الصفحة الرئيسية — تساعد كيميائيين آخرين على الثقة بنا.">Share your experience in a sentence or two. After we review it, your quote may appear on the homepage — helping other chemists trust us.</p>
+        <form id="testimonial-form" style="display: grid; gap: 12px;">
+          <textarea id="t-quote" rows="3" maxlength="600" required placeholder="e.g. Formula AI found a substitute that saved a stalled production batch." style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--border); background:var(--bg-2); color:var(--text); font-family:inherit; resize:vertical;"></textarea>
+          <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+            <input id="t-role" maxlength="80" placeholder="Your role (optional)" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-2); color:var(--text);" />
+            <input id="t-company" maxlength="120" placeholder="Company (optional)" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-2); color:var(--text);" />
+            <select id="t-rating" style="padding:10px; border-radius:8px; border:1px solid var(--border); background:var(--bg-2); color:var(--text);">
+              <option value="5">★★★★★</option>
+              <option value="4">★★★★</option>
+              <option value="3">★★★</option>
+            </select>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button type="submit" class="btn btn-primary" id="t-submit" data-i18n-ar="أرسل شهادتي">Submit testimonial</button>
+            <span id="t-status" style="font-size:0.88rem;"></span>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    var BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+    var form = document.getElementById('testimonial-form');
+    if (!form) return;
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var btn = document.getElementById('t-submit');
+      var status = document.getElementById('t-status');
+      var quote = document.getElementById('t-quote').value.trim();
+      if (quote.length < 10) { status.style.color = '#ff7070'; status.textContent = 'Please write a little more.'; return; }
+      var token = window.FAI_AUTH && window.FAI_AUTH.session && window.FAI_AUTH.session.access_token;
+      if (!token) { status.style.color = '#ff7070'; status.textContent = 'Please sign in first.'; return; }
+      btn.disabled = true; status.style.color = 'var(--text-3)'; status.textContent = 'Sending…';
+      fetch(BASE + '/be/testimonial/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({
+          quote: quote,
+          rating: document.getElementById('t-rating').value,
+          role: document.getElementById('t-role').value,
+          company: document.getElementById('t-company').value
+        })
+      }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+        .then(function (res) {
+          if (!res.ok) {
+            status.style.color = '#ff7070';
+            status.textContent = res.d.detail || res.d.error || 'Could not submit.';
+            btn.disabled = false;
+            return;
+          }
+          document.getElementById('testimonial-card').innerHTML =
+            '<div style="text-align:center; padding:18px 0;"><div style="font-size:2.2rem;">🙏</div>' +
+            '<p style="margin:10px 0 0; color:var(--primary); font-weight:600;">Thank you! Your testimonial is awaiting review.</p></div>';
+        })
+        .catch(function (err) { status.style.color = '#ff7070'; status.textContent = err.message; btn.disabled = false; });
+    });
+  })();
+  </script>
+
   <!-- Footer -->
-  
+
   </main>
   <footer class="footer">
     <div class="container">

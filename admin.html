@@ -99,6 +99,10 @@
             <span id="consult-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
           </button>
           <button class="admin-tab" data-tab="financials" role="tab">Financials</button>
+          <button class="admin-tab" data-tab="testimonials" role="tab">
+            Testimonials
+            <span id="tst-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
+          </button>
         </div>
 
         <!-- ──────────────────────────── Tab: Signups ──────────────────────────── -->
@@ -248,6 +252,18 @@
             <p id="fin-assumptions" style="margin-top:22px; color:var(--text-3); font-size:0.78rem; line-height:1.7;"></p>
           </div>
         </div><!-- /#tab-financials -->
+
+        <!-- ─────────────────────────── Tab: Testimonials ─────────────────────────── -->
+        <div id="tab-testimonials" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size: 1.3rem; margin: 0 0 4px;">Testimonials</h2>
+              <p style="color: var(--text-3); margin: 0; font-size: 0.88rem;">User-submitted social proof. Approve to publish on the homepage; reject to hide. Only approved ones go live.</p>
+            </div>
+            <button id="tst-refresh" class="btn btn-ghost">Refresh</button>
+          </div>
+          <div id="tst-list"><div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div></div>
+        </div><!-- /#tab-testimonials -->
       </div>
 
     </div>
@@ -460,9 +476,80 @@
           document.getElementById('tab-signups').style.display    = (target === 'signups')    ? '' : 'none';
           document.getElementById('tab-consulting').style.display = (target === 'consulting') ? '' : 'none';
           document.getElementById('tab-financials').style.display = (target === 'financials') ? '' : 'none';
+          document.getElementById('tab-testimonials').style.display = (target === 'testimonials') ? '' : 'none';
           if (target === 'consulting' && !consultRows.length) loadConsulting();
           if (target === 'financials' && !finLoaded) loadFinancials();
+          if (target === 'testimonials') loadTestimonials();
         });
+      });
+
+      // ════════════════════════════════════════════════════════════════
+      // Testimonials moderation (D3)
+      // ════════════════════════════════════════════════════════════════
+      document.getElementById('tst-refresh')?.addEventListener('click', loadTestimonials);
+
+      async function loadTestimonials() {
+        const list = document.getElementById('tst-list');
+        list.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div>';
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/testimonials/admin`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const data = await r.json().catch(() => ({}));
+          if (!r.ok) { list.innerHTML = `<div style="padding:30px; color:#ff7070;">Failed (${r.status}): ${escapeHTML(data.error||'')}</div>`; return; }
+          const rows = data.testimonials || [];
+          const pending = rows.filter(t => t.status === 'pending').length;
+          const badge = document.getElementById('tst-badge');
+          if (pending > 0) { badge.style.display = 'inline-block'; badge.textContent = String(pending); }
+          else badge.style.display = 'none';
+          if (!rows.length) { list.innerHTML = '<div style="padding:30px; text-align:center; color:var(--text-3);">No testimonials submitted yet. They appear here when users share their experience from the dashboard.</div>'; return; }
+          list.innerHTML = rows.map(renderTestimonialRow).join('');
+        } catch (err) {
+          list.innerHTML = `<div style="padding:30px; color:#ff7070;">Network error: ${escapeHTML(err.message)}</div>`;
+        }
+      }
+
+      function renderTestimonialRow(t) {
+        const stars = '★★★★★'.slice(0, Math.max(1, Math.min(5, t.rating || 5)));
+        const color = t.status === 'approved' ? 'var(--primary)' : (t.status === 'rejected' ? '#ff7070' : 'var(--secondary)');
+        const who = escapeHTML(t.name || '') + (t.role ? ' · ' + escapeHTML(t.role) : '') + (t.company ? ' · ' + escapeHTML(t.company) : '');
+        return `
+          <div class="card" style="padding:16px 18px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:start;">
+              <div style="min-width:0; flex:1;">
+                <div style="color:#ffd700; font-size:0.9rem;">${stars}</div>
+                <p style="margin:6px 0; line-height:1.6;">"${escapeHTML(t.quote)}"</p>
+                <div style="color:var(--text-3); font-size:0.82rem;">${who}</div>
+                <div style="font-size:0.75rem; margin-top:4px; color:${color}; font-weight:700; text-transform:uppercase;">${escapeHTML(t.status)}${t.featured ? ' · ★ featured' : ''}</div>
+              </div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                ${t.status !== 'approved' ? `<button class="btn btn-primary tst-act" data-id="${escapeHTML(t.id)}" data-status="approved" style="padding:6px 12px; font-size:0.82rem;">Approve</button>` : ''}
+                ${t.status !== 'rejected' ? `<button class="btn btn-ghost tst-act" data-id="${escapeHTML(t.id)}" data-status="rejected" style="padding:6px 12px; font-size:0.82rem;">Reject</button>` : ''}
+                <button class="btn btn-ghost tst-feat" data-id="${escapeHTML(t.id)}" data-featured="${t.featured ? 'false' : 'true'}" style="padding:6px 12px; font-size:0.82rem;">${t.featured ? 'Unfeature' : 'Feature'}</button>
+              </div>
+            </div>
+          </div>`;
+      }
+
+      document.getElementById('tst-list')?.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.tst-act, .tst-feat');
+        if (!btn) return;
+        const id = btn.dataset.id;
+        const body = btn.classList.contains('tst-feat')
+          ? { id, featured: btn.dataset.featured === 'true' }
+          : { id, status: btn.dataset.status };
+        btn.disabled = true;
+        try {
+          const token = window.FAI_AUTH?.session?.access_token;
+          const r = await fetch(`${WORKER_BASE}/be/testimonial/moderate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) { btn.disabled = false; alert('Action failed'); return; }
+          loadTestimonials();
+        } catch (err) { btn.disabled = false; alert('Network error: ' + err.message); }
       });
 
       // Allow URL hash to land directly on the consulting tab + a specific request.

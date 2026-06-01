@@ -738,6 +738,45 @@
   </section>
   HIDDEN-TESTIMONIALS-END -->
 
+  <!-- Live testimonials (D3): real, owner-approved quotes only. Hidden
+       until at least one approved testimonial exists. Populated from
+       /be/testimonials/approved. -->
+  <section class="section" id="live-testimonials" style="display:none;">
+    <div class="container">
+      <div class="section-header reveal">
+        <span class="eyebrow" data-i18n-ar="شهادات حقيقية">Real testimonials</span>
+        <h2 data-i18n-ar='كيميائيون ومصنعون <span class="gradient-text">يثقون بنا</span>'>Chemists &amp; manufacturers <span class="gradient-text">trust us</span></h2>
+      </div>
+      <div class="testimonials" id="live-testimonials-grid"></div>
+    </div>
+  </section>
+  <script>
+  (function () {
+    var BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+    function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+    fetch(BASE + '/be/testimonials/approved')
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(d){
+        if(!d || !d.testimonials || !d.testimonials.length) return; // stay hidden
+        var grid = document.getElementById('live-testimonials-grid');
+        grid.innerHTML = d.testimonials.slice(0,6).map(function(t){
+          var stars = '★★★★★'.slice(0, Math.max(1, Math.min(5, t.rating||5)));
+          var who = esc(t.name||'') + (t.role? ' · '+esc(t.role):'') + (t.company? ' · '+esc(t.company):'');
+          var initial = esc((t.name||'?').trim().charAt(0).toUpperCase());
+          return '<div class="testimonial reveal">'
+            + '<div class="testimonial-stars">'+stars+'</div>'
+            + '<p class="testimonial-text">"'+esc(t.quote)+'"</p>'
+            + '<div class="testimonial-author"><div class="testimonial-avatar">'+initial+'</div>'
+            + '<div><div class="testimonial-name">'+esc(t.name||'')+'</div>'
+            + '<div class="testimonial-role">'+(esc(t.role||'')+(t.company?' · '+esc(t.company):''))+'</div></div></div>'
+            + '</div>';
+        }).join('');
+        document.getElementById('live-testimonials').style.display = '';
+      })
+      .catch(function(){ /* stay hidden on any error */ });
+  })();
+  </script>
+
   <!-- FAQ -->
   <section class="section">
     <div class="container">

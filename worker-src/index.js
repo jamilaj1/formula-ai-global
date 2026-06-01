@@ -103,6 +103,12 @@ import {
 import { handleAdminFinancials } from './handlers/admin.js';
 import { handleCommunityStats } from './handlers/stats.js';
 import {
+  handleTestimonialSubmit,
+  handleTestimonialsApproved,
+  handleTestimonialsAdmin,
+  handleTestimonialModerate,
+} from './handlers/testimonials.js';
+import {
   handleTeamList,
   handleTeamCreate,
   handleTeamMembers,
@@ -240,6 +246,15 @@ async function handleRequest(request, env, ctx) {
       if (path === '/usage') return await handleUsage(auth, env);
       // Public community counter for the campaign landing page (cached 5min).
       if (path === '/stats/community') return await handleCommunityStats(env);
+      // Real social proof (D3): public approved wall + user submit + owner moderation.
+      if (path === '/be/testimonials/approved' && request.method === 'GET')
+        return await handleTestimonialsApproved(env);
+      if (path === '/be/testimonial/submit' && request.method === 'POST')
+        return await handleTestimonialSubmit(request, auth, env);
+      if (path === '/be/testimonials/admin' && request.method === 'GET')
+        return await handleTestimonialsAdmin(auth, env);
+      if (path === '/be/testimonial/moderate' && request.method === 'POST')
+        return await handleTestimonialModerate(request, auth, env);
 
       // Chat
       if (path === '/chat' && request.method === 'POST')

@@ -1402,8 +1402,8 @@ function renderChatMarkdown(session, messages) {
   return out.join("\n");
 }
 function _safeAttachmentName(base, ext) {
-  const clean4 = String(base || "chat").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "chat";
-  return `${clean4}.${ext}`;
+  const clean5 = String(base || "chat").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "chat";
+  return `${clean5}.${ext}`;
 }
 async function handleChatExport(url, auth, env) {
   const sessionId = url.searchParams.get("session_id");
@@ -3563,8 +3563,122 @@ async function handleCommunityStats(env) {
   return json(payload);
 }
 
-// worker-src/handlers/team.js
+// worker-src/handlers/testimonials.js
+var OWNER_EMAIL3 = "jamilaj1@gmail.com";
+var APPROVED_CACHE_KEY = "cache:testimonials:approved";
+var APPROVED_TTL = 300;
 function clean2(s, max) {
+  const v = String(s ?? "").normalize("NFKC").trim();
+  return max ? v.slice(0, max) : v;
+}
+async function handleTestimonialSubmit(request, auth, env) {
+  if (!auth || auth.kind !== "user") return unauthorized();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const quote = clean2(body.quote, 600);
+  if (quote.length < 10) return badRequest("quote_too_short");
+  const rating = Math.max(1, Math.min(parseInt(body.rating, 10) || 5, 5));
+  const name = clean2(body.name, 80) || clean2(auth.email?.split("@")[0], 80) || "Formula AI user";
+  const role = clean2(body.role, 80) || null;
+  const company = clean2(body.company, 120) || null;
+  const payload = {
+    user_id: auth.userId,
+    name,
+    role,
+    company,
+    quote,
+    rating,
+    status: "pending"
+  };
+  const r = await sbService(env, "/testimonials", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(payload)
+  });
+  if (!r.ok) {
+    const detail = (await r.text()).slice(0, 300);
+    if (detail.includes("testimonials_one_active_per_user") || r.status === 409) {
+      return json({ error: "already_submitted", detail: "You already have a testimonial awaiting review or published." }, 409);
+    }
+    return json({ error: "submit_failed", detail }, 500);
+  }
+  return json({ ok: true, status: "pending", message: "Thank you! Your testimonial is awaiting review." });
+}
+async function handleTestimonialsApproved(env) {
+  if (env.RATELIMIT_KV) {
+    try {
+      const cached = await env.RATELIMIT_KV.get(APPROVED_CACHE_KEY);
+      if (cached) return json({ testimonials: JSON.parse(cached), cached: true });
+    } catch {
+    }
+  }
+  const r = await sbService(
+    env,
+    "/testimonials?status=eq.approved&select=name,role,company,quote,rating,featured&order=featured.desc,approved_at.desc&limit=12"
+  );
+  if (!r.ok) return json({ testimonials: [] });
+  const rows = await r.json();
+  const testimonials = Array.isArray(rows) ? rows : [];
+  if (env.RATELIMIT_KV) {
+    try {
+      await env.RATELIMIT_KV.put(APPROVED_CACHE_KEY, JSON.stringify(testimonials), {
+        expirationTtl: APPROVED_TTL
+      });
+    } catch {
+    }
+  }
+  return json({ testimonials });
+}
+async function handleTestimonialsAdmin(auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL3) return json({ error: "forbidden" }, 403);
+  const r = await sbService(
+    env,
+    "/testimonials?select=id,name,role,company,quote,rating,status,featured,created_at&order=status.asc,created_at.desc&limit=200"
+  );
+  if (!r.ok) return json({ error: "db_error" }, 500);
+  return json({ testimonials: await r.json() });
+}
+async function handleTestimonialModerate(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL3) return json({ error: "forbidden" }, 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const id = clean2(body.id, 64);
+  if (!id) return badRequest("missing_id");
+  const patch = {};
+  if (body.status !== void 0) {
+    const s = clean2(body.status, 16);
+    if (!["pending", "approved", "rejected"].includes(s)) return badRequest("invalid_status");
+    patch.status = s;
+    patch.approved_at = s === "approved" ? (/* @__PURE__ */ new Date()).toISOString() : null;
+  }
+  if (body.featured !== void 0) patch.featured = !!body.featured;
+  if (!Object.keys(patch).length) return badRequest("no_fields");
+  const r = await sbService(env, `/testimonials?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(patch)
+  });
+  if (!r.ok) return json({ error: "update_failed", detail: (await r.text()).slice(0, 200) }, 500);
+  if (env.RATELIMIT_KV) {
+    try {
+      await env.RATELIMIT_KV.delete(APPROVED_CACHE_KEY);
+    } catch {
+    }
+  }
+  const arr = await r.json();
+  return json({ ok: true, testimonial: arr[0] || null });
+}
+
+// worker-src/handlers/team.js
+function clean3(s, max) {
   const v = String(s ?? "").normalize("NFKC").trim();
   return max ? v.slice(0, max) : v;
 }
@@ -3604,8 +3718,8 @@ async function handleTeamCreate(request, auth, env) {
   } catch {
     return badRequest("invalid_json");
   }
-  const name = clean2(body.name, 120);
-  const plan = clean2(body.plan, 20).toLowerCase() || "enterprise";
+  const name = clean3(body.name, 120);
+  const plan = clean3(body.plan, 20).toLowerCase() || "enterprise";
   const seats = Math.max(1, Math.min(parseInt(body.seats, 10) || 5, 500));
   if (!name) return badRequest("missing_name");
   if (!["starter", "professional", "business", "enterprise"].includes(plan)) {
@@ -3664,8 +3778,8 @@ async function handleTeamInvite(teamId, request, auth, env) {
   } catch {
     return badRequest("invalid_json");
   }
-  const email = clean2(body.email, 320).toLowerCase();
-  const inviteRole = clean2(body.role, 20).toLowerCase() || "member";
+  const email = clean3(body.email, 320).toLowerCase();
+  const inviteRole = clean3(body.role, 20).toLowerCase() || "member";
   if (!EMAIL_RE2.test(email)) return badRequest("invalid_email");
   if (!["admin", "member"].includes(inviteRole)) return badRequest("invalid_role");
   const existR = await sbService(
@@ -3760,7 +3874,7 @@ async function handleTeamAccept(request, auth, env) {
   } catch {
     return badRequest("invalid_json");
   }
-  const token = clean2(body.token, 200);
+  const token = clean3(body.token, 200);
   if (!token) return badRequest("missing_token");
   const r = await sbService(
     env,
@@ -3827,11 +3941,11 @@ async function handleTeamRemoveMember(teamId, targetUserId, auth, env) {
 }
 
 // worker-src/handlers/enterprise.js
-var OWNER_EMAIL3 = "jamilaj1@gmail.com";
+var OWNER_EMAIL4 = "jamilaj1@gmail.com";
 var TEAM_SIZES = /* @__PURE__ */ new Set(["1-10", "11-50", "51-200", "200+"]);
 var LEAD_STATUS = /* @__PURE__ */ new Set(["new", "contacted", "demo_booked", "negotiating", "won", "lost"]);
 var EMAIL_RE3 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function clean3(v, max) {
+function clean4(v, max) {
   const s = String(v ?? "").normalize("NFKC").trim();
   return max ? s.slice(0, max) : s;
 }
@@ -3849,16 +3963,16 @@ async function handleEnterpriseLead(request, auth, env) {
   } catch {
     return badRequest("invalid_json");
   }
-  const full_name = clean3(body.full_name, 200);
-  const email = clean3(body.email, 320).toLowerCase();
-  const company = clean3(body.company, 200);
+  const full_name = clean4(body.full_name, 200);
+  const email = clean4(body.email, 320).toLowerCase();
+  const company = clean4(body.company, 200);
   if (!full_name || !email || !company) return badRequest("missing_fields");
   if (!EMAIL_RE3.test(email)) return badRequest("invalid_email");
-  const role = clean3(body.role, 120) || null;
-  const team_size_in = clean3(body.team_size, 16);
+  const role = clean4(body.role, 120) || null;
+  const team_size_in = clean4(body.team_size, 16);
   const team_size = TEAM_SIZES.has(team_size_in) ? team_size_in : null;
-  const industry = clean3(body.industry, 80) || null;
-  const use_case = clean3(body.use_case, 6e3) || null;
+  const industry = clean4(body.industry, 80) || null;
+  const use_case = clean4(body.use_case, 6e3) || null;
   let budget = null;
   if (body.budget_per_month_usd != null && String(body.budget_per_month_usd).trim() !== "") {
     const n = Number(String(body.budget_per_month_usd).replace(/[^0-9.]/g, ""));
@@ -3893,7 +4007,7 @@ async function handleEnterpriseLead(request, auth, env) {
   return json({ ok: true, id: arr?.[0]?.id || null });
 }
 async function handleEnterpriseList(auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL3) {
+  if (!auth || auth.email !== OWNER_EMAIL4) {
     return json({ error: "forbidden" }, 403);
   }
   const r = await sbService(
@@ -3906,10 +4020,10 @@ async function handleEnterpriseList(auth, env) {
   return json({ leads: await r.json() });
 }
 async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
-  if (!auth || auth.email !== OWNER_EMAIL3) {
+  if (!auth || auth.email !== OWNER_EMAIL4) {
     return json({ error: "forbidden" }, 403);
   }
-  const id = clean3(leadId, 64);
+  const id = clean4(leadId, 64);
   if (!id) return badRequest("missing_id");
   let body;
   try {
@@ -3919,12 +4033,12 @@ async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
   }
   const patch = {};
   if (body.status !== void 0) {
-    const s = clean3(body.status, 32);
+    const s = clean4(body.status, 32);
     if (!LEAD_STATUS.has(s)) return badRequest("invalid_status");
     patch.status = s;
   }
   if (body.owner_notes !== void 0) {
-    patch.owner_notes = clean3(body.owner_notes, 8e3) || null;
+    patch.owner_notes = clean4(body.owner_notes, 8e3) || null;
   }
   if (Object.keys(patch).length === 0) return badRequest("no_changes");
   const r = await sbService(env, `/enterprise_leads?id=eq.${id}`, {
@@ -4042,6 +4156,14 @@ async function handleRequest(request, env, ctx) {
     if (path === "/search") return await handleSearch(url, auth, env, request);
     if (path === "/usage") return await handleUsage(auth, env);
     if (path === "/stats/community") return await handleCommunityStats(env);
+    if (path === "/be/testimonials/approved" && request.method === "GET")
+      return await handleTestimonialsApproved(env);
+    if (path === "/be/testimonial/submit" && request.method === "POST")
+      return await handleTestimonialSubmit(request, auth, env);
+    if (path === "/be/testimonials/admin" && request.method === "GET")
+      return await handleTestimonialsAdmin(auth, env);
+    if (path === "/be/testimonial/moderate" && request.method === "POST")
+      return await handleTestimonialModerate(request, auth, env);
     if (path === "/chat" && request.method === "POST")
       return await handleChat(request, auth, env);
     if (path === "/chat/sessions" && request.method === "GET")
