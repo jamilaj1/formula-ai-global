@@ -134,6 +134,31 @@ near-complete; the Phase 9.1 vector.js path is still untested (next
 iteration). Pre-existing test_health.py failures are unrelated to 9.7
 and were not introduced here.
 
+Phase 9.2 shipped 2026-06-01 — multi-seat enterprise teams:
+- Schema 2026-05-30_teams.sql: teams + team_members (owner/admin/member)
+  + team_invitations (token + 14-day expiry). RLS members-see-own-team;
+  trigger seeds owner row on create; trigger auto-accepts an invite when
+  the invitee signs up with the matching email; pg_net+Resend trigger
+  emails the tokenised accept link. RPCs list_my_teams + user_has_team_paid.
+- Worker /be/team/{list,create,<id>/members,<id>/invite,<id>/invitations,
+  accept,<id>/leave,<id>/member/<userId>}. Signed-in only; every mutation
+  re-checks role in code (service_role bypasses RLS). Seat-limit + dedupe
+  on invite; owner can't leave / can't be removed.
+- team.html (manage) + accept-invite.html (token landing). 22 vitest.
+- OWNER ACTION: paste 2026-05-30_teams.sql into Supabase SQL Editor.
+
+Phase 9.4 shipped 2026-05-29 — chat history export (Markdown + PDF):
+- Worker GET /chat/export?session_id=&format=md|pdf (owner-of-session
+  gate). MD rendered in-Worker; PDF via FastAPI /api/v2/chat/render-pdf
+  reusing the consulting reportlab parser. Export buttons in chat header.
+  13 vitest + 7 pytest.
+
+Phase 9.3 shipped 2026-05-29 — CSV/XLSX bulk import:
+- FastAPI /api/v2/library/import/{preview,commit} (openpyxl + csv,
+  5MB/2000-row caps, per-row validation). Worker proxies stamp user_id
+  from JWT. workspace.html Import modal (pick→preview→commit).
+  9 vitest + 18 pytest.
+
 Phase 9.6 shipped 2026-05-29 — CSP tighten (unsafe-eval removed):
 - Audited every committed `.js` and inline `<script>` across the repo
   with `rg '\beval\s*\(|new\s+Function|Function\s*\(\s*["'\''`]'`. Zero
