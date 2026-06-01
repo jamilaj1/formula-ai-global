@@ -220,6 +220,13 @@
             <!-- Unit economics row ──────────────────────────────────────── -->
             <div class="admin-grid" id="fin-unit-economics" style="margin-top:14px;"></div>
 
+            <!-- Sign-ups trend (last 30 days) ───────────────────────────── -->
+            <div class="card" style="margin-top:24px;">
+              <h3 style="font-size:1rem; margin:0 0 6px;">Sign-ups — last 30 days</h3>
+              <p style="color:var(--text-3); margin:0 0 14px; font-size:0.82rem;">Daily new registrations. The trend that turns into MRR.</p>
+              <div id="fin-signups-chart"></div>
+            </div>
+
             <!-- Revenue mix + plan distribution side-by-side ────────────── -->
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-top:24px;">
               <div class="card">
@@ -1046,6 +1053,32 @@
             <div style="color:var(--text-3); font-size:0.72rem; margin-top:4px;">${escapeHTML(c.sub)}</div>
           </div>
         `).join('');
+
+        // ── Sign-ups trend bar chart (last 30d) ─────────────────────
+        const daily = Array.isArray(d.signups_daily) ? d.signups_daily : [];
+        const chartEl = document.getElementById('fin-signups-chart');
+        if (!daily.length) {
+          chartEl.innerHTML = '<div style="color:var(--text-3); font-size:0.85rem; padding:10px 0;">No trend yet — run the <code>signups_by_day</code> migration, or sign-ups will appear here as they arrive.</div>';
+        } else {
+          const maxN = Math.max(1, ...daily.map(x => x.n));
+          const total = daily.reduce((s, x) => s + x.n, 0);
+          chartEl.innerHTML = `
+            <div style="display:flex; align-items:flex-end; gap:3px; height:120px; padding-top:6px;">
+              ${daily.map(x => {
+                const h = Math.round((x.n / maxN) * 100);
+                const d2 = String(x.day || '').slice(5); // MM-DD
+                return `<div title="${escapeHTML(x.day)}: ${x.n} sign-up${x.n===1?'':'s'}"
+                  style="flex:1; min-width:4px; height:100%; display:flex; flex-direction:column; justify-content:flex-end;">
+                  <div style="height:${h}%; background:var(--grad-primary, linear-gradient(180deg,#00ff88,#00d4ff)); border-radius:3px 3px 0 0; min-height:${x.n>0?'3px':'0'};"></div>
+                </div>`;
+              }).join('')}
+            </div>
+            <div style="display:flex; justify-content:space-between; color:var(--text-3); font-size:0.72rem; margin-top:6px;">
+              <span>${escapeHTML(daily[0]?.day || '')}</span>
+              <span><strong style="color:var(--text-1);">${total}</strong> in 30 days</span>
+              <span>${escapeHTML(daily[daily.length-1]?.day || '')}</span>
+            </div>`;
+        }
 
         // ── Revenue mix bar (30d) ───────────────────────────────────
         const sub30 = Number(d.revenue_30d?.subscription || 0);

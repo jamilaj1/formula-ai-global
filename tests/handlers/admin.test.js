@@ -40,9 +40,18 @@ function fakeFetch({
   newSignups30d = 0,
   consultRows = [],
   claudeRows = [],
+  signupsDaily = null,   // null → RPC 500 (tests graceful degrade)
 } = {}) {
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
     const u = String(url);
+
+    // E3 — signups_by_day RPC
+    if (u.includes('/rpc/signups_by_day')) {
+      if (signupsDaily === null) return new Response('err', { status: 500 });
+      return new Response(JSON.stringify(signupsDaily), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
 
     // Plan-specific counts: /profiles?plan=eq.<plan>
     const planMatch = u.match(/profiles\?plan=eq\.([^&]+)/);
@@ -251,5 +260,24 @@ describe('handleAdminFinancials — computed metrics', () => {
     const body = await (await handleAdminFinancials(ownerAuth(), baseEnv())).json();
     expect(typeof body.generated_at).toBe('string');
     expect(new Date(body.generated_at).toString()).not.toBe('Invalid Date');
+  });
+
+  it('E3: returns signups_daily from the RPC', async () => {
+    fakeFetch({
+      signupsDaily: [
+        { day: '2026-05-30', n: 2 },
+        { day: '2026-05-31', n: 5 },
+      ],
+    });
+    const body = await (await handleAdminFinancials(ownerAuth(), baseEnv())).json();
+    expect(body.signups_daily).toHaveLength(2);
+    expect(body.signups_daily[1]).toEqual({ day: '2026-05-31', n: 5 });
+  });
+
+  it('E3: degrades to [] when the signups_by_day RPC is absent (not yet migrated)', async () => {
+    fakeFetch({ signupsDaily: null }); // RPC 500
+    const res = await handleAdminFinancials(ownerAuth(), baseEnv());
+    expect(res.status).toBe(200);   // endpoint still works
+    expect((await res.json()).signups_daily).toEqual([]);
   });
 });

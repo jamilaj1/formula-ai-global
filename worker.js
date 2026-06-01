@@ -3430,7 +3430,8 @@ async function handleAdminFinancials(auth, env) {
     totalSignups,
     newSignups30d,
     consultRowsResp,
-    claudeRowsResp
+    claudeRowsResp,
+    signupsDaily
   ] = await Promise.all([
     // Count per plan (one HEAD-style request each, parallel)
     Promise.all(ALL_PLANS.map(async (p) => [
@@ -3442,7 +3443,24 @@ async function handleAdminFinancials(auth, env) {
     // Consulting revenue — small enough table to pull rows + sum locally
     sbService(env, "/consultation_requests?status=in.(paid,delivered)&select=amount_usd,status,created_at"),
     // Claude operational cost — bounded to 30d so the response stays small
-    sbService(env, `/api_usage?created_at=gte.${encodeURIComponent(since30dIso)}&select=est_cost_usd,cache_hit,model`)
+    sbService(env, `/api_usage?created_at=gte.${encodeURIComponent(since30dIso)}&select=est_cost_usd,cache_hit,model`),
+    // E3 — daily sign-up series (last 30d, zero-filled) via RPC. Degrades
+    // to [] if the signups_by_day migration hasn't been run yet, so the
+    // dashboard still loads everything else.
+    (async () => {
+      try {
+        const r = await sbService(env, "/rpc/signups_by_day", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ days: 30 })
+        });
+        if (!r.ok) return [];
+        const rows = await r.json();
+        return Array.isArray(rows) ? rows.map((x) => ({ day: x.day, n: Number(x.n) || 0 })) : [];
+      } catch {
+        return [];
+      }
+    })()
   ]);
   const planDistribution = Object.fromEntries(planCountsArr);
   let mrr = 0;
@@ -3516,7 +3534,9 @@ async function handleAdminFinancials(auth, env) {
     ltv_usd: round(ltvUsd, 0),
     cac_usd: null,
     // explicitly not tracked
-    conversion_pct: round(conversion, 2)
+    conversion_pct: round(conversion, 2),
+    // E3 — daily sign-up trend (last 30d, zero-filled). [] if RPC not run.
+    signups_daily: signupsDaily
   });
 }
 
