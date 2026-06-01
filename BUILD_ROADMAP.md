@@ -27,17 +27,22 @@ FACT NOTE (owner correction, 2026-06-01): DosLunas plant output is
 "~2,000 tons/month" figure (multi-country operations Jamil oversees)
 is correctly monthly. about.html shows "50+ tons/day" only.
 
-### ⚠️ OUTSTANDING OWNER ACTIONS (only one left)
-1. **Run the teams migration** — paste
-   `database/migrations/2026-05-30_teams.sql` into Supabase SQL Editor
-   (Role: postgres). Until then `team.html` errors (tables missing).
-   Everything else (9.1 vector, consulting deliver, etc.) is already
-   activated.
+### ✅ OUTSTANDING OWNER ACTIONS — NONE (all done 2026-06-01)
+All SQL migrations are run (teams, testimonials, signups_by_day,
+activation_rate — verified live; activation = 42.9%). All secrets set
+(OPENAI_API_KEY, RESEND_API_KEY). Vector backfill done (3,381/3,381).
+The entire technical surface (Phases 1-4, 7, all of 9, + the path-to-10
+items A/B/C4/D2/D3/E3/E5/F1/F2) is LIVE and activated.
 
-Already done by owner: workspace migration (4.x), vector migration +
-OpenAI key + 3,381-row embedding backfill (9.1), RESEND_API_KEY on
-Render (consulting deliver). Routine reminder: after any deploy, purge
-LSCache in hPanel → Cache Manager (or wait 1h) to see HTML changes live.
+**The only remaining work is human + non-technical:** record the 10
+videos (marketing/VIDEO_SCRIPTS.md), post the 12 FB posts
+(marketing/FACEBOOK_POSTS.md) with welcome.html?utm_campaign=<tag> links,
+collect real testimonials (system live), supply a global supplier roster
+(Phase 8), and optionally populate chemicals_database for per-chemical
+SEO. Routine: purge LSCache after a deploy (hPanel → Cache Manager).
+
+The product has decisively crossed the launch threshold — the bottleneck
+is now 100% execution (launch), not engineering. See HANDOFF_2026-06-01.md.
 
 Phase 3 closed 2026-05-28 — enterprise B2B foundation live:
 - enterprise_details + enterprise_leads tables (RLS: anon INSERT,

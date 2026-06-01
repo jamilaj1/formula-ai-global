@@ -37,6 +37,14 @@ Owner migrations pending (graceful-degrade until run): testimonials +
 signups_by_day. Still owner-only: record videos, post on FB, collect real
 testimonials, global supplier roster.
 
+### ✅ All migrations run + activated (2026-06-01, verified live)
+testimonials / signups_by_day / activation_rate all applied. **Live
+activation = 42.9%** (3 of 7 users ran AI within 24h) — already above the
+10/10 >40% target. F2 enterprise one-pager + D2 activation card live.
+Criteria met: ~6 of 9 (was 2 at session start). The remaining 3 (1,000
+users · 5 testimonials + 2 case studies · climbing MRR) are earned by
+LAUNCHING, not building.
+
 ### ⏸️ Point of diminishing technical returns (2026-06-01)
 The buildable, data-backed, unblocked work is essentially exhausted. What
 remains is either (a) blocked on owner data/execution, or (b) low-value
