@@ -123,6 +123,7 @@ import {
   handleEnterpriseLead,
   handleEnterpriseList,
   handleEnterpriseLeadUpdate,
+  handleEnterpriseOnepager,
 } from './handlers/enterprise.js';
 import { withObservability } from './observability.js';
 
@@ -387,6 +388,9 @@ async function handleRequest(request, env, ctx) {
       }
 
       // Enterprise B2B (Phase 3). Public lead intake + owner-only admin.
+      // Public enterprise leave-behind PDF (F2).
+      if (path === '/be/enterprise/onepager' && request.method === 'GET')
+        return await handleEnterpriseOnepager(env);
       if (path === '/be/enterprise/lead' && request.method === 'POST')
         return await handleEnterpriseLead(request, auth, env);
       if (path === '/be/enterprise/list' && request.method === 'GET')

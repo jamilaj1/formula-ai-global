@@ -142,3 +142,34 @@ export async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
   const arr = await r.json();
   return json({ ok: true, lead: arr?.[0] || null });
 }
+
+/**
+ * GET /be/enterprise/onepager  (PUBLIC)
+ * Streams the enterprise leave-behind PDF rendered by FastAPI. The Worker
+ * adds the internal secret so the Render endpoint isn't hit directly.
+ * Pure marketing material — no auth, no user data.
+ */
+export async function handleEnterpriseOnepager(env) {
+  const backendUrl = env.CHEM_BACKEND_URL || '';
+  const internalSecret = env.BACKEND_INTERNAL_SECRET || '';
+  if (!backendUrl || !internalSecret) return json({ error: 'backend_not_configured' }, 503);
+  try {
+    const br = await fetch(`${backendUrl.replace(/\/+$/, '')}/api/v2/enterprise/onepager.pdf`, {
+      headers: { 'x-formula-internal': internalSecret },
+    });
+    if (!br.ok) {
+      return json({ error: 'backend_error', status: br.status }, br.status >= 500 ? 502 : br.status);
+    }
+    return new Response(br.body, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': 'inline; filename="Formula-AI-Enterprise.pdf"',
+        'Cache-Control': 'public, max-age=3600',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (err) {
+    return json({ error: 'backend_unreachable', detail: err?.message || '' }, 502);
+  }
+}

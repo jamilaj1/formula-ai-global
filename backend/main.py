@@ -100,7 +100,7 @@ async def stats():
 
 # -------- Routers (v1 = core, v2 = business, chem = RDKit Phase 1) -----
 from app.api.v1 import search, formulas, chat, export
-from app.api.v2 import compliance, subscription, ads, global_initiatives, consulting, library_pdf, chat_export, library_import
+from app.api.v2 import compliance, subscription, ads, global_initiatives, consulting, library_pdf, chat_export, library_import, enterprise_pdf
 from app.api.chem import properties as chem_properties
 from app.api.chem import lookup as chem_lookup
 from app.api.chem import similarity as chem_similarity
@@ -122,6 +122,7 @@ app.include_router(consulting.router, prefix="/api/v2")
 app.include_router(library_pdf.router, prefix="/api/v2")
 app.include_router(chat_export.router, prefix="/api/v2")
 app.include_router(library_import.router, prefix="/api/v2")
+app.include_router(enterprise_pdf.router, prefix="/api/v2")
 
 # Chemistry endpoints (RDKit + PubChem). Mounted at /api so routes become /api/chem/*.
 app.include_router(chem_properties.router, prefix="/api")
