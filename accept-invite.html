@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Accept team invitation — Formula AI</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./assets/styles.css?v=48" />
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+    </div>
+  </nav>
+
+  <main style="max-width: 540px; margin: 0 auto; padding: 130px 20px;">
+    <div class="card" style="padding: 28px; text-align: center;">
+      <div id="invite-status">
+        <div style="font-size:3rem; margin-bottom:14px;">📩</div>
+        <h2 style="margin: 0 0 8px;" data-i18n-ar="قبول الدعوة">Accept your team invitation</h2>
+        <p style="color: var(--text-3); margin: 0 0 20px;" id="invite-msg" data-i18n-ar="جارٍ التحقق من الرابط…">Checking the link…</p>
+        <div id="invite-buttons" style="display:none; margin-top: 20px;"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="./assets/app.js?v=48"></script>
+  <script type="module" src="./assets/auth.js?v=48"></script>
+  <script>
+  (function () {
+    const WORKER_BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+
+    const msgEl  = document.getElementById('invite-msg');
+    const btnsEl = document.getElementById('invite-buttons');
+    function setMessage(text) { msgEl.textContent = text; }
+    function setButtons(html) { btnsEl.style.display = 'block'; btnsEl.innerHTML = html; }
+
+    async function whenAuthReady() {
+      return new Promise(resolve => {
+        const tick = () => window.FAI_AUTH?.initialized ? resolve() : setTimeout(tick, 60);
+        tick();
+      });
+    }
+
+    async function accept(token) {
+      const t = window.FAI_AUTH?.session?.access_token;
+      try {
+        const r = await fetch(`${WORKER_BASE}/be/team/accept`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(t ? { Authorization: 'Bearer ' + t } : {}) },
+          body: JSON.stringify({ token }),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (r.ok) {
+          setMessage('✓ Welcome to the team! Redirecting you to /team.html…');
+          setTimeout(() => { location.href = '/team.html'; }, 1500);
+          return;
+        }
+        const errCode = data.error || 'unknown';
+        if (errCode === 'invalid_token') {
+          setMessage('Invitation not found. The link may have been mistyped or the invitation cancelled.');
+        } else if (errCode === 'expired') {
+          setMessage('This invitation has expired. Ask the team admin to send a new one.');
+        } else if (errCode === 'already_accepted') {
+          setMessage('This invitation was already accepted. Opening your team page…');
+          setTimeout(() => { location.href = '/team.html'; }, 1500);
+        } else if (errCode === 'email_mismatch') {
+          const invitedEmail = data.invited_email || '(unknown email)';
+          setMessage(`This invitation was sent to ${invitedEmail}, but you're signed in as a different user. Sign in with the invited email and try again.`);
+          setButtons(`<a class="btn btn-primary" href="./login.html?redirect=${encodeURIComponent(location.pathname + location.search)}">Sign in with the right account</a>`);
+        } else if (errCode === 'auth_required') {
+          setMessage('Sign in with the invited email to accept this invitation.');
+          setButtons(`<a class="btn btn-primary" href="./login.html?redirect=${encodeURIComponent(location.pathname + location.search)}">Sign in</a>`);
+        } else {
+          setMessage(`Couldn't accept: ${data.detail || errCode}`);
+        }
+      } catch (err) {
+        setMessage(`Network error: ${err.message}`);
+      }
+    }
+
+    (async function init() {
+      const params = new URLSearchParams(location.search);
+      const token = (params.get('token') || '').trim();
+      if (!token) {
+        setMessage('No invitation token in the URL. Open the link from your invitation email.');
+        return;
+      }
+      await whenAuthReady();
+      const u = window.FAI_AUTH?.session?.user;
+      if (!u) {
+        setMessage('Sign in or create an account with the invited email to accept this invitation.');
+        setButtons(`
+          <a class="btn btn-primary" href="./login.html?redirect=${encodeURIComponent(location.pathname + location.search)}">Sign in</a>
+          <a class="btn btn-ghost" style="margin-left:8px;" href="./register.html?redirect=${encodeURIComponent(location.pathname + location.search)}">Create account</a>
+        `);
+        return;
+      }
+      accept(token);
+    })();
+  })();
+  </script>
+</body>
+</html>

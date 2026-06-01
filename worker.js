@@ -1402,8 +1402,8 @@ function renderChatMarkdown(session, messages) {
   return out.join("\n");
 }
 function _safeAttachmentName(base, ext) {
-  const clean3 = String(base || "chat").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "chat";
-  return `${clean3}.${ext}`;
+  const clean4 = String(base || "chat").normalize("NFKD").replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "chat";
+  return `${clean4}.${ext}`;
 }
 async function handleChatExport(url, auth, env) {
   const sessionId = url.searchParams.get("session_id");
@@ -3520,12 +3520,275 @@ async function handleAdminFinancials(auth, env) {
   });
 }
 
+// worker-src/handlers/team.js
+function clean2(s, max) {
+  const v = String(s ?? "").normalize("NFKC").trim();
+  return max ? v.slice(0, max) : v;
+}
+var EMAIL_RE2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function generateInviteToken() {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function getMyRole(env, teamId, userId) {
+  const r = await sbService(
+    env,
+    `/team_members?team_id=eq.${encodeURIComponent(teamId)}&user_id=eq.${encodeURIComponent(userId)}&select=role&limit=1`
+  );
+  if (!r.ok) return null;
+  const arr = await r.json();
+  return Array.isArray(arr) && arr.length ? arr[0].role : null;
+}
+function canAdmin(role) {
+  return role === "owner" || role === "admin";
+}
+async function handleTeamList(auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const r = await sbService(env, "/rpc/list_my_teams", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: auth.userId })
+  });
+  if (!r.ok) return json({ teams: [] });
+  return json({ teams: await r.json() });
+}
+async function handleTeamCreate(request, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const name = clean2(body.name, 120);
+  const plan = clean2(body.plan, 20).toLowerCase() || "enterprise";
+  const seats = Math.max(1, Math.min(parseInt(body.seats, 10) || 5, 500));
+  if (!name) return badRequest("missing_name");
+  if (!["starter", "professional", "business", "enterprise"].includes(plan)) {
+    return badRequest("invalid_plan");
+  }
+  const r = await sbService(env, "/teams", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({ name, plan, seats, owner_user_id: auth.userId })
+  });
+  if (!r.ok) {
+    const detail = (await r.text()).slice(0, 300);
+    return json({ error: "create_failed", detail }, 500);
+  }
+  const arr = await r.json();
+  return json({ team: arr[0] });
+}
+async function handleTeamMembers(teamId, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const role = await getMyRole(env, teamId, auth.userId);
+  if (!role) return json({ error: "not_a_member" }, 403);
+  const memR = await sbService(
+    env,
+    `/team_members?team_id=eq.${encodeURIComponent(teamId)}&select=user_id,role,joined_at&order=joined_at.asc`
+  );
+  if (!memR.ok) return json({ error: "db_error" }, 500);
+  const members = await memR.json();
+  if (!members.length) return json({ members: [] });
+  const ids = members.map((m) => `"${m.user_id}"`).join(",");
+  const profR = await sbService(
+    env,
+    `/profiles?id=in.(${ids})&select=id,email,full_name`
+  );
+  let profiles = [];
+  if (profR.ok) {
+    profiles = await profR.json();
+    if (!Array.isArray(profiles)) profiles = [];
+  }
+  const byId = Object.fromEntries(profiles.map((p) => [p.id, p]));
+  const out = members.map((m) => ({
+    user_id: m.user_id,
+    role: m.role,
+    joined_at: m.joined_at,
+    email: byId[m.user_id]?.email || null,
+    full_name: byId[m.user_id]?.full_name || null
+  }));
+  return json({ members: out, my_role: role });
+}
+async function handleTeamInvite(teamId, request, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const role = await getMyRole(env, teamId, auth.userId);
+  if (!canAdmin(role)) return json({ error: "forbidden" }, 403);
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const email = clean2(body.email, 320).toLowerCase();
+  const inviteRole = clean2(body.role, 20).toLowerCase() || "member";
+  if (!EMAIL_RE2.test(email)) return badRequest("invalid_email");
+  if (!["admin", "member"].includes(inviteRole)) return badRequest("invalid_role");
+  const existR = await sbService(
+    env,
+    `/profiles?email=eq.${encodeURIComponent(email)}&select=id&limit=1`
+  );
+  let existingUserId = null;
+  if (existR.ok) {
+    const arr2 = await existR.json();
+    if (Array.isArray(arr2) && arr2.length) existingUserId = arr2[0].id;
+  }
+  if (existingUserId) {
+    const mineR = await sbService(
+      env,
+      `/team_members?team_id=eq.${encodeURIComponent(teamId)}&user_id=eq.${encodeURIComponent(existingUserId)}&select=user_id&limit=1`
+    );
+    if (mineR.ok) {
+      const arr2 = await mineR.json();
+      if (Array.isArray(arr2) && arr2.length) {
+        return json({ error: "already_member" }, 409);
+      }
+    }
+  }
+  const pendR = await sbService(
+    env,
+    `/team_invitations?team_id=eq.${encodeURIComponent(teamId)}&email=eq.${encodeURIComponent(email)}&accepted_at=is.null&select=id&limit=1`
+  );
+  if (pendR.ok) {
+    const arr2 = await pendR.json();
+    if (Array.isArray(arr2) && arr2.length) {
+      return json({ error: "already_invited" }, 409);
+    }
+  }
+  const seatR = await sbService(
+    env,
+    `/teams?id=eq.${encodeURIComponent(teamId)}&select=seats`
+  );
+  const seatArr = seatR.ok ? await seatR.json() : [];
+  const seats = Array.isArray(seatArr) && seatArr.length ? Number(seatArr[0].seats) : 0;
+  if (seats > 0) {
+    const [memCntR, invCntR] = await Promise.all([
+      sbService(env, `/team_members?team_id=eq.${encodeURIComponent(teamId)}&select=user_id`, {
+        headers: { Prefer: "count=exact", Range: "0-0" }
+      }),
+      sbService(env, `/team_invitations?team_id=eq.${encodeURIComponent(teamId)}&accepted_at=is.null&select=id`, {
+        headers: { Prefer: "count=exact", Range: "0-0" }
+      })
+    ]);
+    const memCount = parseInt((memCntR.headers.get("content-range") || "0-0/0").split("/").pop(), 10) || 0;
+    const invCount = parseInt((invCntR.headers.get("content-range") || "0-0/0").split("/").pop(), 10) || 0;
+    if (memCount + invCount >= seats) {
+      return json({ error: "seat_limit_reached", seats }, 409);
+    }
+  }
+  const token = generateInviteToken();
+  const insR = await sbService(env, "/team_invitations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify({
+      team_id: teamId,
+      email,
+      role: inviteRole,
+      token,
+      invited_by: auth.userId
+    })
+  });
+  if (!insR.ok) {
+    const detail = (await insR.text()).slice(0, 300);
+    return json({ error: "invite_failed", detail }, 500);
+  }
+  const arr = await insR.json();
+  return json({
+    invitation: { id: arr[0].id, email, role: inviteRole, expires_at: arr[0].expires_at }
+  });
+}
+async function handleTeamInvitations(teamId, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const role = await getMyRole(env, teamId, auth.userId);
+  if (!canAdmin(role)) return json({ error: "forbidden" }, 403);
+  const r = await sbService(
+    env,
+    `/team_invitations?team_id=eq.${encodeURIComponent(teamId)}&accepted_at=is.null&select=id,email,role,expires_at,created_at&order=created_at.desc`
+  );
+  if (!r.ok) return json({ invitations: [] });
+  return json({ invitations: await r.json() });
+}
+async function handleTeamAccept(request, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return badRequest("invalid_json");
+  }
+  const token = clean2(body.token, 200);
+  if (!token) return badRequest("missing_token");
+  const r = await sbService(
+    env,
+    `/team_invitations?token=eq.${encodeURIComponent(token)}&select=id,team_id,email,role,expires_at,accepted_at&limit=1`
+  );
+  if (!r.ok) return json({ error: "db_error" }, 500);
+  const arr = await r.json();
+  const inv = Array.isArray(arr) && arr.length ? arr[0] : null;
+  if (!inv) return json({ error: "invalid_token" }, 404);
+  if (inv.accepted_at) return json({ error: "already_accepted" }, 409);
+  if (new Date(inv.expires_at).getTime() < Date.now()) return json({ error: "expired" }, 410);
+  if (auth.email && inv.email && auth.email.toLowerCase() !== inv.email.toLowerCase()) {
+    return json({ error: "email_mismatch", invited_email: inv.email }, 403);
+  }
+  const memR = await sbService(env, "/team_members", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "resolution=merge-duplicates" },
+    body: JSON.stringify({ team_id: inv.team_id, user_id: auth.userId, role: inv.role })
+  });
+  if (!memR.ok && memR.status !== 409) {
+    const detail = (await memR.text()).slice(0, 300);
+    return json({ error: "join_failed", detail }, 500);
+  }
+  await sbService(env, `/team_invitations?id=eq.${encodeURIComponent(inv.id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({ accepted_at: (/* @__PURE__ */ new Date()).toISOString() })
+  });
+  return json({ ok: true, team_id: inv.team_id, role: inv.role });
+}
+async function handleTeamLeave(teamId, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const role = await getMyRole(env, teamId, auth.userId);
+  if (!role) return json({ error: "not_a_member" }, 404);
+  if (role === "owner") {
+    return json({ error: "owner_cannot_leave", detail: "Transfer ownership or delete the team first." }, 409);
+  }
+  const r = await sbService(
+    env,
+    `/team_members?team_id=eq.${encodeURIComponent(teamId)}&user_id=eq.${encodeURIComponent(auth.userId)}`,
+    { method: "DELETE" }
+  );
+  if (!r.ok) return json({ error: "leave_failed" }, 500);
+  return json({ ok: true });
+}
+async function handleTeamRemoveMember(teamId, targetUserId, auth, env) {
+  if (auth.kind !== "user") return unauthorized();
+  const myRole = await getMyRole(env, teamId, auth.userId);
+  if (!canAdmin(myRole)) return json({ error: "forbidden" }, 403);
+  if (targetUserId === auth.userId) {
+    return json({ error: "use_leave_endpoint" }, 409);
+  }
+  const targetRole = await getMyRole(env, teamId, targetUserId);
+  if (targetRole === "owner") {
+    return json({ error: "cannot_remove_owner" }, 409);
+  }
+  const r = await sbService(
+    env,
+    `/team_members?team_id=eq.${encodeURIComponent(teamId)}&user_id=eq.${encodeURIComponent(targetUserId)}`,
+    { method: "DELETE" }
+  );
+  if (!r.ok) return json({ error: "remove_failed" }, 500);
+  return json({ ok: true });
+}
+
 // worker-src/handlers/enterprise.js
 var OWNER_EMAIL3 = "jamilaj1@gmail.com";
 var TEAM_SIZES = /* @__PURE__ */ new Set(["1-10", "11-50", "51-200", "200+"]);
 var LEAD_STATUS = /* @__PURE__ */ new Set(["new", "contacted", "demo_booked", "negotiating", "won", "lost"]);
-var EMAIL_RE2 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-function clean2(v, max) {
+var EMAIL_RE3 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function clean3(v, max) {
   const s = String(v ?? "").normalize("NFKC").trim();
   return max ? s.slice(0, max) : s;
 }
@@ -3543,16 +3806,16 @@ async function handleEnterpriseLead(request, auth, env) {
   } catch {
     return badRequest("invalid_json");
   }
-  const full_name = clean2(body.full_name, 200);
-  const email = clean2(body.email, 320).toLowerCase();
-  const company = clean2(body.company, 200);
+  const full_name = clean3(body.full_name, 200);
+  const email = clean3(body.email, 320).toLowerCase();
+  const company = clean3(body.company, 200);
   if (!full_name || !email || !company) return badRequest("missing_fields");
-  if (!EMAIL_RE2.test(email)) return badRequest("invalid_email");
-  const role = clean2(body.role, 120) || null;
-  const team_size_in = clean2(body.team_size, 16);
+  if (!EMAIL_RE3.test(email)) return badRequest("invalid_email");
+  const role = clean3(body.role, 120) || null;
+  const team_size_in = clean3(body.team_size, 16);
   const team_size = TEAM_SIZES.has(team_size_in) ? team_size_in : null;
-  const industry = clean2(body.industry, 80) || null;
-  const use_case = clean2(body.use_case, 6e3) || null;
+  const industry = clean3(body.industry, 80) || null;
+  const use_case = clean3(body.use_case, 6e3) || null;
   let budget = null;
   if (body.budget_per_month_usd != null && String(body.budget_per_month_usd).trim() !== "") {
     const n = Number(String(body.budget_per_month_usd).replace(/[^0-9.]/g, ""));
@@ -3603,7 +3866,7 @@ async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
   if (!auth || auth.email !== OWNER_EMAIL3) {
     return json({ error: "forbidden" }, 403);
   }
-  const id = clean2(leadId, 64);
+  const id = clean3(leadId, 64);
   if (!id) return badRequest("missing_id");
   let body;
   try {
@@ -3613,12 +3876,12 @@ async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
   }
   const patch = {};
   if (body.status !== void 0) {
-    const s = clean2(body.status, 32);
+    const s = clean3(body.status, 32);
     if (!LEAD_STATUS.has(s)) return badRequest("invalid_status");
     patch.status = s;
   }
   if (body.owner_notes !== void 0) {
-    patch.owner_notes = clean2(body.owner_notes, 8e3) || null;
+    patch.owner_notes = clean3(body.owner_notes, 8e3) || null;
   }
   if (Object.keys(patch).length === 0) return badRequest("no_changes");
   const r = await sbService(env, `/enterprise_leads?id=eq.${id}`, {
@@ -3801,6 +4064,40 @@ async function handleRequest(request, env, ctx) {
       return await handleConsultingPay(request, auth, env);
     if (path === "/be/admin/financials" && request.method === "GET")
       return await handleAdminFinancials(auth, env);
+    if (path === "/be/team/list" && request.method === "GET")
+      return await handleTeamList(auth, env);
+    if (path === "/be/team/create" && request.method === "POST")
+      return await handleTeamCreate(request, auth, env);
+    if (path === "/be/team/accept" && request.method === "POST")
+      return await handleTeamAccept(request, auth, env);
+    if (path.startsWith("/be/team/") && request.method === "GET") {
+      const rest = path.slice("/be/team/".length);
+      if (rest.endsWith("/members")) {
+        const teamId = rest.slice(0, -"/members".length);
+        return await handleTeamMembers(teamId, auth, env);
+      }
+      if (rest.endsWith("/invitations")) {
+        const teamId = rest.slice(0, -"/invitations".length);
+        return await handleTeamInvitations(teamId, auth, env);
+      }
+    }
+    if (path.startsWith("/be/team/") && request.method === "POST") {
+      const rest = path.slice("/be/team/".length);
+      if (rest.endsWith("/invite")) {
+        const teamId = rest.slice(0, -"/invite".length);
+        return await handleTeamInvite(teamId, request, auth, env);
+      }
+      if (rest.endsWith("/leave")) {
+        const teamId = rest.slice(0, -"/leave".length);
+        return await handleTeamLeave(teamId, auth, env);
+      }
+    }
+    if (path.startsWith("/be/team/") && request.method === "DELETE") {
+      const parts = path.slice("/be/team/".length).split("/");
+      if (parts.length === 3 && parts[1] === "member") {
+        return await handleTeamRemoveMember(parts[0], parts[2], auth, env);
+      }
+    }
     if (path === "/be/enterprise/lead" && request.method === "POST")
       return await handleEnterpriseLead(request, auth, env);
     if (path === "/be/enterprise/list" && request.method === "GET")

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team — Formula AI Global</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="./assets/icon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./assets/styles.css?v=48" />
+  <style>
+    .team-shell { max-width: 1100px; margin: 0 auto; padding: 110px 20px 60px; }
+    .team-card  { padding: 22px; }
+    .team-row   { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid var(--border); gap:14px; flex-wrap:wrap; }
+    .team-row:last-child { border-bottom: 0; }
+    .pill-role  { display:inline-block; padding:2px 10px; border-radius:999px; font-size:0.74rem; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; }
+    .pill-owner  { background: rgba(0,255,136,0.12); color: var(--primary); }
+    .pill-admin  { background: rgba(0,212,255,0.12); color: var(--secondary); }
+    .pill-member { background: rgba(255,255,255,0.08); color: var(--text-2); }
+    .empty-state { text-align:center; padding: 40px 20px; color:var(--text-3); }
+    .invite-form { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-top:10px; }
+    .invite-form input { flex:1 1 200px; padding:10px 12px; border:1px solid var(--border); background:var(--bg-glass); color:var(--text-1); border-radius:8px; }
+    .invite-form select { padding:10px 12px; border:1px solid var(--border); background:var(--bg-glass); color:var(--text-1); border-radius:8px; }
+    .toast { display:none; padding:12px 16px; border-radius:8px; margin-bottom:14px; font-size:0.88rem; }
+    .toast.success { display:block; background:rgba(0,255,136,0.08); color:var(--primary); }
+    .toast.error   { display:block; background:rgba(255,80,80,0.08); color:#ff7070; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="./index.html" class="logo">
+        <span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="2.5"/><ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/></svg></span>
+        Formula <span>AI</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="./index.html" data-i18n-ar="الرئيسية">Home</a></li>
+        <li class="nav-dropdown">
+          <button type="button" class="nav-dropdown-toggle" aria-expanded="false" aria-haspopup="true">
+            <span data-i18n-ar="الأدوات">Tools</span>
+            <svg class="nav-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+          <ul class="nav-dropdown-menu">
+            <li><a href="./chat.html" data-i18n-ar="الدردشة الذكية">AI Chat</a></li>
+            <li><a href="./search.html" data-i18n-ar="البحث الذكي">Smart Search</a></li>
+            <li><a href="./workspace.html" data-i18n-ar="مساحتي">Workspace</a></li>
+            <li><a href="./calculators.html" data-i18n-ar="الحاسبات">Calculators</a></li>
+            <li><a href="./substitute.html" data-i18n-ar="إيجاد بديل">Find Substitute</a></li>
+            <li><a href="./scan.html" data-i18n-ar="مسح بصري">Vision Scan</a></li>
+            <li><a href="./safety.html" data-i18n-ar="السلامة">Safety</a></li>
+            <li><a href="./lab.html" data-i18n-ar="المختبر">Lab</a></li>
+            <li><a href="./predict.html" data-i18n-ar="تنبّؤ خواص">Predict Properties</a></li>
+            <li><a href="./similarity.html" data-i18n-ar="تشابه جزيئي">Similarity</a></li>
+            <li><a href="./agent.html" data-i18n-ar="مُصمِّم AI">AI Formulator</a></li>
+            <li><a href="./compliance.html" data-i18n-ar="الامتثال">Compliance</a></li>
+            <li><a href="./encyclopedia.html" data-i18n-ar="الموسوعة">Encyclopedia</a></li>
+            <li><a href="./industries.html" data-i18n-ar="الصناعات">Industries</a></li>
+            <li><a href="./programs.html" data-i18n-ar="البرامج">Programs</a></li>
+            <li><a href="./contribute.html" data-i18n-ar="أضف فورمولا">Contribute</a></li>
+            <li><a href="./learn.html" data-i18n-ar="علّم الذكاء">Teach AI</a></li>
+          </ul>
+        </li>
+        <li><a href="./consulting.html" data-i18n-ar="الاستشارات">Consulting</a></li>
+        <li><a href="./enterprise.html" data-i18n-ar="المؤسسات">Enterprise</a></li>
+        <li><a href="./pricing.html" data-i18n-ar="الأسعار">Pricing</a></li>
+        <li><a href="./about.html" data-i18n-ar="من نحن">About</a></li>
+      </ul>
+            <div class="nav-tools">
+        <button class="icon-btn theme-toggle" aria-label="Toggle theme"><svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button>
+      </div>
+      <div class="nav-cta">
+        <a href="./dashboard.html" class="btn btn-ghost" data-i18n-ar="لوحة التحكم">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="team-shell">
+    <div id="auth-gate" class="card team-card" style="display:none; text-align:center;">
+      <h2 style="margin:0 0 10px;" data-i18n-ar="سجّل دخول لرؤية فريقك">Sign in to see your team</h2>
+      <p style="color:var(--text-3); margin:0 0 20px;" data-i18n-ar="الفِرَق متاحة فقط للمستخدمين المسجّلين.">Teams are only available to signed-in users.</p>
+      <a href="./login.html?redirect=/team.html" class="btn btn-primary" data-i18n-ar="دخول">Sign in</a>
+    </div>
+
+    <div id="loading" class="card team-card" style="text-align:center; color:var(--text-3);">Loading…</div>
+
+    <div id="content" style="display:none;">
+      <div id="toast" class="toast"></div>
+
+      <div style="display:flex; justify-content:space-between; align-items:end; gap:14px; flex-wrap:wrap; margin-bottom:18px;">
+        <div>
+          <h1 style="margin:0 0 4px;" data-i18n-ar="فريقي">My Teams</h1>
+          <p style="margin:0; color:var(--text-3); font-size:0.9rem;" data-i18n-ar="إدارة المقاعد، الأعضاء، والدعوات.">Manage seats, members, and invitations.</p>
+        </div>
+        <button id="create-team-btn" class="btn btn-primary" data-i18n-ar="+ إنشاء فريق">+ Create team</button>
+      </div>
+
+      <div id="no-teams" class="card team-card empty-state" style="display:none;">
+        <div style="font-size:3rem; margin-bottom:10px;">👥</div>
+        <h3 style="margin:0 0 6px;" data-i18n-ar="ليس لديك فريق بعد">No teams yet</h3>
+        <p style="margin:0;" data-i18n-ar="أنشِئ فريقاً للحصول على مقاعد إضافية ومشاركة فورمولاتك مع زملائك.">Create a team to add seats and share formulas with colleagues.</p>
+      </div>
+
+      <div id="teams-list"></div>
+    </div>
+
+    <!-- Create team modal -->
+    <div id="create-modal" style="display:none; position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.65); align-items:center; justify-content:center;">
+      <div class="card" style="width:min(420px, 95vw); padding:24px;">
+        <h3 style="margin:0 0 14px;" data-i18n-ar="إنشاء فريق جديد">Create a new team</h3>
+        <label style="display:block; font-size:0.85rem; color:var(--text-3); margin-bottom:6px;" data-i18n-ar="اسم الفريق">Team name</label>
+        <input id="ct-name" type="text" placeholder="Acme Industries R&D" style="width:100%; padding:10px 12px; border:1px solid var(--border); background:var(--bg-glass); color:var(--text-1); border-radius:8px;">
+        <label style="display:block; font-size:0.85rem; color:var(--text-3); margin:14px 0 6px;" data-i18n-ar="عدد المقاعد">Seats</label>
+        <input id="ct-seats" type="number" min="1" max="500" value="5" style="width:100%; padding:10px 12px; border:1px solid var(--border); background:var(--bg-glass); color:var(--text-1); border-radius:8px;">
+        <p style="color:var(--text-3); font-size:0.78rem; margin:8px 0 0;" data-i18n-ar="الخطة Enterprise بشكل افتراضي. تواصل معنا لتغييرها.">Enterprise plan by default. Contact us to change.</p>
+        <div style="display:flex; gap:8px; justify-content:flex-end; margin-top:20px;">
+          <button id="ct-cancel" class="btn btn-ghost" data-i18n-ar="إلغاء">Cancel</button>
+          <button id="ct-create" class="btn btn-primary" data-i18n-ar="إنشاء">Create</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="./assets/app.js?v=48"></script>
+  <script type="module" src="./assets/auth.js?v=48"></script>
+  <script>
+  (function () {
+    const WORKER_BASE = 'https://formula-ai-brain.jamilaj1.workers.dev';
+
+    function _esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function toast(msg, kind) {
+      const el = document.getElementById('toast');
+      el.className = 'toast ' + (kind || 'success');
+      el.textContent = msg;
+      setTimeout(() => { el.className = 'toast'; }, 4000);
+    }
+    function authHeaders() {
+      const t = window.FAI_AUTH?.session?.access_token;
+      return t ? { Authorization: 'Bearer ' + t } : {};
+    }
+
+    async function whenAuthReady() {
+      return new Promise(resolve => {
+        const tick = () => window.FAI_AUTH?.initialized ? resolve() : setTimeout(tick, 60);
+        tick();
+      });
+    }
+
+    async function loadTeams() {
+      const r = await fetch(`${WORKER_BASE}/be/team/list`, { headers: authHeaders() });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        toast('Failed: ' + (data.detail || data.error || r.status), 'error');
+        return [];
+      }
+      return data.teams || [];
+    }
+
+    async function loadMembers(teamId) {
+      const r = await fetch(`${WORKER_BASE}/be/team/${encodeURIComponent(teamId)}/members`, { headers: authHeaders() });
+      if (!r.ok) return { members: [], my_role: 'member' };
+      return r.json();
+    }
+
+    async function loadInvitations(teamId) {
+      const r = await fetch(`${WORKER_BASE}/be/team/${encodeURIComponent(teamId)}/invitations`, { headers: authHeaders() });
+      if (!r.ok) return { invitations: [] };
+      return r.json();
+    }
+
+    function teamCard(team) {
+      const id = team.id;
+      const safeId = _esc(id);
+      const canManage = team.role === 'owner' || team.role === 'admin';
+      return `
+        <div class="card team-card" data-team-id="${safeId}" style="margin-bottom:18px;">
+          <div style="display:flex; justify-content:space-between; align-items:start; gap:14px; flex-wrap:wrap; margin-bottom:14px;">
+            <div>
+              <h3 style="margin:0 0 4px;">${_esc(team.name)} <span class="pill-role pill-${_esc(team.role)}">${_esc(team.role)}</span></h3>
+              <div style="color:var(--text-3); font-size:0.85rem;">
+                Plan: <strong>${_esc(team.plan)}</strong> ·
+                Seats: <strong>${_esc(team.seats)}</strong> ·
+                Members: <strong>${_esc(team.member_count)}</strong>
+              </div>
+            </div>
+            ${team.role !== 'owner'
+              ? `<button class="btn btn-ghost" data-action="leave" data-team-id="${safeId}" data-i18n-ar="مغادرة">Leave</button>`
+              : ''}
+          </div>
+
+          <h4 style="margin:14px 0 6px; font-size:0.9rem; color:var(--text-2);" data-i18n-ar="الأعضاء">Members</h4>
+          <div class="members-area" data-team-id="${safeId}"><em style="color:var(--text-3);">Loading members…</em></div>
+
+          ${canManage ? `
+            <h4 style="margin:18px 0 6px; font-size:0.9rem; color:var(--text-2);" data-i18n-ar="دعوة عضو">Invite a member</h4>
+            <div class="invite-form" data-team-id="${safeId}">
+              <input type="email" class="invite-email" placeholder="colleague@example.com">
+              <select class="invite-role">
+                <option value="member">Member</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button class="btn btn-primary" data-action="invite" data-team-id="${safeId}" data-i18n-ar="إرسال دعوة">Send invite</button>
+            </div>
+            <h4 style="margin:18px 0 6px; font-size:0.9rem; color:var(--text-2);" data-i18n-ar="دعوات معلّقة">Pending invitations</h4>
+            <div class="invites-area" data-team-id="${safeId}"><em style="color:var(--text-3);">Loading invitations…</em></div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function memberRow(m, teamId, myRole) {
+      const canRemove = (myRole === 'owner' || myRole === 'admin') && m.role !== 'owner';
+      return `
+        <div class="team-row">
+          <div>
+            <div style="font-weight:600;">${_esc(m.full_name || m.email || m.user_id)}</div>
+            <div style="color:var(--text-3); font-size:0.82rem;">${_esc(m.email || '')}</div>
+          </div>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <span class="pill-role pill-${_esc(m.role)}">${_esc(m.role)}</span>
+            ${canRemove
+              ? `<button class="btn btn-ghost" data-action="remove" data-team-id="${_esc(teamId)}" data-user-id="${_esc(m.user_id)}" style="padding:6px 12px; font-size:0.82rem;" data-i18n-ar="إزالة">Remove</button>`
+              : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    function inviteRow(inv) {
+      const exp = new Date(inv.expires_at).toLocaleDateString();
+      return `
+        <div class="team-row">
+          <div>
+            <div style="font-weight:600;">${_esc(inv.email)}</div>
+            <div style="color:var(--text-3); font-size:0.82rem;">Expires ${_esc(exp)} · role: ${_esc(inv.role)}</div>
+          </div>
+          <span class="pill-role pill-member">PENDING</span>
+        </div>
+      `;
+    }
+
+    async function refresh() {
+      document.getElementById('loading').style.display = '';
+      document.getElementById('content').style.display = 'none';
+      const teams = await loadTeams();
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('content').style.display = '';
+      const noTeams = document.getElementById('no-teams');
+      const list = document.getElementById('teams-list');
+      if (!teams.length) {
+        noTeams.style.display = 'block';
+        list.innerHTML = '';
+        return;
+      }
+      noTeams.style.display = 'none';
+      list.innerHTML = teams.map(teamCard).join('');
+
+      for (const t of teams) {
+        const memArea = list.querySelector(`.members-area[data-team-id="${t.id}"]`);
+        loadMembers(t.id).then(({ members, my_role }) => {
+          memArea.innerHTML = members.length
+            ? members.map(m => memberRow(m, t.id, my_role)).join('')
+            : '<em style="color:var(--text-3);">No members yet.</em>';
+        });
+        if (t.role === 'owner' || t.role === 'admin') {
+          const invArea = list.querySelector(`.invites-area[data-team-id="${t.id}"]`);
+          loadInvitations(t.id).then(({ invitations }) => {
+            invArea.innerHTML = invitations.length
+              ? invitations.map(inviteRow).join('')
+              : '<em style="color:var(--text-3);">No pending invitations.</em>';
+          });
+        }
+      }
+    }
+
+    // ── Event delegation on the teams list ─────────────────────────
+    document.getElementById('teams-list').addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      const action = btn.dataset.action;
+      const teamId = btn.dataset.teamId;
+      if (action === 'invite') {
+        const form = btn.closest('.invite-form');
+        const email = form.querySelector('.invite-email').value.trim();
+        const role = form.querySelector('.invite-role').value;
+        if (!email) { toast('Email is required', 'error'); return; }
+        btn.disabled = true; btn.textContent = 'Sending…';
+        const r = await fetch(`${WORKER_BASE}/be/team/${encodeURIComponent(teamId)}/invite`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...authHeaders() },
+          body: JSON.stringify({ email, role }),
+        });
+        const data = await r.json().catch(() => ({}));
+        btn.disabled = false; btn.textContent = 'Send invite';
+        if (!r.ok) { toast('Invite failed: ' + (data.detail || data.error || r.status), 'error'); return; }
+        toast(`Invitation emailed to ${email}.`, 'success');
+        form.querySelector('.invite-email').value = '';
+        refresh();
+      } else if (action === 'leave') {
+        if (!confirm('Leave this team?')) return;
+        const r = await fetch(`${WORKER_BASE}/be/team/${encodeURIComponent(teamId)}/leave`, {
+          method: 'POST', headers: authHeaders(),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { toast('Leave failed: ' + (data.detail || data.error || r.status), 'error'); return; }
+        toast('Left the team.', 'success');
+        refresh();
+      } else if (action === 'remove') {
+        const userId = btn.dataset.userId;
+        if (!confirm('Remove this member?')) return;
+        const r = await fetch(`${WORKER_BASE}/be/team/${encodeURIComponent(teamId)}/member/${encodeURIComponent(userId)}`, {
+          method: 'DELETE', headers: authHeaders(),
+        });
+        const data = await r.json().catch(() => ({}));
+        if (!r.ok) { toast('Remove failed: ' + (data.detail || data.error || r.status), 'error'); return; }
+        toast('Member removed.', 'success');
+        refresh();
+      }
+    });
+
+    // ── Create team modal ─────────────────────────────────────────
+    document.getElementById('create-team-btn').addEventListener('click', () => {
+      document.getElementById('create-modal').style.display = 'flex';
+    });
+    document.getElementById('ct-cancel').addEventListener('click', () => {
+      document.getElementById('create-modal').style.display = 'none';
+    });
+    document.getElementById('ct-create').addEventListener('click', async () => {
+      const name = document.getElementById('ct-name').value.trim();
+      const seats = parseInt(document.getElementById('ct-seats').value, 10) || 5;
+      if (!name) { toast('Team name is required', 'error'); return; }
+      const r = await fetch(`${WORKER_BASE}/be/team/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...authHeaders() },
+        body: JSON.stringify({ name, seats }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) { toast('Create failed: ' + (data.detail || data.error || r.status), 'error'); return; }
+      document.getElementById('create-modal').style.display = 'none';
+      document.getElementById('ct-name').value = '';
+      toast(`Team "${name}" created.`, 'success');
+      refresh();
+    });
+
+    // ── Bootstrap ─────────────────────────────────────────────────
+    (async function init() {
+      await whenAuthReady();
+      const u = window.FAI_AUTH?.session?.user;
+      if (!u) {
+        document.getElementById('auth-gate').style.display = '';
+        document.getElementById('loading').style.display = 'none';
+        return;
+      }
+      refresh();
+    })();
+  })();
+  </script>
+</body>
+</html>

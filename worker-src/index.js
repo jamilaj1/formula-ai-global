@@ -102,6 +102,16 @@ import {
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
 import {
+  handleTeamList,
+  handleTeamCreate,
+  handleTeamMembers,
+  handleTeamInvite,
+  handleTeamInvitations,
+  handleTeamAccept,
+  handleTeamLeave,
+  handleTeamRemoveMember,
+} from './handlers/team.js';
+import {
   handleEnterpriseLead,
   handleEnterpriseList,
   handleEnterpriseLeadUpdate,
@@ -314,6 +324,45 @@ async function handleRequest(request, env, ctx) {
       // plan distribution / Claude operational cost / gross margin).
       if (path === '/be/admin/financials' && request.method === 'GET')
         return await handleAdminFinancials(auth, env);
+
+      // Phase 9.2 — multi-seat enterprise teams.
+      if (path === '/be/team/list'    && request.method === 'GET')
+        return await handleTeamList(auth, env);
+      if (path === '/be/team/create'  && request.method === 'POST')
+        return await handleTeamCreate(request, auth, env);
+      if (path === '/be/team/accept'  && request.method === 'POST')
+        return await handleTeamAccept(request, auth, env);
+      if (path.startsWith('/be/team/') && request.method === 'GET') {
+        const rest = path.slice('/be/team/'.length);
+        // /be/team/<id>/members
+        if (rest.endsWith('/members')) {
+          const teamId = rest.slice(0, -('/members'.length));
+          return await handleTeamMembers(teamId, auth, env);
+        }
+        // /be/team/<id>/invitations
+        if (rest.endsWith('/invitations')) {
+          const teamId = rest.slice(0, -('/invitations'.length));
+          return await handleTeamInvitations(teamId, auth, env);
+        }
+      }
+      if (path.startsWith('/be/team/') && request.method === 'POST') {
+        const rest = path.slice('/be/team/'.length);
+        if (rest.endsWith('/invite')) {
+          const teamId = rest.slice(0, -('/invite'.length));
+          return await handleTeamInvite(teamId, request, auth, env);
+        }
+        if (rest.endsWith('/leave')) {
+          const teamId = rest.slice(0, -('/leave'.length));
+          return await handleTeamLeave(teamId, auth, env);
+        }
+      }
+      if (path.startsWith('/be/team/') && request.method === 'DELETE') {
+        // /be/team/<teamId>/member/<userId>
+        const parts = path.slice('/be/team/'.length).split('/');
+        if (parts.length === 3 && parts[1] === 'member') {
+          return await handleTeamRemoveMember(parts[0], parts[2], auth, env);
+        }
+      }
 
       // Enterprise B2B (Phase 3). Public lead intake + owner-only admin.
       if (path === '/be/enterprise/lead' && request.method === 'POST')
