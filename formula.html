@@ -164,7 +164,41 @@
             <h1 class="fx-title" id="fx-name">—</h1>
             <div class="fx-sub" id="fx-name-2"></div>
             <div class="fx-badges" id="fx-badges"></div>
+            <!-- Share row (B4 — every shared formula brings a targeted visitor) -->
+            <div id="fx-share" style="display:flex; gap:8px; align-items:center; margin-top:12px; flex-wrap:wrap;">
+              <span style="color:var(--text-3); font-size:0.82rem;" data-i18n-ar="شارك:">Share:</span>
+              <a id="fx-share-wa" target="_blank" rel="noopener" class="btn btn-ghost" style="padding:6px 12px; font-size:0.82rem;">WhatsApp</a>
+              <a id="fx-share-fb" target="_blank" rel="noopener" class="btn btn-ghost" style="padding:6px 12px; font-size:0.82rem;">Facebook</a>
+              <button id="fx-share-copy" class="btn btn-ghost" style="padding:6px 12px; font-size:0.82rem;" data-i18n-ar="انسخ الرابط">Copy link</button>
+              <span id="fx-share-msg" style="color:var(--primary); font-size:0.8rem;"></span>
+            </div>
           </div>
+          <script>
+          (function () {
+            function wire() {
+              var nameEl = document.getElementById('fx-name');
+              var name = (nameEl && nameEl.textContent || 'this chemical formula').trim();
+              var url = location.href;
+              var text = 'Check this formula on Formula AI Global: ' + name;
+              var wa = document.getElementById('fx-share-wa');
+              var fb = document.getElementById('fx-share-fb');
+              if (wa) wa.href = 'https://wa.me/?text=' + encodeURIComponent(text + ' ' + url);
+              if (fb) fb.href = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+            }
+            // The formula loads async; refresh share links once the name is set.
+            wire();
+            var n = 0, iv = setInterval(function () {
+              wire();
+              if (++n > 20) clearInterval(iv);
+            }, 500);
+            var copyBtn = document.getElementById('fx-share-copy');
+            if (copyBtn) copyBtn.addEventListener('click', function () {
+              (navigator.clipboard ? navigator.clipboard.writeText(location.href) : Promise.reject())
+                .then(function () { var m = document.getElementById('fx-share-msg'); m.textContent = '✓ Copied'; setTimeout(function(){ m.textContent=''; }, 2000); })
+                .catch(function () { var m = document.getElementById('fx-share-msg'); m.textContent = location.href; });
+            });
+          })();
+          </script>
 
           <div class="fx-grid">
             <!-- LEFT: ingredients -->
