@@ -11,6 +11,32 @@
 
 ---
 
+## ✅ Progress log (2026-06-01)
+
+Shipped this push-cycle (all live, 210/210 tests):
+- **A1** outcome-centric homepage hero + single CTA · fabricated
+  testimonials hidden.
+- **A3** outcome-led headers on tool pages (search/calculators/agent/similarity).
+- **A4** enterprise.html reframed to outcomes (cost/quality/speed/compliance).
+- **C4** Open Graph + Twitter cards on consulting/enterprise/pricing/about/
+  industries (FB-shared links now show a proper preview).
+- **B4** viral loop surfaced: share buttons on formula.html + "Earn free
+  Pro" referral banner on the dashboard.
+- **D3** real testimonial capture (submit → owner moderate → publish).
+- **E3** sign-ups time-series chart in the Financials dashboard.
+- Earlier: full growth kit (10 video scripts, 12 FB posts, welcome.html,
+  /stats/community counter, UTM tracking).
+
+Owner migrations pending (graceful-degrade until run): testimonials +
+signups_by_day. Still owner-only: record videos, post on FB, collect real
+testimonials, global supplier roster.
+
+Remaining AI-buildable (next candidates): C1 quality per-chemical SEO
+pages, E5 client-side error tracking, E2 real docs page, D2 activation
+tracking, E1 mobile QA, F2 enterprise leave-behind PDF.
+
+---
+
 ## 0. Honest scorecard — where we are vs 10/10
 
 | Dimension | Now | Target | The gap to close |
