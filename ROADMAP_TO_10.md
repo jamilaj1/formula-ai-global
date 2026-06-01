@@ -31,9 +31,20 @@ Owner migrations pending (graceful-degrade until run): testimonials +
 signups_by_day. Still owner-only: record videos, post on FB, collect real
 testimonials, global supplier roster.
 
-Remaining AI-buildable (next candidates): C1 quality per-chemical SEO
-pages, E5 client-side error tracking, E2 real docs page, D2 activation
-tracking, E1 mobile QA, F2 enterprise leave-behind PDF.
+Remaining AI-buildable (next candidates): E5 client-side error tracking,
+E2 real docs page, D2 activation tracking, E1 mobile QA, F2 enterprise
+leave-behind PDF.
+
+C1 SEO — DATA FINDING (2026-06-01): `chemicals_database` is **empty**
+(0 rows; the "~7,000" in old docs was stale). `scripts/build_chemicals.py`
+is built + ready and CORRECTLY produces zero pages from an empty table
+(quality gate = no thin spam). Per-chemical SEO is therefore GATED on
+populating `chemicals_database` first — e.g. via the existing PubChem
+admin backfill (`/api/admin/...`). Until then, the only data-backed SEO
+option is per-formula teaser pages from the real 3,381 `formulas`
+(paywall-safe: name/category/trust/ingredient-count + CTA), which is a
+weaker, more uniform set — owner to choose: populate chemicals first
+(richer, recommended) vs ship formula teasers now.
 
 ---
 
