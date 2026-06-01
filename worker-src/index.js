@@ -101,6 +101,7 @@ import {
   handleConsultingPay,
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
+import { handleCommunityStats } from './handlers/stats.js';
 import {
   handleTeamList,
   handleTeamCreate,
@@ -237,6 +238,8 @@ async function handleRequest(request, env, ctx) {
       // Read-only
       if (path === '/search') return await handleSearch(url, auth, env, request);
       if (path === '/usage') return await handleUsage(auth, env);
+      // Public community counter for the campaign landing page (cached 5min).
+      if (path === '/stats/community') return await handleCommunityStats(env);
 
       // Chat
       if (path === '/chat' && request.method === 'POST')

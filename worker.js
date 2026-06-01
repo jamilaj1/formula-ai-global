@@ -3520,6 +3520,49 @@ async function handleAdminFinancials(auth, env) {
   });
 }
 
+// worker-src/handlers/stats.js
+var CACHE_KEY = "cache:stats:community";
+var CACHE_TTL = 300;
+var INDUSTRIES = 40;
+async function countExact(env, table) {
+  const r = await sbService(env, `/${table}?select=id`, {
+    headers: { Prefer: "count=exact", Range: "0-0" }
+  });
+  if (!r.ok) return null;
+  const cr = r.headers.get("content-range") || "";
+  const n = parseInt(cr.split("/").pop(), 10);
+  return Number.isFinite(n) ? n : null;
+}
+async function handleCommunityStats(env) {
+  if (env.RATELIMIT_KV) {
+    try {
+      const cached = await env.RATELIMIT_KV.get(CACHE_KEY);
+      if (cached) {
+        return json({ ...JSON.parse(cached), cached: true });
+      }
+    } catch {
+    }
+  }
+  const [users, formulas] = await Promise.all([
+    countExact(env, "profiles"),
+    countExact(env, "formulas")
+  ]);
+  const payload = {
+    users: users ?? 0,
+    formulas: formulas ?? 0,
+    industries: INDUSTRIES
+  };
+  if (env.RATELIMIT_KV) {
+    try {
+      await env.RATELIMIT_KV.put(CACHE_KEY, JSON.stringify(payload), {
+        expirationTtl: CACHE_TTL
+      });
+    } catch {
+    }
+  }
+  return json(payload);
+}
+
 // worker-src/handlers/team.js
 function clean2(s, max) {
   const v = String(s ?? "").normalize("NFKC").trim();
@@ -3998,6 +4041,7 @@ async function handleRequest(request, env, ctx) {
     const auth = await resolveCaller(request, env);
     if (path === "/search") return await handleSearch(url, auth, env, request);
     if (path === "/usage") return await handleUsage(auth, env);
+    if (path === "/stats/community") return await handleCommunityStats(env);
     if (path === "/chat" && request.method === "POST")
       return await handleChat(request, auth, env);
     if (path === "/chat/sessions" && request.method === "GET")
