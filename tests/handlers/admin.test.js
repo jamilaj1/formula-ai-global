@@ -41,6 +41,7 @@ function fakeFetch({
   consultRows = [],
   claudeRows = [],
   signupsDaily = null,   // null → RPC 500 (tests graceful degrade)
+  activation = null,     // null → RPC 500 (tests graceful degrade)
 } = {}) {
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async (url) => {
     const u = String(url);
@@ -49,6 +50,14 @@ function fakeFetch({
     if (u.includes('/rpc/signups_by_day')) {
       if (signupsDaily === null) return new Response('err', { status: 500 });
       return new Response(JSON.stringify(signupsDaily), {
+        status: 200, headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // D2 — activation_rate RPC
+    if (u.includes('/rpc/activation_rate')) {
+      if (activation === null) return new Response('err', { status: 500 });
+      return new Response(JSON.stringify([activation]), {
         status: 200, headers: { 'Content-Type': 'application/json' },
       });
     }
@@ -279,5 +288,18 @@ describe('handleAdminFinancials — computed metrics', () => {
     const res = await handleAdminFinancials(ownerAuth(), baseEnv());
     expect(res.status).toBe(200);   // endpoint still works
     expect((await res.json()).signups_daily).toEqual([]);
+  });
+
+  it('D2: returns activation {eligible, activated, pct} from the RPC', async () => {
+    fakeFetch({ activation: { eligible: 100, activated: 42, pct: 42.0 } });
+    const body = await (await handleAdminFinancials(ownerAuth(), baseEnv())).json();
+    expect(body.activation).toEqual({ eligible: 100, activated: 42, pct: 42 });
+  });
+
+  it('D2: degrades to null when activation_rate RPC is absent', async () => {
+    fakeFetch({ activation: null }); // RPC 500
+    const res = await handleAdminFinancials(ownerAuth(), baseEnv());
+    expect(res.status).toBe(200);
+    expect((await res.json()).activation).toBeNull();
   });
 });

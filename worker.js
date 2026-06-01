@@ -3431,7 +3431,8 @@ async function handleAdminFinancials(auth, env) {
     newSignups30d,
     consultRowsResp,
     claudeRowsResp,
-    signupsDaily
+    signupsDaily,
+    activation
   ] = await Promise.all([
     // Count per plan (one HEAD-style request each, parallel)
     Promise.all(ALL_PLANS.map(async (p) => [
@@ -3459,6 +3460,28 @@ async function handleAdminFinancials(auth, env) {
         return Array.isArray(rows) ? rows.map((x) => ({ day: x.day, n: Number(x.n) || 0 })) : [];
       } catch {
         return [];
+      }
+    })(),
+    // D2 — activation rate (first AI call within 24h of signup, 90d cohort)
+    // via RPC. Degrades to null if the activation_rate migration is absent.
+    (async () => {
+      try {
+        const r = await sbService(env, "/rpc/activation_rate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ days: 90 })
+        });
+        if (!r.ok) return null;
+        const rows = await r.json();
+        const row = Array.isArray(rows) ? rows[0] : rows;
+        if (!row) return null;
+        return {
+          eligible: Number(row.eligible) || 0,
+          activated: Number(row.activated) || 0,
+          pct: row.pct == null ? null : Number(row.pct)
+        };
+      } catch {
+        return null;
       }
     })()
   ]);
@@ -3536,7 +3559,10 @@ async function handleAdminFinancials(auth, env) {
     // explicitly not tracked
     conversion_pct: round(conversion, 2),
     // E3 — daily sign-up trend (last 30d, zero-filled). [] if RPC not run.
-    signups_daily: signupsDaily
+    signups_daily: signupsDaily,
+    // D2 — activation: % of users who ran their first AI call within 24h
+    // of signup (90d cohort). null if the activation_rate RPC isn't run.
+    activation
   });
 }
 

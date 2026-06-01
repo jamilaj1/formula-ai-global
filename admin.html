@@ -1040,9 +1040,15 @@
 
         // ── Unit economics ──────────────────────────────────────────
         const cacNote = d.assumptions?.cac_notice || 'CAC not tracked yet';
+        const act = d.activation;
+        const actV = (act && act.pct != null) ? fmtPct(act.pct) : '—';
+        const actSub = act
+          ? `${act.activated}/${act.eligible} ran AI within 24h (90d)`
+          : 'run the activation_rate migration';
         const unit = [
           { label: 'ARPU',           v: fmtUSDPrecise(d.arpu_usd),  sub: 'avg revenue per paying user / month' },
           { label: 'LTV',            v: fmtUSD(d.ltv_usd),          sub: `assuming ${d.assumptions?.lifetime_months_for_ltv ?? 12}-month lifetime` },
+          { label: 'Activation',     v: actV,                       sub: actSub },
           { label: 'CAC',            v: '—',                        sub: cacNote },
           { label: 'Signup → paid',  v: fmtPct(d.conversion_pct),   sub: 'conversion rate' },
         ];
