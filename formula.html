@@ -562,6 +562,42 @@
       return Array.isArray(c) ? c : [];
     }
 
+    // Step 2b — fill the long-tail (function phrases the glossary missed,
+    // procedure text, Arabic ingredient names) via the AI /translate endpoint,
+    // only when the user is in Arabic. Cached server-side, so each formula
+    // costs at most one Haiku call. Progressive: render shows instantly,
+    // these patch in when the translation returns.
+    async function localizeFreeText(f, cs) {
+      if ((localStorage.getItem('fai_lang') || 'en') !== 'ar') return;
+      if (!window.FAI_DB || typeof window.FAI_DB.translate !== 'function') return;
+      const proc = f.procedure || f.instructions || f.method;
+      const texts = [];
+      if (proc) texts.push(String(proc).trim());
+      cs.forEach((x) => { const n = (x.name_en || x.name || '').trim(); if (n) texts.push(n); });
+      cs.forEach((x) => { const fn = (x.function || '').trim(); if (fn) texts.push(fn); });
+      const uniq = Array.from(new Set(texts.filter(Boolean)));
+      if (!uniq.length) return;
+      let map = {};
+      try {
+        const res = await window.FAI_DB.translate(uniq);
+        map = (res && res.translations) || {};
+      } catch (_) { return; }
+      if (!Object.keys(map).length) return;
+      if (proc && map[String(proc).trim()]) {
+        const pd = $('fx-procedure');
+        if (pd) pd.setAttribute('data-i18n-ar', map[String(proc).trim()]);
+      }
+      document.querySelectorAll('[data-fx-fn]').forEach((el) => {
+        const en = (el.getAttribute('data-fx-fn') || '').trim();
+        if (en && map[en]) el.setAttribute('data-i18n-ar', map[en]);
+      });
+      document.querySelectorAll('.fx-ar-name[data-fx-en]').forEach((el) => {
+        const en = (el.getAttribute('data-fx-en') || '').trim();
+        if (en && map[en]) el.setAttribute('data-i18n-ar', map[en]);
+      });
+      if (window.applyLang) window.applyLang();
+    }
+
     function render(f) {
       const name = f.name_en || f.name || 'Untitled formula';
       const name2 = (f.name && f.name !== name) ? f.name : '';
@@ -626,10 +662,12 @@
         if (x.cas_number) chips.push(`<span class="chem-chip">CAS ${esc(x.cas_number)}</span>`);
         const locked = !IS_PAID && i >= 3;
         const fnAr = translateFunction(x.function);
+        const fnEnAttr = escAttr(x.function || '');
+        const nmEnAttr = escAttr(x.name_en || x.name || '');
         return `<tr${locked ? ' class="fx-locked-row"' : ''}>
           <td style="color:var(--text-3);">${i + 1}</td>
-          <td><strong>${nm}</strong>${ar}<div>${chips.join('')}</div></td>
-          <td><span class="fn-tag"${fnAr ? ` data-i18n-ar="${escAttr(fnAr)}"` : ''}>${esc(x.function || '—')}</span></td>
+          <td><strong>${nm}</strong>${ar}<div class="fx-ar-name" data-fx-en="${nmEnAttr}" style="font-size:0.78rem;color:var(--primary);"></div><div>${chips.join('')}</div></td>
+          <td><span class="fn-tag" data-fx-fn="${fnEnAttr}"${fnAr ? ` data-i18n-ar="${escAttr(fnAr)}"` : ''}>${esc(x.function || '—')}</span></td>
           <td class="pct-cell">${isNaN(pct) ? '—' : pct + '%'}
             ${isNaN(pct) ? '' : `<div class="pct-bar"><div style="width:${Math.min(100, pct / maxPct * 100)}%"></div></div>`}</td>
         </tr>`;
@@ -674,6 +712,7 @@
       scale();
       hide('fx-loading'); show('fx-content');
       applyLang();
+      localizeFreeText(f, cs);
     }
 
     // Batch scaler — pure client-side, instant value, no backend needed.

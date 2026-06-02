@@ -65,6 +65,17 @@ const FAI_DB = {
     } catch { return null; }
   },
 
+  async translate(texts) {
+    try {
+      const r = await fetch(`${WORKER_URL}/translate`, {
+        method: 'POST',
+        headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texts: Array.isArray(texts) ? texts : [] }),
+      });
+      return await r.json();
+    } catch (err) { return { ok: false, error: err.message, translations: {} }; }
+  },
+
   async getSafety(formula) {
     try {
       const r = await fetch(`${WORKER_URL}/safety`, {
