@@ -68,10 +68,14 @@
     { match: /chlorhexidine/i,           level: "caution",   note: "Topical antiseptic · do not ingest" },
     { match: /benzalkonium/i,            level: "caution",   note: "Quaternary ammonium · skin irritation possible" },
     { match: /povidone iodine|pvp-?i/i,  level: "caution",   note: "Iodine-based · avoid on iodine-allergic skin" },
-    // Generic catch-all (checked last; highest-severity match per ingredient wins):
-    // ANY acid or hydroxide (English or Arabic name) is an acid/alkali hazard.
-    { match: /\bacid\b|حمض|حامض/i,       level: "warning",   note: "Acidic · low pH · corrosive/irritant in concentrated form · verify handling & neutralization" },
-    { match: /hydroxide|هيدروكسيد|هايدروكسيد/i, level: "warning", note: "Hydroxide (alkaline) · caustic/corrosive in concentrated form · skin & eye hazard" },
+    // Mild / food-grade acids & bases — exception list (kept at "caution"). The generic
+    // danger rules below exclude these terms via a leading negative lookahead, so for these
+    // ingredients the highest-severity match stays "caution".
+    { match: /citric|lactic|ascorbic|stearic|palmitic|oleic|lauric|myristic|hyaluron|sorbic acid|fatty acid|amino acid|magnesium hydroxide|alumin\w* hydroxide/i, level: "caution", note: "Mild / weak acid or base · low irritancy at use levels · still avoid eye contact" },
+    // Generic catch-all: ANY acid or hydroxide (English or Arabic) is corrosive/danger by
+    // default, EXCEPT the mild ones above (excluded by the negative lookahead).
+    { match: /^(?!.*(?:citric|lactic|ascorbic|stearic|palmitic|oleic|lauric|myristic|hyaluron|sorbic acid|fatty acid|amino acid)).*(?:\bacid\b|حمض|حامض)/i, level: "danger", note: "Acid · low pH · corrosive · skin/eye burns in concentrated form · neutralize before use" },
+    { match: /^(?!.*(?:magnesium hydroxide|alumin\w* hydroxide)).*(?:hydroxide|هيدروكسيد|هايدروكسيد)/i, level: "danger", note: "Hydroxide (strong alkali) · caustic · skin/eye burns · handle with care" },
   ];
   const HAZARD_SEVERITY = { danger: 3, warning: 2, caution: 1, info: 0 };
   function detectHazards(components) {
