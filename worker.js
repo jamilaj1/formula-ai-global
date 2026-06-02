@@ -514,6 +514,15 @@ async function cachePut(env, key, response, ttlSeconds = DEFAULT_TTL_SECONDS) {
     return false;
   }
 }
+async function cacheGetOrSet(env, key, producer, ttlSeconds) {
+  const cached = await cacheGet(env, key);
+  if (cached) return { hit: true, response: cached };
+  const fresh = await producer();
+  if (fresh) {
+    await cachePut(env, key, fresh, ttlSeconds);
+  }
+  return { hit: false, response: fresh };
+}
 
 // worker-src/lib/ratelimit.js
 function currentBucket(windowSeconds) {
@@ -1489,6 +1498,56 @@ async function handleLoadMessages(url, auth, env) {
   );
   if (!r.ok) return json({ messages: [] });
   return json({ session_id: sessionId, messages: await r.json() });
+}
+
+// worker-src/handlers/translate.js
+var MAX_ITEMS = 80;
+var MAX_CHARS = 6e3;
+var CACHE_TTL_SECONDS = 60 * 60 * 24 * 30;
+var SYSTEM = `You are a professional translator for the INDUSTRIAL CHEMISTRY / formulation domain (detergents, cosmetics, home & personal care). Translate each English string into clear Modern Standard Arabic using CORRECT, standard Arabic industrial-chemistry terminology \u2014 meaning-for-meaning, never literal word-for-word.
+
+Rules:
+- Chemical substance names: use the common Arabic name when one is standard; otherwise transliterate into Arabic and keep the English/abbreviation in parentheses. Example: "Linear Alkylbenzene Sulphonic Acid (LABSA)" -> "\u062D\u0645\u0636 \u0627\u0644\u0623\u0644\u0643\u064A\u0644 \u0628\u0646\u0632\u064A\u0646 \u0627\u0644\u0633\u0644\u0641\u0648\u0646\u064A\u0643 \u0627\u0644\u062E\u0637\u0651\u064A (LABSA)".
+- Keep numbers, %, units, CAS numbers, pH values and chemical formulas EXACTLY as given.
+- Preserve meaning precisely; do not add, omit, or editorialize. Professional chemists read this.
+- Output ONLY a JSON array of the Arabic strings, in the SAME ORDER as the input array. No prose, no markdown code fences.`;
+async function handleTranslate(request, auth, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
+  }
+  let texts = Array.isArray(body && body.texts) ? body.texts : [];
+  texts = texts.map((t) => String(t == null ? "" : t).trim()).filter((t) => t && t.length <= MAX_CHARS);
+  texts = Array.from(new Set(texts)).slice(0, MAX_ITEMS);
+  if (!texts.length) return json({ ok: true, translations: {} });
+  const messages = [{ role: "user", content: JSON.stringify(texts) }];
+  const key = await buildCacheKey({ model: CLAUDE_HAIKU, system: SYSTEM, messages, tools: [] });
+  const { response } = await cacheGetOrSet(
+    env,
+    key,
+    async () => {
+      const r = await claudeCall(
+        env,
+        { system: SYSTEM, max_tokens: 3e3, messages },
+        { model: CLAUDE_HAIKU }
+      );
+      return r.ok ? r.data : null;
+    },
+    CACHE_TTL_SECONDS
+  );
+  if (!response) return json({ ok: false, error: "translate_failed" });
+  const arr = extractClaudeJson(response);
+  if (!Array.isArray(arr)) return json({ ok: false, error: "parse_failed" });
+  const translations = {};
+  texts.forEach((t, i) => {
+    const ar = arr[i];
+    if (typeof ar === "string" && ar.trim() && ar.trim() !== t) {
+      translations[t] = ar.trim();
+    }
+  });
+  return json({ ok: true, translations });
 }
 
 // worker-src/handlers/library.js
@@ -4282,6 +4341,8 @@ async function handleRequest(request, env, ctx) {
       return await handleTestimonialsAdmin(auth, env);
     if (path === "/be/testimonial/moderate" && request.method === "POST")
       return await handleTestimonialModerate(request, auth, env);
+    if (path === "/translate" && request.method === "POST")
+      return await handleTranslate(request, auth, env);
     if (path === "/chat" && request.method === "POST")
       return await handleChat(request, auth, env);
     if (path === "/chat/sessions" && request.method === "GET")

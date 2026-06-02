@@ -57,6 +57,7 @@ import { handleSearch } from './handlers/search.js';
 import { handleUsage } from './handlers/usage.js';
 import { handleSafety, handleLab } from './handlers/insights.js';
 import { handleChat, handleListSessions, handleLoadMessages, handleChatExport } from './handlers/chat.js';
+import { handleTranslate } from './handlers/translate.js';
 import {
   handleSaveFormula,
   handleMyFormulas,
@@ -260,6 +261,10 @@ async function handleRequest(request, env, ctx) {
         return await handleTestimonialsAdmin(auth, env);
       if (path === '/be/testimonial/moderate' && request.method === 'POST')
         return await handleTestimonialModerate(request, auth, env);
+
+      // i18n — on-demand EN→AR translation of formula free-text (cached in KV).
+      if (path === '/translate' && request.method === 'POST')
+        return await handleTranslate(request, auth, env);
 
       // Chat
       if (path === '/chat' && request.method === 'POST')
