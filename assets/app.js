@@ -746,6 +746,70 @@ window.applyLang = function () {
   try { faiApplyLang(localStorage.getItem('fai_lang') || 'en'); } catch (_) {}
 };
 
+/* ── Auto-translate layer (Path B) ──────────────────────────────────────
+   Fills the long tail of UI strings that have NO data-i18n-ar. When the
+   user is in Arabic, collect visible English leaf-text + placeholders that
+   aren't already managed, batch them to the cached /translate endpoint, and
+   apply (with an EN cache so toggling back to English still works). Guards
+   skip numbers, CAS, short codes, the brand, URLs and already-Arabic text.
+   Any element/subtree can opt out with data-no-translate. */
+let __autoTrBusy = false;
+function __trOK(t) {
+  if (!t || t.length < 2 || t.length > 600) return false;
+  if (/[؀-ۿ]/.test(t)) return false;                 // already Arabic
+  if (!/[A-Za-z]{2,}/.test(t)) return false;                   // needs real letters
+  if (/^[\d\s.,:%×\-/+()]+$/.test(t)) return false;            // pure number/symbols
+  if (/^https?:\/\//i.test(t) || t.includes('@')) return false; // url/email
+  if (/^\d+-\d+-\d+$/.test(t)) return false;                   // CAS number
+  if (/^(AI|Formula AI|Formula|CAS|API|PDF|SDS|MSDS|HLB|pH|UV|FWA|CMC|SLES|LAS|EDTA|SHMP|WhatsApp|Facebook|Instagram|LinkedIn|Paystack)$/i.test(t)) return false;
+  return true;
+}
+function __collectTr() {
+  const out = [];
+  const SKIP = '[data-i18n-ar],[data-no-translate],code,pre,script,style,.chem-chip,.fx-ar-name,.lang-menu,.lang-trigger';
+  document.body.querySelectorAll('button,a,h1,h2,h3,h4,h5,h6,p,span,li,label,th,td,option,small,strong,em,b,div').forEach((el) => {
+    if (el.children.length) return;                            // leaf elements only
+    if (el.hasAttribute('data-i18n-ar') || el.closest(SKIP)) return;
+    const t = (el.textContent || '').replace(/\s+/g, ' ').trim();
+    if (__trOK(t)) out.push({ el, text: t, attr: null });
+  });
+  document.body.querySelectorAll('[placeholder]').forEach((el) => {
+    if (el.hasAttribute('data-i18n-attr') || el.closest(SKIP)) return;
+    const t = (el.getAttribute('placeholder') || '').trim();
+    if (__trOK(t)) out.push({ el, text: t, attr: 'placeholder' });
+  });
+  return out;
+}
+async function autoTranslatePage() {
+  if ((localStorage.getItem('fai_lang') || 'en') !== 'ar') return;
+  if (__autoTrBusy || !window.FAI_DB || typeof window.FAI_DB.translate !== 'function') return;
+  const items = __collectTr();
+  if (!items.length) return;
+  __autoTrBusy = true;
+  try {
+    const uniq = Array.from(new Set(items.map((i) => i.text))).slice(0, 80);
+    const res = await window.FAI_DB.translate(uniq);
+    const map = (res && res.translations) || {};
+    items.forEach(({ el, text, attr }) => {
+      const ar = map[text];
+      if (!ar) return;
+      if (attr) {
+        el.setAttribute('data-i18n-attr', attr);
+        el.setAttribute('data-i18n-' + attr + '-ar', ar);
+        el.setAttribute('data-i18n-' + attr + '-en-cache', text);
+        el.setAttribute(attr, ar);
+      } else {
+        if (!el.hasAttribute('data-i18n-en-cache')) el.setAttribute('data-i18n-en-cache', el.innerHTML);
+        el.setAttribute('data-i18n-ar', ar);
+        el.innerHTML = ar;
+      }
+    });
+  } catch (_) { /* keep English on failure */ } finally {
+    __autoTrBusy = false;
+  }
+}
+window.autoTranslatePage = autoTranslatePage;
+
 (function initLangSwitcher() {
   const trigger = document.querySelector('.lang-trigger');
   const menu = document.querySelector('.lang-menu');
@@ -776,6 +840,10 @@ window.applyLang = function () {
   // Apply saved (or default) language on page load BEFORE user interaction
   faiApplyLang(saved);
   setActive(saved);
+  // Auto-translate the long tail of unmarked UI strings (Arabic only).
+  // Run now + once more after late-rendered chrome settles.
+  autoTranslatePage();
+  setTimeout(autoTranslatePage, 1200);
 
   // Defensive UX: also expose an AR/EN switch INSIDE the mobile hamburger
   // menu so the language is always discoverable on small screens even
@@ -798,6 +866,7 @@ window.applyLang = function () {
       localStorage.setItem('fai_lang', next);
       setActive(next);
       faiApplyLang(next);
+      autoTranslatePage();
       renderLabel();
       if (navLinks.classList.contains('open')) navLinks.classList.remove('open');
     });
@@ -820,6 +889,7 @@ window.applyLang = function () {
     localStorage.setItem('fai_lang', code);
     setActive(code);
     faiApplyLang(code);
+    autoTranslatePage();
     menu.classList.remove('open');
   });
 })();
