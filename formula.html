@@ -345,7 +345,7 @@
       document.body.appendChild(bg);
       const c = document.getElementById('fx-modal-close');
       if (c) c.addEventListener('click', () => bg.remove());
-      if (window.applyI18n) window.applyI18n();
+      if (window.applyLang) window.applyLang();
     }
 
     function esc(s) {
@@ -354,7 +354,7 @@
     }
     function show(el) { $(el).style.display = ''; }
     function hide(el) { $(el).style.display = 'none'; }
-    function applyLang() { if (window.applyI18n) window.applyI18n(); }
+    function applyLang() { if (window.applyLang) window.applyLang(); }
 
     /* ─── Safety engine + EN→AR glossary (canonical here; ported from formula-detail-live.js) ─── */
     const escAttr = (s) => String(s == null ? '' : s).replace(/"/g, '&quot;');
@@ -608,7 +608,7 @@
             ' <span style="background:rgba(0,255,136,.12); color:var(--primary); padding:2px 9px; border-radius:999px; font-size:.72rem; font-weight:700;">' + label + '</span>' +
             (c.verified_formulas_count ? ' <span style="color:var(--text-3); font-size:.78rem;">· ' + c.verified_formulas_count + ' verified formulas</span>' : '');
           host.appendChild(el);
-          if (window.applyI18n) window.applyI18n();
+          if (window.applyLang) window.applyLang();
         });
       }
 
@@ -682,7 +682,7 @@
       if (!IS_PAID) {
         $('fx-batch').disabled = true;
         $('fx-scale-out').innerHTML = '<div class="fx-upgrade"><h4 data-i18n-ar="حاسبة الدفعة للأعضاء">Batch scaler is members-only</h4><p data-i18n-ar="افتح حساب كميات الدفعة الفوري مع العضوية.">Unlock instant batch-amount calculation with a membership.</p><a href="./pricing.html" class="btn btn-primary btn-sm" data-i18n-ar="افتح الفورمولا الكاملة">Unlock full formula</a></div>';
-        if (window.applyI18n) window.applyI18n();
+        if (window.applyLang) window.applyLang();
         return;
       }
       const kg = parseFloat($('fx-batch').value) || 0;
