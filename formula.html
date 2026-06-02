@@ -356,6 +356,76 @@
     function hide(el) { $(el).style.display = 'none'; }
     function applyLang() { if (window.applyI18n) window.applyI18n(); }
 
+    /* ─── Safety engine + EN→AR glossary (canonical here; ported from formula-detail-live.js) ─── */
+    const escAttr = (s) => String(s == null ? '' : s).replace(/"/g, '&quot;');
+    const HAZARD_SEVERITY = { danger: 3, warning: 2, caution: 1, info: 0 };
+    const HAZARD_RULES = [
+      { match: /sodium hydroxide|naoh/i, level: "warning", note: "Strongly alkaline · skin/eye corrosive in concentrated form" },
+      { match: /triclosan/i, level: "caution", note: "Antimicrobial · banned in some regions (FDA banned in OTC soap 2017)" },
+      { match: /formaldehyde/i, level: "danger", note: "Known carcinogen (IARC Group 1)" },
+      { match: /paraben|methylparaben|propylparaben/i, level: "caution", note: "Endocrine-disruption concerns · restricted in EU" },
+      { match: /phthalat/i, level: "warning", note: "Reproductive toxin · banned in toys" },
+      { match: /\bethanol\b|isopropyl alcohol|\bIPA\b/i, level: "caution", note: "Highly flammable · keep away from heat" },
+      { match: /ammonia/i, level: "warning", note: "Respiratory irritant · use ventilation" },
+      { match: /sulfuric acid|hydrochloric acid|nitric acid/i, level: "danger", note: "Strong acid · severe burns" },
+      { match: /sulfonic acid|sulphonic acid|labsa|alkylbenzene sulf|dodecylbenzene sulf/i, level: "danger", note: "Strong organic acid · very low pH · skin/eye corrosive in raw form · must be neutralized before use" },
+      { match: /chlorhexidine/i, level: "caution", note: "Topical antiseptic · do not ingest" },
+      { match: /benzalkonium/i, level: "caution", note: "Quaternary ammonium · skin irritation possible" },
+      { match: /povidone iodine|pvp-?i/i, level: "caution", note: "Iodine-based · avoid on iodine-allergic skin" },
+      { match: /citric|lactic|ascorbic|stearic|palmitic|oleic|lauric|myristic|hyaluron|sorbic acid|fatty acid|amino acid|magnesium hydroxide|alumin\w* hydroxide/i, level: "caution", note: "Mild / weak acid or base · low irritancy at use levels · still avoid eye contact" },
+      { match: /^(?!.*(?:citric|lactic|ascorbic|stearic|palmitic|oleic|lauric|myristic|hyaluron|sorbic acid|fatty acid|amino acid)).*(?:\bacid\b|حمض|حامض)/i, level: "danger", note: "Acid · low pH · corrosive · skin/eye burns in concentrated form · neutralize before use" },
+      { match: /^(?!.*(?:magnesium hydroxide|alumin\w* hydroxide)).*(?:hydroxide|هيدروكسيد|هايدروكسيد)/i, level: "danger", note: "Hydroxide (strong alkali) · caustic · skin/eye burns · handle with care" },
+    ];
+    function detectHazards(components) {
+      const found = [];
+      for (const c of (components || [])) {
+        const hay = `${c.name_en || ""} ${c.name_ar || ""} ${c.name || ""}`;
+        let best = null;
+        for (const rule of HAZARD_RULES) {
+          if (rule.match.test(hay)) {
+            if (!best || HAZARD_SEVERITY[rule.level] > HAZARD_SEVERITY[best.level]) {
+              best = { ingredient: String(c.name_en || c.name_ar || c.name || ""), level: rule.level, note: rule.note };
+            }
+          }
+        }
+        if (best) found.push(best);
+      }
+      return found;
+    }
+    const LEVEL_STYLE = {
+      danger:  { bg: "rgba(239,68,68,0.12)",  fg: "#f87171", label: "خطر · DANGER" },
+      warning: { bg: "rgba(251,146,60,0.12)", fg: "#fb923c", label: "تحذير · WARNING" },
+      caution: { bg: "rgba(250,204,21,0.12)", fg: "#facc15", label: "احتياط · CAUTION" },
+      info:    { bg: "rgba(0,212,255,0.12)",  fg: "#22d3ee", label: "معلومة · INFO" },
+    };
+    function renderHazards(hz) {
+      return '<div style="margin-bottom:12px;"><div style="font-size:0.8rem;color:var(--text-3);margin-bottom:8px;" data-i18n-ar="مستخلصة تلقائيًا من قاعدة بيانات مخاطر المكوّنات">Auto-derived from ingredient hazard database</div>' +
+        hz.map((h) => {
+          const st = LEVEL_STYLE[h.level] || LEVEL_STYLE.info;
+          return `<div style="background:${st.bg};border-inline-start:3px solid ${st.fg};padding:10px 12px;border-radius:8px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:3px;">
+              <strong style="color:${st.fg};">${esc(h.ingredient)}</strong>
+              <span style="background:${st.fg};color:#000;padding:1px 7px;border-radius:6px;font-size:0.68rem;font-weight:800;">${st.label}</span>
+            </div>
+            <div style="color:var(--text-2);font-size:0.85rem;">${esc(h.note)}</div>
+          </div>`;
+        }).join('') + '</div>';
+    }
+    const FUNCTION_GLOSSARY = { "surfactant": "خافض للتوتر السطحي", "anionic surfactant": "خافض توتر أنيوني (سالب)", "cationic surfactant": "خافض توتر كاتيوني (موجب)", "nonionic surfactant": "خافض توتر لا أيوني", "amphoteric surfactant": "خافض توتر أمفوتيري (متعادل)", "amphoteric co-surfactant": "خافض توتر أمفوتيري مساعد", "co-surfactant": "خافض توتر مساعد", "primary surfactant": "خافض توتر أساسي", "secondary surfactant": "خافض توتر ثانوي", "foam booster": "معزّز رغوة", "thickener": "مكثّف", "viscosity modifier": "معدّل لزوجة", "preservative": "مادة حافظة", "chelating agent": "عامل خلب (مخلِّب)", "chelating": "عامل خلب (مخلِّب)", "sequestrant": "عامل خلب", "ph adjuster": "ضابط حموضة (pH)", "ph buffer": "محلول منظّم للحموضة", "buffer": "محلول منظّم (بفر)", "alkali": "قلوي (قاعدة)", "acid": "حمض", "neutralizer": "معادِل", "builder": "معزّز تنظيف (بانٍ)", "solvent": "مذيب", "vehicle": "حامل", "emulsifier": "مستحلِب", "humectant": "حابس رطوبة", "emollient": "مُطرٍّ (ملطّف)", "moisturizer": "مرطّب", "conditioning agent": "عامل تنعيم", "fragrance": "عطر", "perfume": "عطر", "colorant": "ملوّن", "dye": "صبغة", "opacifier": "معتِّم", "pearlising agent": "مُلَألِئ", "pearlizer": "مُلَألِئ", "antioxidant": "مضاد أكسدة", "antimicrobial": "مضاد ميكروبي", "antiseptic": "مطهِّر", "disinfectant": "مطهِّر", "bleaching agent": "عامل تبييض", "optical brightener": "منوّر بصري", "enzyme": "إنزيم", "defoamer": "كاسر رغوة", "active": "مادة فعّالة", "active ingredient": "مادة فعّالة", "stabilizer": "مثبِّت", "salt": "ملح (لضبط اللزوجة)", "hardness": "ضابط عسر الماء", "uv filter": "واقٍ من الأشعة فوق البنفسجية", "filler": "مالئ" };
+    function translateFunction(fn) {
+      if (!fn) return "";
+      const parts = String(fn).split(/\s*[\/&,]\s*/).map((p) => p.trim()).filter(Boolean);
+      if (!parts.length) return "";
+      const tr = parts.map((p) => {
+        const k = p.toLowerCase();
+        if (FUNCTION_GLOSSARY[k]) return FUNCTION_GLOSSARY[k];
+        let best = "";
+        for (const key in FUNCTION_GLOSSARY) { if (k.includes(key) && key.length > best.length) best = key; }
+        return best ? FUNCTION_GLOSSARY[best] : p;
+      });
+      return parts.some((p, i) => tr[i] !== p) ? tr.join(" / ") : "";
+    }
+
     function fail(msg) {
       hide('fx-loading'); hide('fx-content'); show('fx-error');
       if (msg) $('fx-error-msg').textContent = msg;
@@ -555,10 +625,11 @@
         if (ch.logp != null) chips.push(`<span class="chem-chip">logP ${Number(ch.logp).toFixed(2)}</span>`);
         if (x.cas_number) chips.push(`<span class="chem-chip">CAS ${esc(x.cas_number)}</span>`);
         const locked = !IS_PAID && i >= 3;
+        const fnAr = translateFunction(x.function);
         return `<tr${locked ? ' class="fx-locked-row"' : ''}>
           <td style="color:var(--text-3);">${i + 1}</td>
           <td><strong>${nm}</strong>${ar}<div>${chips.join('')}</div></td>
-          <td><span class="fn-tag">${esc(x.function || '—')}</span></td>
+          <td><span class="fn-tag"${fnAr ? ` data-i18n-ar="${escAttr(fnAr)}"` : ''}>${esc(x.function || '—')}</span></td>
           <td class="pct-cell">${isNaN(pct) ? '—' : pct + '%'}
             ${isNaN(pct) ? '' : `<div class="pct-bar"><div style="width:${Math.min(100, pct / maxPct * 100)}%"></div></div>`}</td>
         </tr>`;
@@ -588,6 +659,16 @@
       if (cs[0] && (cs[0].name_en || cs[0].name)) {
         $('fx-sub-link').href = './substitute.html?ingredient=' +
           encodeURIComponent(cs[0].name_en || cs[0].name);
+      }
+
+      // Auto-derived hazard warnings (instant, rules-based) — shown above the AI "Analyse" button.
+      const hz = detectHazards(cs);
+      const safetyOut = $('fx-safety-out');
+      if (safetyOut && hz.length && !document.getElementById('fx-hazards')) {
+        const wrap = document.createElement('div');
+        wrap.id = 'fx-hazards';
+        wrap.innerHTML = renderHazards(hz);
+        safetyOut.insertBefore(wrap, safetyOut.firstChild);
       }
 
       scale();
