@@ -68,16 +68,26 @@
     { match: /chlorhexidine/i,           level: "caution",   note: "Topical antiseptic · do not ingest" },
     { match: /benzalkonium/i,            level: "caution",   note: "Quaternary ammonium · skin irritation possible" },
     { match: /povidone iodine|pvp-?i/i,  level: "caution",   note: "Iodine-based · avoid on iodine-allergic skin" },
+    // Generic catch-all (checked last; highest-severity match per ingredient wins):
+    // ANY acid or hydroxide (English or Arabic name) is an acid/alkali hazard.
+    { match: /\bacid\b|حمض|حامض/i,       level: "warning",   note: "Acidic · low pH · corrosive/irritant in concentrated form · verify handling & neutralization" },
+    { match: /hydroxide|هيدروكسيد|هايدروكسيد/i, level: "warning", note: "Hydroxide (alkaline) · caustic/corrosive in concentrated form · skin & eye hazard" },
   ];
+  const HAZARD_SEVERITY = { danger: 3, warning: 2, caution: 1, info: 0 };
   function detectHazards(components) {
     const found = [];
     for (const c of components) {
-      const name = String(c.name_en || "");
+      const label = String(c.name_en || c.name_ar || c.name || "");
+      const haystack = `${c.name_en || ""} ${c.name_ar || ""} ${c.name || ""}`;
+      let best = null;
       for (const rule of HAZARD_RULES) {
-        if (rule.match.test(name)) {
-          found.push({ ingredient: name, level: rule.level, note: rule.note });
+        if (rule.match.test(haystack)) {
+          if (!best || HAZARD_SEVERITY[rule.level] > HAZARD_SEVERITY[best.level]) {
+            best = { ingredient: label, level: rule.level, note: rule.note };
+          }
         }
       }
+      if (best) found.push(best);
     }
     return found;
   }
