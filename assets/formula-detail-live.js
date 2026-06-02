@@ -44,6 +44,102 @@
     active: "#f97316", "uv filter": "#f97316",
     builder: "#84cc16", filler: "#84cc16",
   };
+  /* ─── EN→AR glossaries (Step 1 localization; app.js i18n swaps via data-i18n-ar) ─── */
+  const FUNCTION_GLOSSARY = {
+    "surfactant": "خافض للتوتر السطحي",
+    "anionic surfactant": "خافض توتر أنيوني (سالب)",
+    "cationic surfactant": "خافض توتر كاتيوني (موجب)",
+    "nonionic surfactant": "خافض توتر لا أيوني",
+    "amphoteric surfactant": "خافض توتر أمفوتيري (متعادل)",
+    "amphoteric co-surfactant": "خافض توتر أمفوتيري مساعد",
+    "co-surfactant": "خافض توتر مساعد",
+    "primary surfactant": "خافض توتر أساسي",
+    "secondary surfactant": "خافض توتر ثانوي",
+    "foam booster": "معزّز رغوة",
+    "thickener": "مكثّف",
+    "viscosity modifier": "معدّل لزوجة",
+    "preservative": "مادة حافظة",
+    "chelating agent": "عامل خلب (مخلِّب)",
+    "chelating": "عامل خلب (مخلِّب)",
+    "sequestrant": "عامل خلب",
+    "ph adjuster": "ضابط حموضة (pH)",
+    "ph buffer": "محلول منظّم للحموضة",
+    "buffer": "محلول منظّم (بفر)",
+    "alkali": "قلوي (قاعدة)",
+    "acid": "حمض",
+    "neutralizer": "معادِل",
+    "builder": "معزّز تنظيف (بانٍ)",
+    "solvent": "مذيب",
+    "vehicle": "حامل",
+    "emulsifier": "مستحلِب",
+    "humectant": "حابس رطوبة",
+    "emollient": "مُطرٍّ (ملطّف)",
+    "moisturizer": "مرطّب",
+    "conditioning agent": "عامل تنعيم",
+    "fragrance": "عطر",
+    "perfume": "عطر",
+    "colorant": "ملوّن",
+    "dye": "صبغة",
+    "opacifier": "معتِّم",
+    "pearlising agent": "مُلَألِئ",
+    "pearlizer": "مُلَألِئ",
+    "antioxidant": "مضاد أكسدة",
+    "antimicrobial": "مضاد ميكروبي",
+    "antiseptic": "مطهِّر",
+    "disinfectant": "مطهِّر",
+    "bleaching agent": "عامل تبييض",
+    "optical brightener": "منوّر بصري",
+    "enzyme": "إنزيم",
+    "defoamer": "كاسر رغوة",
+    "active": "مادة فعّالة",
+    "active ingredient": "مادة فعّالة",
+    "stabilizer": "مثبِّت",
+    "salt": "ملح (لضبط اللزوجة)",
+    "hardness": "ضابط عسر الماء",
+    "uv filter": "واقٍ من الأشعة فوق البنفسجية",
+    "filler": "مالئ",
+  };
+  const PROPERTY_KEY_GLOSSARY = {
+    "ph": "درجة الحموضة (pH)",
+    "viscosity": "اللزوجة",
+    "appearance": "المظهر",
+    "color": "اللون",
+    "colour": "اللون",
+    "odor": "الرائحة",
+    "odour": "الرائحة",
+    "density": "الكثافة",
+    "specific gravity": "الكثافة النوعية",
+    "solubility": "الذوبانية",
+    "active content": "نسبة المادة الفعّالة",
+    "active matter": "نسبة المادة الفعّالة",
+    "foam": "الرغوة",
+    "shelf life": "مدة الصلاحية",
+    "form": "الشكل",
+    "state": "الحالة",
+    "flash point": "نقطة الوميض",
+    "cloud point": "نقطة التعكّر",
+    "total solids": "إجمالي المواد الصلبة",
+  };
+  function translateFunction(fn) {
+    if (!fn) return "";
+    const parts = String(fn).split(/\s*[\/&,]\s*/).map(p => p.trim()).filter(Boolean);
+    if (!parts.length) return "";
+    const tr = parts.map(p => {
+      const k = p.toLowerCase();
+      if (FUNCTION_GLOSSARY[k]) return FUNCTION_GLOSSARY[k];
+      let best = "";
+      for (const key in FUNCTION_GLOSSARY) {
+        if (k.includes(key) && key.length > best.length) best = key;
+      }
+      return best ? FUNCTION_GLOSSARY[best] : p;
+    });
+    const anyTranslated = parts.some((p, i) => tr[i] !== p);
+    return anyTranslated ? tr.join(" / ") : "";
+  }
+  function translatePropKey(k) {
+    const norm = String(k).replace(/_/g, " ").toLowerCase().trim();
+    return PROPERTY_KEY_GLOSSARY[norm] || "";
+  }
   function fnBadge(fn) {
     if (!fn) return "";
     const key = String(fn).toLowerCase();
@@ -51,7 +147,9 @@
     for (const k of Object.keys(FN_COLORS)) {
       if (key.includes(k)) { color = FN_COLORS[k]; break; }
     }
-    return `<span style="display:inline-block; padding:2px 8px; border-radius:6px; background:${color}1A; color:${color}; font-size:0.78rem; font-weight:600;">${escapeHTML(fn)}</span>`;
+    const ar = translateFunction(fn);
+    const i18n = ar ? ` data-i18n-ar="${escapeAttr(ar)}"` : "";
+    return `<span${i18n} style="display:inline-block; padding:2px 8px; border-radius:6px; background:${color}1A; color:${color}; font-size:0.78rem; font-weight:600;">${escapeHTML(fn)}</span>`;
   }
 
   /* ─── Risky ingredient detection (basic heuristic) ──────────────── */
@@ -307,12 +405,15 @@
             <div class="card" style="padding:32px; margin-bottom:24px;">
               <h2 style="font-size:1.3rem; margin-bottom:14px;">📊 ${T("Properties", "الخصائص")}</h2>
               <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
-                ${Object.entries(row.properties).filter(([_, v]) => v != null && v !== "").map(([k, v]) => `
+                ${Object.entries(row.properties).filter(([_, v]) => v != null && v !== "").map(([k, v]) => {
+                  const keyEn = k.replace(/_/g, " ");
+                  const keyAr = translatePropKey(k);
+                  return `
                   <div style="background:rgba(255,255,255,0.02); padding:14px; border-radius:10px;">
-                    <div style="color:var(--text-3); font-size:0.78rem; text-transform:capitalize; margin-bottom:4px;">${escapeHTML(k.replace(/_/g, " "))}</div>
+                    <div style="color:var(--text-3); font-size:0.78rem; text-transform:capitalize; margin-bottom:4px;"${keyAr ? ` data-i18n-ar="${escapeAttr(keyAr)}"` : ""}>${escapeHTML(keyEn)}</div>
                     <div style="color:var(--text-1); font-weight:600; font-size:1rem;">${escapeHTML(String(v))}</div>
                   </div>
-                `).join("")}
+                `;}).join("")}
               </div>
             </div>
           ` : ""}
