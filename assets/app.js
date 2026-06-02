@@ -736,6 +736,16 @@ function faiApplyLang(code) {
   });
 }
 
+// Expose a no-arg re-apply hook so pages that inject content dynamically
+// (formula detail, compliance results, chat, etc.) can re-translate the
+// freshly-added nodes to the user's current language. faiApplyLang
+// re-scans the whole DOM and caches originals, so calling this after an
+// innerHTML update is safe and idempotent. (Previously callers referenced
+// window.applyLang / window.applyI18n which were never assigned → no-op.)
+window.applyLang = function () {
+  try { faiApplyLang(localStorage.getItem('fai_lang') || 'en'); } catch (_) {}
+};
+
 (function initLangSwitcher() {
   const trigger = document.querySelector('.lang-trigger');
   const menu = document.querySelector('.lang-menu');
