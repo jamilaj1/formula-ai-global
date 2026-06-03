@@ -103,6 +103,7 @@
             Testimonials
             <span id="tst-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
           </button>
+          <button class="admin-tab" data-tab="translations" role="tab">Translations · الترجمات</button>
         </div>
 
         <!-- ──────────────────────────── Tab: Signups ──────────────────────────── -->
@@ -271,6 +272,25 @@
           </div>
           <div id="tst-list"><div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div></div>
         </div><!-- /#tab-testimonials -->
+
+        <!-- ─────────────────────────── Tab: Translations ─────────────────────────── -->
+        <div id="tab-translations" style="display:none;">
+          <div style="margin-bottom:16px;">
+            <h2 style="font-size:1.3rem; margin:0 0 4px;">Translation overrides · تصحيح الترجمات</h2>
+            <p style="color:var(--text-3); margin:0; font-size:0.88rem;">Your Arabic correction overrides the AI auto-translation everywhere. Enter the EXACT English source and your approved Arabic.</p>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; align-items:flex-start;">
+            <input id="tr-en" placeholder="English source (exact)" style="flex:2; min-width:220px; padding:9px 11px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; color:var(--text-1); font:inherit;" />
+            <input id="tr-ar" dir="rtl" placeholder="الترجمة العربية المعتمدة" style="flex:2; min-width:220px; padding:9px 11px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; color:var(--text-1); font:inherit;" />
+            <button id="tr-save" class="btn btn-primary">Save · حفظ</button>
+            <button id="tr-refresh" class="btn btn-ghost">Refresh</button>
+          </div>
+          <div id="tr-msg" style="font-size:0.85rem; margin-bottom:10px;"></div>
+          <table class="admin-table" id="tr-table">
+            <thead><tr><th>English</th><th>عربي</th><th></th></tr></thead>
+            <tbody><tr><td colspan="3" style="padding:24px; text-align:center; color:var(--text-3);">Loading…</td></tr></tbody>
+          </table>
+        </div><!-- /#tab-translations -->
       </div>
 
     </div>
@@ -484,9 +504,11 @@
           document.getElementById('tab-consulting').style.display = (target === 'consulting') ? '' : 'none';
           document.getElementById('tab-financials').style.display = (target === 'financials') ? '' : 'none';
           document.getElementById('tab-testimonials').style.display = (target === 'testimonials') ? '' : 'none';
+          document.getElementById('tab-translations').style.display = (target === 'translations') ? '' : 'none';
           if (target === 'consulting' && !consultRows.length) loadConsulting();
           if (target === 'financials' && !finLoaded) loadFinancials();
           if (target === 'testimonials') loadTestimonials();
+          if (target === 'translations') loadTranslations();
         });
       });
 
@@ -494,6 +516,74 @@
       // Testimonials moderation (D3)
       // ════════════════════════════════════════════════════════════════
       document.getElementById('tst-refresh')?.addEventListener('click', loadTestimonials);
+
+      // ════════════════════════════════════════════════════════════════
+      // Translation overrides (Step 3) — owner corrections win over AI
+      // ════════════════════════════════════════════════════════════════
+      const trEsc = (s) => String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+      async function loadTranslations() {
+        const tb = document.querySelector('#tr-table tbody');
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/admin/translations`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const d = await r.json();
+          const rows = (d && d.rows) || [];
+          if (!rows.length) { tb.innerHTML = '<tr><td colspan="3" style="padding:24px;text-align:center;color:var(--text-3);">No overrides yet. Add one above.</td></tr>'; return; }
+          tb.innerHTML = rows.map((row) => `
+            <tr>
+              <td>${trEsc(row.source_text)}</td>
+              <td dir="rtl">${trEsc(row.ar_text)}</td>
+              <td style="white-space:nowrap;">
+                <button class="btn btn-ghost btn-sm tr-edit" data-en="${trEsc(row.source_text)}" data-ar="${trEsc(row.ar_text)}">Edit</button>
+                <button class="btn btn-ghost btn-sm tr-del" data-en="${trEsc(row.source_text)}">Delete</button>
+              </td>
+            </tr>`).join('');
+          tb.querySelectorAll('.tr-edit').forEach((b) => b.addEventListener('click', () => {
+            document.getElementById('tr-en').value = b.dataset.en;
+            document.getElementById('tr-ar').value = b.dataset.ar;
+          }));
+          tb.querySelectorAll('.tr-del').forEach((b) => b.addEventListener('click', () => deleteOverride(b.dataset.en)));
+        } catch (e) {
+          tb.innerHTML = `<tr><td colspan="3" style="padding:24px;text-align:center;color:#f87171;">Error: ${trEsc(e.message)}</td></tr>`;
+        }
+      }
+      async function saveOverride() {
+        const en = document.getElementById('tr-en').value.trim();
+        const ar = document.getElementById('tr-ar').value.trim();
+        const msg = document.getElementById('tr-msg');
+        if (!en || !ar) { msg.style.color = '#f87171'; msg.textContent = 'Both fields are required.'; return; }
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/admin/translation`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ source_text: en, ar_text: ar }),
+          });
+          const d = await r.json();
+          if (d && d.ok) {
+            msg.style.color = 'var(--primary)'; msg.textContent = '✓ Saved';
+            document.getElementById('tr-en').value = ''; document.getElementById('tr-ar').value = '';
+            loadTranslations();
+          } else { msg.style.color = '#f87171'; msg.textContent = 'Error: ' + ((d && (d.error || d.detail)) || 'failed'); }
+        } catch (e) { msg.style.color = '#f87171'; msg.textContent = 'Error: ' + e.message; }
+      }
+      async function deleteOverride(en) {
+        if (!en || !confirm('Delete this override?')) return;
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          await fetch(`${WORKER_BASE}/be/admin/translation/delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ source_text: en }),
+          });
+          loadTranslations();
+        } catch (_) { /* best-effort */ }
+      }
+      document.getElementById('tr-save')?.addEventListener('click', saveOverride);
+      document.getElementById('tr-refresh')?.addEventListener('click', loadTranslations);
 
       async function loadTestimonials() {
         const list = document.getElementById('tst-list');
