@@ -3691,6 +3691,102 @@ async function handleTranslationDelete(request, auth, env) {
   return json({ ok: true });
 }
 
+// worker-src/handlers/submissions_admin.js
+var OWNER_EMAIL4 = "jamilaj1@gmail.com";
+var forbid2 = () => json({ error: "forbidden" }, 403);
+var EXTRACT_SYSTEM2 = `Extract ONE structured chemical formula from the user's submission text. Output ONLY a JSON object (no prose, no markdown fences):
+{"name":"...","category":"...","form_type":"liquid|gel|cream|powder|paste|other","components":[{"name_en":"...","percentage":0,"cas_number":"","function":""}],"process_conditions":{"order_of_addition":""},"description":""}
+Rules: percentages are plain numbers (no % sign); keep ingredient names in English; be faithful to the submission \u2014 never invent ingredients; if it is not a real formula, return {"name":""}.`;
+async function handleSubmissionsList(auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
+  const r = await sbService(
+    env,
+    "/user_submissions?review_status=in.(pending,processing)&select=id,submitter_email,title,product_type,raw_text,review_status,created_at&order=created_at.asc"
+  );
+  if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
+  return json({ ok: true, rows: await r.json() });
+}
+async function handleSubmissionApprove(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
+  }
+  const id = String(body && body.id || "").trim();
+  if (!id) return json({ ok: false, error: "missing_id" });
+  const sr = await sbService(env, `/user_submissions?id=eq.${encodeURIComponent(id)}&select=id,title,product_type,raw_text`);
+  if (!sr.ok) return json({ ok: false, error: "db", detail: (await sr.text()).slice(0, 200) });
+  const sub = (await sr.json())[0];
+  if (!sub) return json({ ok: false, error: "not_found" });
+  let parsed = null;
+  try {
+    const cr = await claudeCall(
+      env,
+      {
+        system: EXTRACT_SYSTEM2,
+        max_tokens: 2e3,
+        messages: [{ role: "user", content: `Title: ${sub.title || ""}
+Type: ${sub.product_type || ""}
+
+${(sub.raw_text || "").slice(0, 8e3)}` }]
+      },
+      { model: CLAUDE_HAIKU }
+    );
+    if (cr.ok) parsed = extractClaudeJson(cr.data);
+  } catch (_) {
+  }
+  if (!parsed || !parsed.name) {
+    return json({ ok: false, error: "extract_failed", detail: "Could not structure this into a formula. Reject it, or fix the submission text." });
+  }
+  const row = {
+    name: String(parsed.name).slice(0, 200),
+    name_en: String(parsed.name).slice(0, 200),
+    category: parsed.category || sub.product_type || null,
+    form_type: parsed.form_type || null,
+    description: parsed.description || null,
+    components: Array.isArray(parsed.components) ? parsed.components : [],
+    process_conditions: parsed.process_conditions || {},
+    trust_score: 85,
+    human_verified: true,
+    is_complete: true,
+    source_type: "community",
+    language: "en"
+  };
+  const ir = await sbService(env, "/formulas", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Prefer: "return=representation" },
+    body: JSON.stringify(row)
+  });
+  if (!ir.ok) return json({ ok: false, error: "insert_failed", detail: (await ir.text()).slice(0, 200) });
+  const created = (await ir.json())[0] || null;
+  await sbService(env, `/user_submissions?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ review_status: "verified", parsed, reviewed_at: (/* @__PURE__ */ new Date()).toISOString() })
+  });
+  return json({ ok: true, formula_id: created && created.id });
+}
+async function handleSubmissionReject(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
+  }
+  const id = String(body && body.id || "").trim();
+  if (!id) return json({ ok: false, error: "missing_id" });
+  const r = await sbService(env, `/user_submissions?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ review_status: "rejected", reviewed_at: (/* @__PURE__ */ new Date()).toISOString() })
+  });
+  if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
+  return json({ ok: true });
+}
+
 // worker-src/handlers/stats.js
 var CACHE_KEY = "cache:stats:community";
 var CACHE_TTL = 300;
@@ -3781,7 +3877,7 @@ async function handleClientError(request, env) {
 }
 
 // worker-src/handlers/testimonials.js
-var OWNER_EMAIL4 = "jamilaj1@gmail.com";
+var OWNER_EMAIL5 = "jamilaj1@gmail.com";
 var APPROVED_CACHE_KEY = "cache:testimonials:approved";
 var APPROVED_TTL = 300;
 function clean2(s, max) {
@@ -3851,7 +3947,7 @@ async function handleTestimonialsApproved(env) {
   return json({ testimonials });
 }
 async function handleTestimonialsAdmin(auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL4) return json({ error: "forbidden" }, 403);
+  if (!auth || auth.email !== OWNER_EMAIL5) return json({ error: "forbidden" }, 403);
   const r = await sbService(
     env,
     "/testimonials?select=id,name,role,company,quote,rating,status,featured,created_at&order=status.asc,created_at.desc&limit=200"
@@ -3860,7 +3956,7 @@ async function handleTestimonialsAdmin(auth, env) {
   return json({ testimonials: await r.json() });
 }
 async function handleTestimonialModerate(request, auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL4) return json({ error: "forbidden" }, 403);
+  if (!auth || auth.email !== OWNER_EMAIL5) return json({ error: "forbidden" }, 403);
   let body;
   try {
     body = await request.json();
@@ -4158,7 +4254,7 @@ async function handleTeamRemoveMember(teamId, targetUserId, auth, env) {
 }
 
 // worker-src/handlers/enterprise.js
-var OWNER_EMAIL5 = "jamilaj1@gmail.com";
+var OWNER_EMAIL6 = "jamilaj1@gmail.com";
 var TEAM_SIZES = /* @__PURE__ */ new Set(["1-10", "11-50", "51-200", "200+"]);
 var LEAD_STATUS = /* @__PURE__ */ new Set(["new", "contacted", "demo_booked", "negotiating", "won", "lost"]);
 var EMAIL_RE3 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -4224,7 +4320,7 @@ async function handleEnterpriseLead(request, auth, env) {
   return json({ ok: true, id: arr?.[0]?.id || null });
 }
 async function handleEnterpriseList(auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL5) {
+  if (!auth || auth.email !== OWNER_EMAIL6) {
     return json({ error: "forbidden" }, 403);
   }
   const r = await sbService(
@@ -4237,7 +4333,7 @@ async function handleEnterpriseList(auth, env) {
   return json({ leads: await r.json() });
 }
 async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
-  if (!auth || auth.email !== OWNER_EMAIL5) {
+  if (!auth || auth.email !== OWNER_EMAIL6) {
     return json({ error: "forbidden" }, 403);
   }
   const id = clean4(leadId, 64);
@@ -4481,6 +4577,12 @@ async function handleRequest(request, env, ctx) {
       return await handleTranslationUpsert(request, auth, env);
     if (path === "/be/admin/translation/delete" && request.method === "POST")
       return await handleTranslationDelete(request, auth, env);
+    if (path === "/be/admin/submissions" && request.method === "GET")
+      return await handleSubmissionsList(auth, env);
+    if (path === "/be/admin/submission/approve" && request.method === "POST")
+      return await handleSubmissionApprove(request, auth, env);
+    if (path === "/be/admin/submission/reject" && request.method === "POST")
+      return await handleSubmissionReject(request, auth, env);
     if (path === "/be/team/list" && request.method === "GET")
       return await handleTeamList(auth, env);
     if (path === "/be/team/create" && request.method === "POST")

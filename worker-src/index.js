@@ -103,6 +103,7 @@ import {
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
 import { handleTranslationsList, handleTranslationUpsert, handleTranslationDelete } from './handlers/translations_admin.js';
+import { handleSubmissionsList, handleSubmissionApprove, handleSubmissionReject } from './handlers/submissions_admin.js';
 import { handleCommunityStats } from './handlers/stats.js';
 import { handleClientError } from './handlers/client_error.js';
 import {
@@ -361,6 +362,14 @@ async function handleRequest(request, env, ctx) {
         return await handleTranslationUpsert(request, auth, env);
       if (path === '/be/admin/translation/delete' && request.method === 'POST')
         return await handleTranslationDelete(request, auth, env);
+
+      // Community submissions moderation (credibility gate: approve → publish, reject → hide).
+      if (path === '/be/admin/submissions' && request.method === 'GET')
+        return await handleSubmissionsList(auth, env);
+      if (path === '/be/admin/submission/approve' && request.method === 'POST')
+        return await handleSubmissionApprove(request, auth, env);
+      if (path === '/be/admin/submission/reject' && request.method === 'POST')
+        return await handleSubmissionReject(request, auth, env);
 
       // Phase 9.2 — multi-seat enterprise teams.
       if (path === '/be/team/list'    && request.method === 'GET')
