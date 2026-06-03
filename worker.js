@@ -3706,7 +3706,7 @@ async function handleSubmissionsList(auth, env) {
   if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
   return json({ ok: true, rows: await r.json() });
 }
-async function handleSubmissionApprove(request, auth, env) {
+async function handleSubmissionStructure(request, auth, env) {
   if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
   let body;
   try {
@@ -3737,17 +3737,41 @@ ${(sub.raw_text || "").slice(0, 8e3)}` }]
     if (cr.ok) parsed = extractClaudeJson(cr.data);
   } catch (_) {
   }
-  if (!parsed || !parsed.name) {
-    return json({ ok: false, error: "extract_failed", detail: "Could not structure this into a formula. Reject it, or fix the submission text." });
+  return json({
+    ok: true,
+    draft: {
+      name: parsed && parsed.name || sub.title || "",
+      category: parsed && parsed.category || sub.product_type || "",
+      form_type: parsed && parsed.form_type || "",
+      description: parsed && parsed.description || "",
+      components: parsed && Array.isArray(parsed.components) ? parsed.components : []
+    }
+  });
+}
+async function handleSubmissionPublish(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
   }
+  const id = String(body && body.id || "").trim();
+  const name = String(body && body.name || "").trim();
+  if (!id || !name) return json({ ok: false, error: "missing_fields" });
+  const components = (Array.isArray(body.components) ? body.components : []).map((c) => ({
+    name_en: String(c && c.name_en || "").slice(0, 200),
+    percentage: Number(c && c.percentage) || 0,
+    function: String(c && c.function || "").slice(0, 120),
+    cas_number: String(c && c.cas_number || "").slice(0, 40)
+  })).filter((c) => c.name_en);
   const row = {
-    name: String(parsed.name).slice(0, 200),
-    name_en: String(parsed.name).slice(0, 200),
-    category: parsed.category || sub.product_type || null,
-    form_type: parsed.form_type || null,
-    description: parsed.description || null,
-    components: Array.isArray(parsed.components) ? parsed.components : [],
-    process_conditions: parsed.process_conditions || {},
+    name: name.slice(0, 200),
+    name_en: name.slice(0, 200),
+    category: String(body && body.category || "").slice(0, 100) || null,
+    form_type: String(body && body.form_type || "").slice(0, 50) || null,
+    description: String(body && body.description || "").slice(0, 2e3) || null,
+    components,
     trust_score: 85,
     human_verified: true,
     is_complete: true,
@@ -3764,7 +3788,7 @@ ${(sub.raw_text || "").slice(0, 8e3)}` }]
   await sbService(env, `/user_submissions?id=eq.${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ review_status: "verified", parsed, reviewed_at: (/* @__PURE__ */ new Date()).toISOString() })
+    body: JSON.stringify({ review_status: "verified", parsed: row, reviewed_at: (/* @__PURE__ */ new Date()).toISOString() })
   });
   return json({ ok: true, formula_id: created && created.id });
 }
@@ -4579,8 +4603,10 @@ async function handleRequest(request, env, ctx) {
       return await handleTranslationDelete(request, auth, env);
     if (path === "/be/admin/submissions" && request.method === "GET")
       return await handleSubmissionsList(auth, env);
-    if (path === "/be/admin/submission/approve" && request.method === "POST")
-      return await handleSubmissionApprove(request, auth, env);
+    if (path === "/be/admin/submission/structure" && request.method === "POST")
+      return await handleSubmissionStructure(request, auth, env);
+    if (path === "/be/admin/submission/publish" && request.method === "POST")
+      return await handleSubmissionPublish(request, auth, env);
     if (path === "/be/admin/submission/reject" && request.method === "POST")
       return await handleSubmissionReject(request, auth, env);
     if (path === "/be/team/list" && request.method === "GET")

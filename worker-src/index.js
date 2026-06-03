@@ -103,7 +103,7 @@ import {
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
 import { handleTranslationsList, handleTranslationUpsert, handleTranslationDelete } from './handlers/translations_admin.js';
-import { handleSubmissionsList, handleSubmissionApprove, handleSubmissionReject } from './handlers/submissions_admin.js';
+import { handleSubmissionsList, handleSubmissionStructure, handleSubmissionPublish, handleSubmissionReject } from './handlers/submissions_admin.js';
 import { handleCommunityStats } from './handlers/stats.js';
 import { handleClientError } from './handlers/client_error.js';
 import {
@@ -366,8 +366,10 @@ async function handleRequest(request, env, ctx) {
       // Community submissions moderation (credibility gate: approve → publish, reject → hide).
       if (path === '/be/admin/submissions' && request.method === 'GET')
         return await handleSubmissionsList(auth, env);
-      if (path === '/be/admin/submission/approve' && request.method === 'POST')
-        return await handleSubmissionApprove(request, auth, env);
+      if (path === '/be/admin/submission/structure' && request.method === 'POST')
+        return await handleSubmissionStructure(request, auth, env);
+      if (path === '/be/admin/submission/publish' && request.method === 'POST')
+        return await handleSubmissionPublish(request, auth, env);
       if (path === '/be/admin/submission/reject' && request.method === 'POST')
         return await handleSubmissionReject(request, auth, env);
 
