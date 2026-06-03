@@ -104,6 +104,10 @@
             <span id="tst-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
           </button>
           <button class="admin-tab" data-tab="translations" role="tab">Translations · الترجمات</button>
+          <button class="admin-tab" data-tab="submissions" role="tab">
+            Submissions
+            <span id="sub-badge" class="pill pill-paid pill-status" style="display:none; margin-left:6px;">0</span>
+          </button>
         </div>
 
         <!-- ──────────────────────────── Tab: Signups ──────────────────────────── -->
@@ -291,6 +295,18 @@
             <tbody><tr><td colspan="3" style="padding:24px; text-align:center; color:var(--text-3);">Loading…</td></tr></tbody>
           </table>
         </div><!-- /#tab-translations -->
+
+        <!-- ─────────────────────────── Tab: Submissions ─────────────────────────── -->
+        <div id="tab-submissions" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; margin-bottom:16px;">
+            <div>
+              <h2 style="font-size:1.3rem; margin:0 0 4px;">Community submissions · المساهمات</h2>
+              <p style="color:var(--text-3); margin:0; font-size:0.88rem;">Review each upload. Approve → published to the verified formula base. Reject → hidden. Nothing goes public without your approval.</p>
+            </div>
+            <button id="sub-refresh" class="btn btn-ghost">Refresh</button>
+          </div>
+          <div id="sub-list"><div style="padding:30px; text-align:center; color:var(--text-3);">Loading…</div></div>
+        </div><!-- /#tab-submissions -->
       </div>
 
     </div>
@@ -505,10 +521,12 @@
           document.getElementById('tab-financials').style.display = (target === 'financials') ? '' : 'none';
           document.getElementById('tab-testimonials').style.display = (target === 'testimonials') ? '' : 'none';
           document.getElementById('tab-translations').style.display = (target === 'translations') ? '' : 'none';
+          document.getElementById('tab-submissions').style.display = (target === 'submissions') ? '' : 'none';
           if (target === 'consulting' && !consultRows.length) loadConsulting();
           if (target === 'financials' && !finLoaded) loadFinancials();
           if (target === 'testimonials') loadTestimonials();
           if (target === 'translations') loadTranslations();
+          if (target === 'submissions') loadSubmissions();
         });
       });
 
@@ -584,6 +602,67 @@
       }
       document.getElementById('tr-save')?.addEventListener('click', saveOverride);
       document.getElementById('tr-refresh')?.addEventListener('click', loadTranslations);
+
+      // ════════════════════════════════════════════════════════════════
+      // Community submissions moderation — the credibility gate
+      // ════════════════════════════════════════════════════════════════
+      async function loadSubmissions() {
+        const host = document.getElementById('sub-list');
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/admin/submissions`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const d = await r.json();
+          const rows = (d && d.rows) || [];
+          const badge = document.getElementById('sub-badge');
+          if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? '' : 'none'; }
+          if (!rows.length) { host.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3);">No pending submissions.</div>'; return; }
+          host.innerHTML = rows.map((s) => `
+            <div style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+                <div><strong>${trEsc(s.title || '(untitled)')}</strong> <span style="color:var(--text-3); font-size:0.82rem;">· ${trEsc(s.product_type || '')}</span></div>
+                <span style="color:var(--text-3); font-size:0.8rem;">${trEsc(s.submitter_email || '')}</span>
+              </div>
+              <pre style="white-space:pre-wrap; background:var(--bg-card); border-radius:8px; padding:12px; font-size:0.85rem; max-height:240px; overflow:auto; margin:0 0 12px;">${trEsc(s.raw_text || '')}</pre>
+              <div style="display:flex; gap:8px;">
+                <button class="btn btn-primary sub-approve" data-id="${trEsc(s.id)}">✓ Approve · اعتماد</button>
+                <button class="btn btn-ghost sub-reject" data-id="${trEsc(s.id)}">✕ Reject · رفض</button>
+              </div>
+            </div>`).join('');
+          host.querySelectorAll('.sub-approve').forEach((b) => b.addEventListener('click', () => approveSubmission(b.dataset.id, b)));
+          host.querySelectorAll('.sub-reject').forEach((b) => b.addEventListener('click', () => rejectSubmission(b.dataset.id)));
+        } catch (e) {
+          host.innerHTML = `<div style="padding:30px;text-align:center;color:#f87171;">Error: ${trEsc(e.message)}</div>`;
+        }
+      }
+      async function approveSubmission(id, btn) {
+        if (btn) { btn.disabled = true; btn.textContent = 'Publishing…'; }
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/admin/submission/approve`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ id }),
+          });
+          const d = await r.json();
+          if (d && d.ok) { loadSubmissions(); }
+          else { alert('Approve failed: ' + ((d && (d.detail || d.error)) || 'error')); if (btn) { btn.disabled = false; btn.textContent = '✓ Approve · اعتماد'; } }
+        } catch (e) { alert('Error: ' + e.message); if (btn) btn.disabled = false; }
+      }
+      async function rejectSubmission(id) {
+        if (!confirm('Reject this submission? It will never be published.')) return;
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          await fetch(`${WORKER_BASE}/be/admin/submission/reject`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ id }),
+          });
+          loadSubmissions();
+        } catch (_) { /* best-effort */ }
+      }
+      document.getElementById('sub-refresh')?.addEventListener('click', loadSubmissions);
 
       async function loadTestimonials() {
         const list = document.getElementById('tst-list');
