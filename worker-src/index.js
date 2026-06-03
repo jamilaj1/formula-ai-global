@@ -102,6 +102,7 @@ import {
   handleConsultingPay,
 } from './handlers/consulting.js';
 import { handleAdminFinancials } from './handlers/admin.js';
+import { handleTranslationsList, handleTranslationUpsert, handleTranslationDelete } from './handlers/translations_admin.js';
 import { handleCommunityStats } from './handlers/stats.js';
 import { handleClientError } from './handlers/client_error.js';
 import {
@@ -352,6 +353,14 @@ async function handleRequest(request, env, ctx) {
       // plan distribution / Claude operational cost / gross margin).
       if (path === '/be/admin/financials' && request.method === 'GET')
         return await handleAdminFinancials(auth, env);
+
+      // Phase 9.x — owner-only translation overrides (Step 3: corrections win over AI).
+      if (path === '/be/admin/translations' && request.method === 'GET')
+        return await handleTranslationsList(auth, env);
+      if (path === '/be/admin/translation' && request.method === 'POST')
+        return await handleTranslationUpsert(request, auth, env);
+      if (path === '/be/admin/translation/delete' && request.method === 'POST')
+        return await handleTranslationDelete(request, auth, env);
 
       // Phase 9.2 — multi-seat enterprise teams.
       if (path === '/be/team/list'    && request.method === 'GET')

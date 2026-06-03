@@ -1522,7 +1522,20 @@ async function handleTranslate(request, auth, env) {
   texts = texts.map((t) => String(t == null ? "" : t).trim()).filter((t) => t && t.length <= MAX_CHARS);
   texts = Array.from(new Set(texts)).slice(0, MAX_ITEMS);
   if (!texts.length) return json({ ok: true, translations: {} });
-  const messages = [{ role: "user", content: JSON.stringify(texts) }];
+  const translations = {};
+  try {
+    const r = await sbService(env, "/translation_overrides?select=source_text,ar_text");
+    if (r.ok) {
+      const rows = await r.json();
+      for (const row of Array.isArray(rows) ? rows : []) {
+        if (row && row.source_text && row.ar_text) translations[row.source_text] = row.ar_text;
+      }
+    }
+  } catch (_) {
+  }
+  const toAI = texts.filter((t) => !(t in translations));
+  if (!toAI.length) return json({ ok: true, translations });
+  const messages = [{ role: "user", content: JSON.stringify(toAI) }];
   const key = await buildCacheKey({ model: CLAUDE_HAIKU, system: SYSTEM, messages, tools: [] });
   const { response } = await cacheGetOrSet(
     env,
@@ -1537,16 +1550,15 @@ async function handleTranslate(request, auth, env) {
     },
     CACHE_TTL_SECONDS
   );
-  if (!response) return json({ ok: false, error: "translate_failed" });
-  const arr = extractClaudeJson(response);
-  if (!Array.isArray(arr)) return json({ ok: false, error: "parse_failed" });
-  const translations = {};
-  texts.forEach((t, i) => {
-    const ar = arr[i];
-    if (typeof ar === "string" && ar.trim() && ar.trim() !== t) {
-      translations[t] = ar.trim();
+  if (response) {
+    const arr = extractClaudeJson(response);
+    if (Array.isArray(arr)) {
+      toAI.forEach((t, i) => {
+        const ar = arr[i];
+        if (typeof ar === "string" && ar.trim() && ar.trim() !== t) translations[t] = ar.trim();
+      });
     }
-  });
+  }
   return json({ ok: true, translations });
 }
 
@@ -3625,6 +3637,60 @@ async function handleAdminFinancials(auth, env) {
   });
 }
 
+// worker-src/handlers/translations_admin.js
+var OWNER_EMAIL3 = "jamilaj1@gmail.com";
+var forbid = () => json({ error: "forbidden" }, 403);
+async function handleTranslationsList(auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL3) return forbid();
+  const r = await sbService(
+    env,
+    "/translation_overrides?select=id,source_text,ar_text,updated_at&order=updated_at.desc"
+  );
+  if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
+  return json({ ok: true, rows: await r.json() });
+}
+async function handleTranslationUpsert(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL3) return forbid();
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
+  }
+  const source_text = String(body && body.source_text || "").trim();
+  const ar_text = String(body && body.ar_text || "").trim();
+  if (!source_text || !ar_text) return json({ ok: false, error: "missing_fields" });
+  const r = await sbService(env, "/translation_overrides?on_conflict=source_text", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Prefer: "resolution=merge-duplicates,return=representation"
+    },
+    body: JSON.stringify({ source_text, ar_text, updated_at: (/* @__PURE__ */ new Date()).toISOString() })
+  });
+  if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
+  const rows = await r.json();
+  return json({ ok: true, row: (Array.isArray(rows) ? rows[0] : rows) || null });
+}
+async function handleTranslationDelete(request, auth, env) {
+  if (!auth || auth.email !== OWNER_EMAIL3) return forbid();
+  let body;
+  try {
+    body = await request.json();
+  } catch (_) {
+    return json({ ok: false, error: "bad_json" });
+  }
+  const source_text = String(body && body.source_text || "").trim();
+  if (!source_text) return json({ ok: false, error: "missing_fields" });
+  const r = await sbService(
+    env,
+    `/translation_overrides?source_text=eq.${encodeURIComponent(source_text)}`,
+    { method: "DELETE" }
+  );
+  if (!r.ok) return json({ ok: false, error: "db", detail: (await r.text()).slice(0, 200) });
+  return json({ ok: true });
+}
+
 // worker-src/handlers/stats.js
 var CACHE_KEY = "cache:stats:community";
 var CACHE_TTL = 300;
@@ -3715,7 +3781,7 @@ async function handleClientError(request, env) {
 }
 
 // worker-src/handlers/testimonials.js
-var OWNER_EMAIL3 = "jamilaj1@gmail.com";
+var OWNER_EMAIL4 = "jamilaj1@gmail.com";
 var APPROVED_CACHE_KEY = "cache:testimonials:approved";
 var APPROVED_TTL = 300;
 function clean2(s, max) {
@@ -3785,7 +3851,7 @@ async function handleTestimonialsApproved(env) {
   return json({ testimonials });
 }
 async function handleTestimonialsAdmin(auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL3) return json({ error: "forbidden" }, 403);
+  if (!auth || auth.email !== OWNER_EMAIL4) return json({ error: "forbidden" }, 403);
   const r = await sbService(
     env,
     "/testimonials?select=id,name,role,company,quote,rating,status,featured,created_at&order=status.asc,created_at.desc&limit=200"
@@ -3794,7 +3860,7 @@ async function handleTestimonialsAdmin(auth, env) {
   return json({ testimonials: await r.json() });
 }
 async function handleTestimonialModerate(request, auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL3) return json({ error: "forbidden" }, 403);
+  if (!auth || auth.email !== OWNER_EMAIL4) return json({ error: "forbidden" }, 403);
   let body;
   try {
     body = await request.json();
@@ -4092,7 +4158,7 @@ async function handleTeamRemoveMember(teamId, targetUserId, auth, env) {
 }
 
 // worker-src/handlers/enterprise.js
-var OWNER_EMAIL4 = "jamilaj1@gmail.com";
+var OWNER_EMAIL5 = "jamilaj1@gmail.com";
 var TEAM_SIZES = /* @__PURE__ */ new Set(["1-10", "11-50", "51-200", "200+"]);
 var LEAD_STATUS = /* @__PURE__ */ new Set(["new", "contacted", "demo_booked", "negotiating", "won", "lost"]);
 var EMAIL_RE3 = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -4158,7 +4224,7 @@ async function handleEnterpriseLead(request, auth, env) {
   return json({ ok: true, id: arr?.[0]?.id || null });
 }
 async function handleEnterpriseList(auth, env) {
-  if (!auth || auth.email !== OWNER_EMAIL4) {
+  if (!auth || auth.email !== OWNER_EMAIL5) {
     return json({ error: "forbidden" }, 403);
   }
   const r = await sbService(
@@ -4171,7 +4237,7 @@ async function handleEnterpriseList(auth, env) {
   return json({ leads: await r.json() });
 }
 async function handleEnterpriseLeadUpdate(request, auth, env, leadId) {
-  if (!auth || auth.email !== OWNER_EMAIL4) {
+  if (!auth || auth.email !== OWNER_EMAIL5) {
     return json({ error: "forbidden" }, 403);
   }
   const id = clean4(leadId, 64);
@@ -4409,6 +4475,12 @@ async function handleRequest(request, env, ctx) {
       return await handleConsultingPay(request, auth, env);
     if (path === "/be/admin/financials" && request.method === "GET")
       return await handleAdminFinancials(auth, env);
+    if (path === "/be/admin/translations" && request.method === "GET")
+      return await handleTranslationsList(auth, env);
+    if (path === "/be/admin/translation" && request.method === "POST")
+      return await handleTranslationUpsert(request, auth, env);
+    if (path === "/be/admin/translation/delete" && request.method === "POST")
+      return await handleTranslationDelete(request, auth, env);
     if (path === "/be/team/list" && request.method === "GET")
       return await handleTeamList(auth, env);
     if (path === "/be/team/create" && request.method === "POST")

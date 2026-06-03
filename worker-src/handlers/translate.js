@@ -22,6 +22,7 @@
 import { json } from '../lib/responses.js';
 import { claudeCall, CLAUDE_HAIKU, extractClaudeJson } from '../lib/claude.js';
 import { buildCacheKey, cacheGetOrSet } from '../lib/cache.js';
+import { sbService } from '../lib/supabase.js';
 
 const MAX_ITEMS = 80;
 const MAX_CHARS = 6000;
@@ -50,7 +51,25 @@ export async function handleTranslate(request, auth, env) {
   texts = Array.from(new Set(texts)).slice(0, MAX_ITEMS);
   if (!texts.length) return json({ ok: true, translations: {} });
 
-  const messages = [{ role: 'user', content: JSON.stringify(texts) }];
+  const translations = {};
+
+  // 1) Owner-approved overrides WIN over AI (Step 3). Graceful: if the
+  //    translation_overrides table is absent, this no-ops and we AI everything.
+  try {
+    const r = await sbService(env, '/translation_overrides?select=source_text,ar_text');
+    if (r.ok) {
+      const rows = await r.json();
+      for (const row of (Array.isArray(rows) ? rows : [])) {
+        if (row && row.source_text && row.ar_text) translations[row.source_text] = row.ar_text;
+      }
+    }
+  } catch (_) { /* overrides are optional */ }
+
+  // 2) AI-translate only what the owner has NOT overridden.
+  const toAI = texts.filter((t) => !(t in translations));
+  if (!toAI.length) return json({ ok: true, translations });
+
+  const messages = [{ role: 'user', content: JSON.stringify(toAI) }];
   // Stable key per (model, system, exact text set) → same bundle is free on re-open.
   const key = await buildCacheKey({ model: CLAUDE_HAIKU, system: SYSTEM, messages, tools: [] });
 
@@ -68,17 +87,15 @@ export async function handleTranslate(request, auth, env) {
     CACHE_TTL_SECONDS,
   );
 
-  if (!response) return json({ ok: false, error: 'translate_failed' });
-
-  const arr = extractClaudeJson(response);
-  if (!Array.isArray(arr)) return json({ ok: false, error: 'parse_failed' });
-
-  const translations = {};
-  texts.forEach((t, i) => {
-    const ar = arr[i];
-    if (typeof ar === 'string' && ar.trim() && ar.trim() !== t) {
-      translations[t] = ar.trim();
+  // If AI fails we still return whatever overrides we already have.
+  if (response) {
+    const arr = extractClaudeJson(response);
+    if (Array.isArray(arr)) {
+      toAI.forEach((t, i) => {
+        const ar = arr[i];
+        if (typeof ar === 'string' && ar.trim() && ar.trim() !== t) translations[t] = ar.trim();
+      });
     }
-  });
+  }
   return json({ ok: true, translations });
 }
