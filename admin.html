@@ -604,59 +604,125 @@
       document.getElementById('tr-refresh')?.addEventListener('click', loadTranslations);
 
       // ════════════════════════════════════════════════════════════════
-      // Community submissions moderation — the credibility gate
+      // Community submissions — review, edit the clear formula, then publish
       // ════════════════════════════════════════════════════════════════
       async function loadSubmissions() {
         const host = document.getElementById('sub-list');
         const token = window.FAI_AUTH?.session?.access_token;
         try {
-          const r = await fetch(`${WORKER_BASE}/be/admin/submissions`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
+          const r = await fetch(`${WORKER_BASE}/be/admin/submissions`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
           const d = await r.json();
           const rows = (d && d.rows) || [];
           const badge = document.getElementById('sub-badge');
           if (badge) { badge.textContent = rows.length; badge.style.display = rows.length ? '' : 'none'; }
           if (!rows.length) { host.innerHTML = '<div style="padding:30px;text-align:center;color:var(--text-3);">No pending submissions.</div>'; return; }
           host.innerHTML = rows.map((s) => `
-            <div style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px;">
+            <div class="sub-card" id="sub-${trEsc(s.id)}" style="border:1px solid var(--border); border-radius:10px; padding:16px; margin-bottom:14px;">
               <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
                 <div><strong>${trEsc(s.title || '(untitled)')}</strong> <span style="color:var(--text-3); font-size:0.82rem;">· ${trEsc(s.product_type || '')}</span></div>
                 <span style="color:var(--text-3); font-size:0.8rem;">${trEsc(s.submitter_email || '')}</span>
               </div>
-              <pre style="white-space:pre-wrap; background:var(--bg-card); border-radius:8px; padding:12px; font-size:0.85rem; max-height:240px; overflow:auto; margin:0 0 12px;">${trEsc(s.raw_text || '')}</pre>
-              <div style="display:flex; gap:8px;">
-                <button class="btn btn-primary sub-approve" data-id="${trEsc(s.id)}">✓ Approve · اعتماد</button>
+              <pre style="white-space:pre-wrap; background:var(--bg-card); border-radius:8px; padding:12px; font-size:0.85rem; max-height:200px; overflow:auto; margin:0 0 12px;">${trEsc(s.raw_text || '')}</pre>
+              <div class="sub-actions" style="display:flex; gap:8px;">
+                <button class="btn btn-primary sub-review" data-id="${trEsc(s.id)}">Review &amp; edit · مراجعة وتعديل</button>
                 <button class="btn btn-ghost sub-reject" data-id="${trEsc(s.id)}">✕ Reject · رفض</button>
               </div>
+              <div class="sub-editor" style="display:none; margin-top:14px;"></div>
             </div>`).join('');
-          host.querySelectorAll('.sub-approve').forEach((b) => b.addEventListener('click', () => approveSubmission(b.dataset.id, b)));
+          host.querySelectorAll('.sub-review').forEach((b) => b.addEventListener('click', () => reviewSubmission(b.dataset.id, b)));
           host.querySelectorAll('.sub-reject').forEach((b) => b.addEventListener('click', () => rejectSubmission(b.dataset.id)));
         } catch (e) {
           host.innerHTML = `<div style="padding:30px;text-align:center;color:#f87171;">Error: ${trEsc(e.message)}</div>`;
         }
       }
-      async function approveSubmission(id, btn) {
-        if (btn) { btn.disabled = true; btn.textContent = 'Publishing…'; }
+      const inStyle = 'padding:6px 8px; background:var(--bg-card); border:1px solid var(--border); border-radius:6px; color:var(--text-1); font:inherit;';
+      function compRow(c) {
+        c = c || {};
+        return `<tr>
+          <td><input class="c-name" value="${trEsc(c.name_en || '')}" style="width:100%; ${inStyle}"></td>
+          <td><input class="c-pct" type="number" step="0.01" value="${c.percentage != null ? trEsc(c.percentage) : ''}" style="width:80px; ${inStyle}"></td>
+          <td><input class="c-fn" value="${trEsc(c.function || '')}" style="width:100%; ${inStyle}"></td>
+          <td><button class="btn btn-ghost btn-sm c-del">✕</button></td>
+        </tr>`;
+      }
+      function bindDel(editor) {
+        editor.querySelectorAll('.c-del').forEach((b) => { b.onclick = () => b.closest('tr').remove(); });
+      }
+      async function reviewSubmission(id, btn) {
+        const card = document.getElementById('sub-' + id);
+        const editor = card.querySelector('.sub-editor');
+        if (btn) { btn.disabled = true; btn.textContent = 'Structuring…'; }
         const token = window.FAI_AUTH?.session?.access_token;
+        let draft = { name: '', category: '', form_type: '', components: [] };
         try {
-          const r = await fetch(`${WORKER_BASE}/be/admin/submission/approve`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+          const r = await fetch(`${WORKER_BASE}/be/admin/submission/structure`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify({ id }),
           });
           const d = await r.json();
-          if (d && d.ok) { loadSubmissions(); }
-          else { alert('Approve failed: ' + ((d && (d.detail || d.error)) || 'error')); if (btn) { btn.disabled = false; btn.textContent = '✓ Approve · اعتماد'; } }
-        } catch (e) { alert('Error: ' + e.message); if (btn) btn.disabled = false; }
+          if (d && d.ok && d.draft) draft = d.draft;
+        } catch (_) { /* keep empty draft for manual entry */ }
+        const comps = (draft.components && draft.components.length ? draft.components : [{}]);
+        editor.innerHTML = `
+          <div style="display:grid; gap:8px; margin-bottom:10px;">
+            <input class="sub-name" value="${trEsc(draft.name)}" placeholder="Formula name (English)" style="${inStyle}">
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <input class="sub-cat" value="${trEsc(draft.category)}" placeholder="Category" style="flex:1; min-width:140px; ${inStyle}">
+              <input class="sub-form" value="${trEsc(draft.form_type)}" placeholder="Form (liquid/gel/…)" style="flex:1; min-width:140px; ${inStyle}">
+            </div>
+          </div>
+          <table style="width:100%; font-size:0.85rem; margin-bottom:8px;">
+            <thead><tr style="color:var(--text-3);"><th style="text-align:start;">Ingredient</th><th style="text-align:start; width:90px;">%</th><th style="text-align:start;">Function</th><th></th></tr></thead>
+            <tbody class="sub-comps">${comps.map(compRow).join('')}</tbody>
+          </table>
+          <button class="btn btn-ghost btn-sm sub-addrow" style="margin-bottom:12px;">+ ingredient</button>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary sub-publish">✓ Publish · نشر</button>
+            <button class="btn btn-ghost sub-cancel">Cancel</button>
+          </div>
+          <div class="sub-msg" style="font-size:0.82rem; margin-top:8px;"></div>`;
+        editor.style.display = '';
+        card.querySelector('.sub-actions').style.display = 'none';
+        bindDel(editor);
+        editor.querySelector('.sub-addrow').addEventListener('click', () => {
+          editor.querySelector('.sub-comps').insertAdjacentHTML('beforeend', compRow({}));
+          bindDel(editor);
+        });
+        editor.querySelector('.sub-publish').addEventListener('click', (e) => publishSubmission(id, editor, e.currentTarget));
+        editor.querySelector('.sub-cancel').addEventListener('click', () => {
+          editor.style.display = 'none'; editor.innerHTML = '';
+          card.querySelector('.sub-actions').style.display = '';
+          if (btn) { btn.disabled = false; btn.textContent = 'Review & edit · مراجعة وتعديل'; }
+        });
+        if (btn) { btn.disabled = false; btn.textContent = 'Review & edit · مراجعة وتعديل'; }
+      }
+      async function publishSubmission(id, editor, btn) {
+        const name = editor.querySelector('.sub-name').value.trim();
+        const msg = editor.querySelector('.sub-msg');
+        if (!name) { msg.style.color = '#f87171'; msg.textContent = 'Formula name is required.'; return; }
+        const components = Array.from(editor.querySelectorAll('.sub-comps tr')).map((tr) => ({
+          name_en: tr.querySelector('.c-name').value.trim(),
+          percentage: parseFloat(tr.querySelector('.c-pct').value) || 0,
+          function: tr.querySelector('.c-fn').value.trim(),
+        })).filter((c) => c.name_en);
+        if (btn) { btn.disabled = true; btn.textContent = 'Publishing…'; }
+        const token = window.FAI_AUTH?.session?.access_token;
+        try {
+          const r = await fetch(`${WORKER_BASE}/be/admin/submission/publish`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            body: JSON.stringify({ id, name, category: editor.querySelector('.sub-cat').value.trim(), form_type: editor.querySelector('.sub-form').value.trim(), components }),
+          });
+          const d = await r.json();
+          if (d && d.ok) loadSubmissions();
+          else { msg.style.color = '#f87171'; msg.textContent = 'Failed: ' + ((d && (d.detail || d.error)) || 'error'); if (btn) { btn.disabled = false; btn.textContent = '✓ Publish · نشر'; } }
+        } catch (e) { msg.style.color = '#f87171'; msg.textContent = 'Error: ' + e.message; if (btn) btn.disabled = false; }
       }
       async function rejectSubmission(id) {
         if (!confirm('Reject this submission? It will never be published.')) return;
         const token = window.FAI_AUTH?.session?.access_token;
         try {
           await fetch(`${WORKER_BASE}/be/admin/submission/reject`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+            method: 'POST', headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
             body: JSON.stringify({ id }),
           });
           loadSubmissions();
