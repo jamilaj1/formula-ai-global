@@ -11,14 +11,27 @@
  */
 import { json } from '../lib/responses.js';
 import { sbService } from '../lib/supabase.js';
-import { claudeCall, CLAUDE_HAIKU, extractClaudeJson } from '../lib/claude.js';
+import { claudeCall, CLAUDE_HAIKU, CLAUDE_SONNET, extractClaudeJson } from '../lib/claude.js';
 
 const OWNER_EMAIL = 'jamilaj1@gmail.com';
 const forbid = () => json({ error: 'forbidden' }, 403);
 
-const EXTRACT_SYSTEM = `Extract ONE structured chemical formula from the user's submission text. Output ONLY a JSON object (no prose, no markdown fences):
-{"name":"...","category":"...","form_type":"liquid|gel|cream|powder|paste|other","components":[{"name_en":"...","percentage":0,"cas_number":"","function":""}],"process_conditions":{"order_of_addition":""},"description":""}
-Rules: percentages are plain numbers (no % sign); keep ingredient names in English; be faithful to the submission — never invent ingredients; if it is not a real formula, return {"name":""}.`;
+const EXTRACT_SYSTEM = `You convert a chemist's RAW formula submission (often a messy paste or an aligned table) into ONE structured chemical formula.
+
+Read carefully and extract EVERY ingredient line with its percentage. Submissions usually look like columns:
+  Sodium Hypochlorite        30
+  LABSA                      13
+  Water - (low TDS)          57
+or "Ingredient — 12%" lines, or "Caustic Soda (NaOH) dry basis  0.8". Pull EACH one. A line that has a chemical name AND a number = an ingredient and its percentage. Percentages are plain numbers (no % sign).
+
+Output ONLY a JSON object (no prose, no markdown fences):
+{"name":"...","category":"...","form_type":"liquid|gel|cream|powder|paste|other","components":[{"name_en":"ingredient name as written","percentage":0,"function":""}],"description":""}
+
+Rules:
+- components MUST contain every ingredient found in the text — do NOT return an empty list if the text clearly lists ingredients.
+- Keep ingredient names in English exactly as written.
+- Be faithful: never invent ingredients, never drop present ones.
+- Only return "components":[] if the text genuinely has no ingredient list.`;
 
 export async function handleSubmissionsList(auth, env) {
   if (!auth || auth.email !== OWNER_EMAIL) return forbid();
@@ -50,10 +63,10 @@ export async function handleSubmissionStructure(request, auth, env) {
       env,
       {
         system: EXTRACT_SYSTEM,
-        max_tokens: 2000,
+        max_tokens: 3000,
         messages: [{ role: 'user', content: `Title: ${sub.title || ''}\nType: ${sub.product_type || ''}\n\n${(sub.raw_text || '').slice(0, 8000)}` }],
       },
-      { model: CLAUDE_HAIKU },
+      { model: CLAUDE_SONNET },
     );
     if (cr.ok) parsed = extractClaudeJson(cr.data);
   } catch (_) { /* fall through to empty draft */ }

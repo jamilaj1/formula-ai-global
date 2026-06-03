@@ -3694,9 +3694,22 @@ async function handleTranslationDelete(request, auth, env) {
 // worker-src/handlers/submissions_admin.js
 var OWNER_EMAIL4 = "jamilaj1@gmail.com";
 var forbid2 = () => json({ error: "forbidden" }, 403);
-var EXTRACT_SYSTEM2 = `Extract ONE structured chemical formula from the user's submission text. Output ONLY a JSON object (no prose, no markdown fences):
-{"name":"...","category":"...","form_type":"liquid|gel|cream|powder|paste|other","components":[{"name_en":"...","percentage":0,"cas_number":"","function":""}],"process_conditions":{"order_of_addition":""},"description":""}
-Rules: percentages are plain numbers (no % sign); keep ingredient names in English; be faithful to the submission \u2014 never invent ingredients; if it is not a real formula, return {"name":""}.`;
+var EXTRACT_SYSTEM2 = `You convert a chemist's RAW formula submission (often a messy paste or an aligned table) into ONE structured chemical formula.
+
+Read carefully and extract EVERY ingredient line with its percentage. Submissions usually look like columns:
+  Sodium Hypochlorite        30
+  LABSA                      13
+  Water - (low TDS)          57
+or "Ingredient \u2014 12%" lines, or "Caustic Soda (NaOH) dry basis  0.8". Pull EACH one. A line that has a chemical name AND a number = an ingredient and its percentage. Percentages are plain numbers (no % sign).
+
+Output ONLY a JSON object (no prose, no markdown fences):
+{"name":"...","category":"...","form_type":"liquid|gel|cream|powder|paste|other","components":[{"name_en":"ingredient name as written","percentage":0,"function":""}],"description":""}
+
+Rules:
+- components MUST contain every ingredient found in the text \u2014 do NOT return an empty list if the text clearly lists ingredients.
+- Keep ingredient names in English exactly as written.
+- Be faithful: never invent ingredients, never drop present ones.
+- Only return "components":[] if the text genuinely has no ingredient list.`;
 async function handleSubmissionsList(auth, env) {
   if (!auth || auth.email !== OWNER_EMAIL4) return forbid2();
   const r = await sbService(
@@ -3726,13 +3739,13 @@ async function handleSubmissionStructure(request, auth, env) {
       env,
       {
         system: EXTRACT_SYSTEM2,
-        max_tokens: 2e3,
+        max_tokens: 3e3,
         messages: [{ role: "user", content: `Title: ${sub.title || ""}
 Type: ${sub.product_type || ""}
 
 ${(sub.raw_text || "").slice(0, 8e3)}` }]
       },
-      { model: CLAUDE_HAIKU }
+      { model: CLAUDE_SONNET }
     );
     if (cr.ok) parsed = extractClaudeJson(cr.data);
   } catch (_) {
