@@ -620,6 +620,26 @@
       }
       $('fx-badges').innerHTML = badges.join('');
 
+      // Estimated raw-material cost line. cost_per_kg is NOT gated by
+      // get_formula, so it shows for everyone (a value teaser). Only
+      // rendered when a real cost was computed from the reference prices.
+      const costPrev = document.getElementById('fx-cost');
+      if (costPrev) costPrev.remove();
+      if (f.cost_per_kg != null && Number(f.cost_per_kg) > 0) {
+        const costHost = document.querySelector('.fx-head');
+        if (costHost) {
+          const ck = Number(f.cost_per_kg).toFixed(2);
+          const costEl = document.createElement('div');
+          costEl.id = 'fx-cost';
+          costEl.style.cssText = 'margin-top:12px; font-size:0.95rem; display:flex; align-items:center; gap:8px; flex-wrap:wrap;';
+          costEl.innerHTML =
+            '<span style="background:rgba(0,255,136,.12); color:var(--primary); padding:4px 12px; border-radius:999px; font-weight:800;">≈ $' + ck + ' / kg</span>' +
+            ' <span style="color:var(--text-3); font-size:.82rem;" data-i18n-ar="تكلفة المواد الخام التقديرية لكل كجم — من دفتر الأسعار المرجعي">indicative raw-material cost per kg — from the reference price book</span>';
+          costHost.appendChild(costEl);
+          if (window.applyLang) window.applyLang();
+        }
+      }
+
       // Async: show contributor recognition badge if this formula was
       // submitted by a verified chemist (reads the public_profiles view).
       if (f.contributor_id && window.FAI_DB && window.FAI_DB.getContributor) {
