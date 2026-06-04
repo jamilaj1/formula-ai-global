@@ -215,9 +215,18 @@
                       <th data-i18n-ar="المكوّن">Ingredient</th>
                       <th data-i18n-ar="الوظيفة">Function</th>
                       <th data-i18n-ar="النسبة">%</th>
+                      <th data-i18n-ar="السعر/كجم">Price/kg</th>
                     </tr></thead>
                     <tbody id="fx-ing-body"></tbody>
                   </table>
+                </div>
+                <div id="fx-cost-tools" style="display:none; margin-top:14px; padding-top:12px; border-top:1px solid var(--border); align-items:center; gap:10px; flex-wrap:wrap;">
+                  <span style="font-size:0.82rem;color:var(--text-2);font-weight:700;" data-i18n-ar="سعّرها بنفسك:">Price it yourself:</span>
+                  <label style="font-size:0.82rem;color:var(--text-3);" data-i18n-ar="العملة">Currency</label>
+                  <input id="fx-cur" value="USD" maxlength="6" style="width:74px;padding:4px 8px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.04);color:var(--text-1);" />
+                  <span data-i18n-ar="تكلفتك:" style="font-size:0.85rem;color:var(--text-3);">Your cost:</span>
+                  <span id="fx-your-cost" style="font-weight:800;color:var(--primary);">—</span>
+                  <span id="fx-price-status" style="font-size:0.78rem;color:var(--text-3);"></span>
                 </div>
                 <div class="lock-note" id="fx-lock" style="display:none;" data-i18n-ar="بعض التفاصيل (البنية الجزيئية، التحليل الكامل) متاحة للمشتركين. <a href='./pricing.html' style='color:var(--primary);font-weight:700;'>اعرف المزيد</a>">
                   Some details (molecular structure, full analysis) are available to subscribers. <a href="./pricing.html" style="color:var(--primary);font-weight:700;">Learn more</a>
@@ -598,6 +607,81 @@
       if (window.applyLang) window.applyLang();
     }
 
+    // Interactive per-ingredient pricing. Each viewer enters their OWN prices
+    // (in their own currency); the total recomputes live and — for signed-in
+    // users — saves to their ingredient_prices book. The cost line above is the
+    // owner's reference; this is "your cost".
+    function setupPricing(cs) {
+      const tools = document.getElementById('fx-cost-tools');
+      if (!tools) return;
+      const inputs = Array.prototype.slice.call(
+        document.querySelectorAll('#fx-ing-body input.fx-price'));
+      if (!inputs.length) { tools.style.display = 'none'; return; }
+      tools.style.display = 'flex';
+      const curEl = document.getElementById('fx-cur');
+      const outEl = document.getElementById('fx-your-cost');
+      const statusEl = document.getElementById('fx-price-status');
+
+      function recompute() {
+        const cur = (curEl.value || 'USD').trim() || 'USD';
+        let total = 0, n = 0;
+        inputs.forEach((inp) => {
+          const p = parseFloat(inp.value);
+          const pct = parseFloat(inp.dataset.pct) || 0;
+          if (!isNaN(p) && p > 0 && pct > 0) { total += (pct / 100) * p; n += 1; }
+        });
+        outEl.textContent = n ? ('≈ ' + total.toFixed(3) + ' ' + cur + ' / kg') : '—';
+        outEl.title = n + '/' + inputs.length + ' priced';
+      }
+
+      // Prefill from the viewer's own saved prices (empty for guests).
+      if (window.FAI_DB && window.FAI_DB.listPrices) {
+        window.FAI_DB.listPrices().then((res) => {
+          const list = (res && res.prices) || [];
+          if (!list.length) return;
+          const byName = {};
+          list.forEach((p) => { byName[String(p.ingredient_name || '').toLowerCase()] = p; });
+          inputs.forEach((inp) => {
+            const m = byName[String(inp.dataset.ing || '').toLowerCase()];
+            if (m && m.price_per_kg != null) {
+              inp.value = m.price_per_kg;
+              if (m.currency && curEl) curEl.value = m.currency;
+            }
+          });
+          recompute();
+        }).catch(() => {});
+      }
+
+      // Save (debounced) on change.
+      let t;
+      function save(inp) {
+        if (!window.FAI_DB || !window.FAI_DB.savePrice) return;
+        const p = parseFloat(inp.value);
+        if (isNaN(p) || p <= 0) return;
+        window.FAI_DB.savePrice({
+          ingredient_name: inp.dataset.ing,
+          price_per_kg: p,
+          currency: (curEl.value || 'USD').trim() || 'USD',
+        }).then((r) => {
+          if (r && r.saved) {
+            statusEl.textContent = '✓ saved';
+            statusEl.setAttribute('data-i18n-ar', '✓ حُفظت');
+          } else {
+            statusEl.textContent = 'sign in to save';
+            statusEl.setAttribute('data-i18n-ar', 'سجّل الدخول لحفظ أسعارك');
+          }
+          if (window.applyLang) window.applyLang();
+        }).catch(() => {});
+      }
+
+      inputs.forEach((inp) => {
+        inp.addEventListener('input', recompute);
+        inp.addEventListener('change', () => { clearTimeout(t); t = setTimeout(() => save(inp), 500); });
+      });
+      curEl.addEventListener('input', recompute);
+      recompute();
+    }
+
     function render(f) {
       const name = f.name_en || f.name || 'Untitled formula';
       const name2 = (f.name && f.name !== name) ? f.name : '';
@@ -690,8 +774,12 @@
           <td><span class="fn-tag" data-fx-fn="${fnEnAttr}"${fnAr ? ` data-i18n-ar="${escAttr(fnAr)}"` : ''}>${esc(x.function || '—')}</span></td>
           <td class="pct-cell">${isNaN(pct) ? '—' : pct + '%'}
             ${isNaN(pct) ? '' : `<div class="pct-bar"><div style="width:${Math.min(100, pct / maxPct * 100)}%"></div></div>`}</td>
+          <td>${locked ? '<span style="color:var(--text-3);">·</span>' : `<input class="fx-price" data-ing="${nmEnAttr}" data-pct="${isNaN(pct) ? 0 : pct}" type="number" step="any" min="0" inputmode="decimal" placeholder="—" style="width:76px;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:rgba(255,255,255,.04);color:var(--text-1);font-size:0.85rem;" />`}</td>
         </tr>`;
-      }).join('') || `<tr><td colspan="4" style="color:var(--text-3);padding:20px;text-align:center;" data-i18n-ar="لا توجد مكوّنات مُسجَّلة لهذه الفورمولا.">No components recorded for this formula.</td></tr>`;
+      }).join('') || `<tr><td colspan="5" style="color:var(--text-3);padding:20px;text-align:center;" data-i18n-ar="لا توجد مكوّنات مُسجَّلة لهذه الفورمولا.">No components recorded for this formula.</td></tr>`;
+
+      // Wire the interactive "price it yourself" calculator (rows now exist).
+      setupPricing(cs);
 
       const lockNote = $('fx-lock');
       if (!IS_PAID && cs.length > 0) {

@@ -98,6 +98,26 @@ const FAI_DB = {
     } catch (err) { return { error: err.message }; }
   },
 
+  /** List the signed-in user's ingredient price book (empty for guests). */
+  async listPrices() {
+    try {
+      const r = await fetch(`${WORKER_URL}/prices`, { headers: await authHeaders() });
+      return await r.json();
+    } catch (err) { return { prices: [], error: err.message }; }
+  },
+
+  /** Upsert one ingredient price into the signed-in user's book. */
+  async savePrice(p) {
+    try {
+      const r = await fetch(`${WORKER_URL}/prices`, {
+        method: 'POST',
+        headers: { ...(await authHeaders()), 'Content-Type': 'application/json' },
+        body: JSON.stringify(p),
+      });
+      return await r.json();
+    } catch (err) { return { error: err.message }; }
+  },
+
   /** Start a checkout — Paystack first (Ghana+global), Stripe fallback. */
   async startCheckout(plan) {
     try {
