@@ -118,7 +118,7 @@
         </div>
 
         <!-- Segmentation ────────────────────────────────────────────── -->
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:18px; margin-bottom:24px;">
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:18px; margin-bottom:24px;">
           <div class="card">
             <h3 style="font-size: 1rem; margin: 0 0 12px;">By education</h3>
             <div id="seg-education"></div>
@@ -126,6 +126,10 @@
           <div class="card">
             <h3 style="font-size: 1rem; margin: 0 0 12px;">By profession</h3>
             <div id="seg-profession"></div>
+          </div>
+          <div class="card">
+            <h3 style="font-size: 1rem; margin: 0 0 12px;">By country</h3>
+            <div id="seg-country"></div>
           </div>
         </div>
 
@@ -396,11 +400,12 @@
       }
 
       function renderSeg(rows) {
-        const byDim = { education_field: [], profession: [] };
+        const byDim = { education_field: [], profession: [], country: [] };
         for (const r of rows) byDim[r.dimension]?.push(r);
         const maxFor = arr => Math.max(1, ...arr.map(r => Number(r.count)));
         renderSegSection('seg-education',  byDim.education_field, maxFor(byDim.education_field));
         renderSegSection('seg-profession', byDim.profession,      maxFor(byDim.profession));
+        renderSegSection('seg-country',    byDim.country,         maxFor(byDim.country));
       }
       function renderSegSection(elId, arr, max) {
         const el = document.getElementById(elId);

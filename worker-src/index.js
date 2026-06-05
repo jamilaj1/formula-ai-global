@@ -52,6 +52,7 @@
  */
 import { json, corsHeaders } from './lib/responses.js';
 import { resolveCaller } from './auth.js';
+import { sbService } from './lib/supabase.js';
 
 import { handleSearch } from './handlers/search.js';
 import { handleUsage } from './handlers/usage.js';
@@ -249,6 +250,20 @@ async function handleRequest(request, env, ctx) {
 
       // Resolve caller (authenticated user OR anonymous IP-keyed guest)
       const auth = await resolveCaller(request, env);
+
+      // Best-effort geo: stamp the signed-in user's country (Cloudflare edge)
+      // once, so the owner admin can segment signups by country. Fire-and-forget
+      // via waitUntil (never blocks the response); writes only while country is
+      // still null, so it runs at most once per user.
+      if (auth?.kind === 'user' && auth.userId && request.cf?.country) {
+        ctx.waitUntil(
+          sbService(env, `/profiles?id=eq.${auth.userId}&country=is.null`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({ country: request.cf.country }),
+          }).catch(() => {})
+        );
+      }
 
       // Read-only
       if (path === '/search') return await handleSearch(url, auth, env, request);

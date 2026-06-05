@@ -4562,6 +4562,16 @@ async function handleRequest(request, env, ctx) {
       return await handlePaystackWebhook(request, env);
     }
     const auth = await resolveCaller(request, env);
+    if (auth?.kind === "user" && auth.userId && request.cf?.country) {
+      ctx.waitUntil(
+        sbService(env, `/profiles?id=eq.${auth.userId}&country=is.null`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Prefer: "return=minimal" },
+          body: JSON.stringify({ country: request.cf.country })
+        }).catch(() => {
+        })
+      );
+    }
     if (path === "/search") return await handleSearch(url, auth, env, request);
     if (path === "/usage") return await handleUsage(auth, env);
     if (path === "/stats/community") return await handleCommunityStats(env);
