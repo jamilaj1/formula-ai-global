@@ -84,6 +84,10 @@ import {
   handleScale,
 } from './handlers/prices.js';
 import {
+  handleChemicals,
+  handleChemicalCategories,
+} from './handlers/chemicals.js';
+import {
   handlePaystackCheckout,
   handlePaystackVerify,
   handlePaystackWebhook,
@@ -267,6 +271,12 @@ async function handleRequest(request, env, ctx) {
       // i18n — on-demand EN→AR translation of formula free-text (cached in KV).
       if (path === '/translate' && request.method === 'POST')
         return await handleTranslate(request, auth, env);
+
+      // Chemicals encyclopedia — public raw-materials catalog (chemicals_database).
+      if (path === '/chemicals' && request.method === 'GET')
+        return await handleChemicals(url, env);
+      if (path === '/chemicals/categories' && request.method === 'GET')
+        return await handleChemicalCategories(env);
 
       // Chat
       if (path === '/chat' && request.method === 'POST')

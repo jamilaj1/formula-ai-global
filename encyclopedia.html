@@ -231,7 +231,7 @@
 
       <!-- Search -->
       <div class="enc-search-bar reveal">
-        <input type="text" id="enc-search" placeholder="Search shampoos, detergents, disinfectants, paints..." />
+        <input type="text" id="enc-search" placeholder="Search raw materials — name, CAS, or formula…" />
         <button class="btn btn-primary">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           Search
@@ -257,8 +257,8 @@
     <div class="container">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
         <div>
-          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text">3,381</span> verified formulas · growing</h2>
-          <p style="color: var(--text-3); font-size: 0.92rem;">Sorted by trust score — highest verified first</p>
+          <h2 style="font-size: 1.6rem; margin-bottom: 4px;"><span class="gradient-text" id="enc-count">1,001</span> <span data-i18n-ar="مادة خام مُتحقَّقة · تنمو">verified raw materials · growing</span></h2>
+          <p style="color: var(--text-3); font-size: 0.92rem;" data-i18n-ar="ابحث بالاسم أو CAS أو الصيغة — انقر أي مادة لعرض خصائصها">Search by name, CAS, or formula — click any material for its properties</p>
         </div>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-ghost">
@@ -273,8 +273,8 @@
       </div>
 
       <div style="text-align: center; margin-top: 40px;">
-        <button class="btn btn-outline btn-lg">
-          Load 12 more formulas
+        <button class="btn btn-outline btn-lg" id="enc-more" style="display:none;">
+          <span data-i18n-ar="تحميل المزيد">Load more</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
         </button>
       </div>
@@ -365,69 +365,110 @@
   <script type="module" src="./assets/auth.js?v=36"></script>
   <script type="module" src="./assets/supabase-client.js?v=36"></script>
   <script>
-    const ENCYCLOPEDIA = [
-      { emoji: '🧴', title: 'Mild Daily Shampoo', cat: 'Hair Care · Sulfate-free', cmp: 9, dl: '12.4K', trust: 96, category: 'haircare' },
-      { emoji: '🧴', title: 'Anti-Dandruff Shampoo', cat: 'Hair Care · Treatment', cmp: 11, dl: '8.7K', trust: 94, category: 'haircare' },
-      { emoji: '💆', title: 'Argan Oil Hair Treatment', cat: 'Hair Care · Premium', cmp: 6, dl: '6.2K', trust: 95, category: 'haircare' },
-      { emoji: '🧖', title: 'Niacinamide Brightening Serum', cat: 'Skin Care · Active', cmp: 8, dl: '15.1K', trust: 97, category: 'skincare' },
-      { emoji: '💧', title: 'Hyaluronic Acid Moisturizer', cat: 'Skin Care · Hydration', cmp: 9, dl: '11.3K', trust: 96, category: 'skincare' },
-      { emoji: '☀️', title: 'Mineral Sunscreen SPF 50', cat: 'Skin Care · Protection', cmp: 12, dl: '9.8K', trust: 98, category: 'skincare' },
-      { emoji: '🧼', title: 'Industrial Floor Cleaner', cat: 'Detergent · Heavy duty', cmp: 8, dl: '7.4K', trust: 94, category: 'detergent' },
-      { emoji: '🍽️', title: 'Concentrated Dishwashing Liquid', cat: 'Detergent · Kitchen', cmp: 7, dl: '13.6K', trust: 95, category: 'detergent' },
-      { emoji: '🧺', title: 'Eco Laundry Detergent Powder', cat: 'Detergent · Biodegradable', cmp: 10, dl: '10.2K', trust: 93, category: 'detergent' },
-      { emoji: '🦠', title: 'Hospital-Grade Disinfectant', cat: 'Disinfectant · Medical', cmp: 7, dl: '5.9K', trust: 98, category: 'disinfectant' },
-      { emoji: '✋', title: 'Alcohol-Based Hand Sanitizer', cat: 'Disinfectant · Personal', cmp: 5, dl: '24.8K', trust: 99, category: 'disinfectant' },
-      { emoji: '🚿', title: 'Bathroom Mold Remover', cat: 'Disinfectant · Surface', cmp: 6, dl: '8.1K', trust: 92, category: 'disinfectant' },
-      { emoji: '🛢️', title: 'Industrial Lubricant ISO 68', cat: 'Industrial · Machinery', cmp: 9, dl: '4.3K', trust: 95, category: 'industrial' },
-      { emoji: '🧱', title: 'Concrete Plasticizer', cat: 'Industrial · Construction', cmp: 7, dl: '3.2K', trust: 94, category: 'industrial' },
-      { emoji: '🎨', title: 'Acrylic Wall Paint', cat: 'Industrial · Coating', cmp: 14, dl: '6.7K', trust: 96, category: 'industrial' },
-      { emoji: '🚗', title: 'Premium Car Shampoo', cat: 'Auto · Cleaning', cmp: 6, dl: '8.9K', trust: 93, category: 'auto' },
-      { emoji: '✨', title: 'Carnauba Wax Polish', cat: 'Auto · Detailing', cmp: 8, dl: '5.4K', trust: 95, category: 'auto' },
-      { emoji: '⚙️', title: 'Engine Coolant -40°C', cat: 'Auto · Mechanical', cmp: 5, dl: '4.1K', trust: 96, category: 'auto' },
-      { emoji: '🥤', title: 'Sports Drink Electrolyte Mix', cat: 'Food · Beverage', cmp: 11, dl: '7.8K', trust: 94, category: 'food' },
-      { emoji: '🍫', title: 'Cocoa Emulsifier Blend', cat: 'Food · Confectionery', cmp: 6, dl: '3.9K', trust: 93, category: 'food' },
-      { emoji: '🥖', title: 'Bread Improver Mix', cat: 'Food · Baking', cmp: 9, dl: '5.2K', trust: 95, category: 'food' },
-      { emoji: '🦷', title: 'Whitening Toothpaste', cat: 'Skin Care · Oral', cmp: 12, dl: '14.3K', trust: 96, category: 'skincare' },
-      { emoji: '🧴', title: 'Volumizing Conditioner', cat: 'Hair Care · Daily', cmp: 8, dl: '9.1K', trust: 94, category: 'haircare' },
-      { emoji: '🧼', title: 'Castile Liquid Soap', cat: 'Detergent · Personal', cmp: 5, dl: '11.7K', trust: 97, category: 'detergent' }
-    ];
+    // Live raw-materials encyclopedia — reads chemicals_database via the Worker.
+    const WORKER = 'https://formula-ai-brain.jamilaj1.workers.dev';
+    const grid = document.getElementById('encyclopedia-grid');
+    const searchInput = document.getElementById('enc-search');
+    const pillBar = document.querySelector('.cat-pills');
+    const moreBtn = document.getElementById('enc-more');
+    const countEl = document.getElementById('enc-count');
+    const state = { q: '', category: '', offset: 0, limit: 48, total: 0, loading: false };
 
-    function renderEncyclopedia(category = 'all') {
-      const list = category === 'all' ? ENCYCLOPEDIA : ENCYCLOPEDIA.filter(f => f.category === category);
-      const grid = document.getElementById('encyclopedia-grid');
-      grid.innerHTML = list.map(f => `
-        <a href="./formulas.html" class="formula-card">
-          <span class="formula-card-trust">${f.trust}%</span>
-          <div class="formula-card-header">
-            <div class="formula-card-emoji">${f.emoji}</div>
-            <div style="flex: 1; min-width: 0;">
-              <div class="formula-card-title">${f.title}</div>
-              <div class="formula-card-cat">${f.cat}</div>
-            </div>
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const escA = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+    function cardHTML(c) {
+      const phys = c.physical_properties || {};
+      const meta = [c.molecular_formula, (c.molecular_weight != null ? 'MW ' + Number(c.molecular_weight).toFixed(1) : ''), (c.cas_number ? 'CAS ' + c.cas_number : '')].filter(Boolean).join('  ·  ');
+      const cat = [c.category, c.function_category].filter(Boolean).join(' · ');
+      const det = Object.keys(phys).filter((k) => phys[k]).map((k) => `<div><span style="color:var(--text-3);">${esc(k.replace(/_/g, ' '))}:</span> ${esc(phys[k])}</div>`).join('');
+      const syn = (c.synonyms || []).filter(Boolean);
+      return `<div class="formula-card enc-chem" style="cursor:pointer;">
+        <div class="formula-card-header">
+          <div style="flex:1;min-width:0;">
+            <div class="formula-card-title">${esc(c.name)}</div>
+            <div class="formula-card-cat">${esc(cat || 'Raw material')}</div>
           </div>
-          <div class="formula-card-stats">
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
-              ${f.cmp} components
-            </span>
-            <span>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M20 6L9 17l-5-5"/></svg>
-              Verified · trust ${f.trust}%
-            </span>
-          </div>
-        </a>
-      `).join('');
+        </div>
+        <div class="formula-card-stats"><span style="font-variant-numeric:tabular-nums;">${esc(meta || '—')}</span></div>
+        <div class="enc-det" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:0.85rem;line-height:1.7;color:var(--text-2);">
+          ${det || '<div style="color:var(--text-3);" data-i18n-ar="لا خصائص إضافية مُسجَّلة.">No further properties recorded.</div>'}
+          ${syn.length ? `<div style="margin-top:6px;"><span style="color:var(--text-3);" data-i18n-ar="أسماء أخرى:">synonyms:</span> ${esc(syn.join(', '))}</div>` : ''}
+          ${c.source ? `<div style="margin-top:6px;color:var(--text-3);font-size:0.78rem;">${esc(c.source)}</div>` : ''}
+        </div>
+      </div>`;
     }
 
-    document.querySelectorAll('.cat-pill').forEach(pill => {
-      pill.addEventListener('click', () => {
-        document.querySelectorAll('.cat-pill').forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        renderEncyclopedia(pill.dataset.cat);
-      });
+    async function load(reset) {
+      if (state.loading) return;
+      state.loading = true;
+      if (reset) { state.offset = 0; grid.innerHTML = '<div style="color:var(--text-3);padding:30px;" data-i18n-ar="جارٍ التحميل…">Loading…</div>'; }
+      try {
+        const u = new URL(WORKER + '/chemicals');
+        if (state.q) u.searchParams.set('q', state.q);
+        if (state.category) u.searchParams.set('category', state.category);
+        u.searchParams.set('limit', String(state.limit));
+        u.searchParams.set('offset', String(state.offset));
+        const r = await fetch(u.toString());
+        const data = await r.json();
+        const items = data.chemicals || [];
+        state.total = data.total || 0;
+        if (reset) grid.innerHTML = '';
+        if (!items.length && state.offset === 0) {
+          grid.innerHTML = '<div style="color:var(--text-3);padding:30px;" data-i18n-ar="لا توجد مواد مطابقة.">No materials found.</div>';
+        } else {
+          grid.insertAdjacentHTML('beforeend', items.map(cardHTML).join(''));
+          state.offset += items.length;
+        }
+        if (countEl) countEl.textContent = state.total.toLocaleString();
+        if (moreBtn) moreBtn.style.display = state.offset < state.total ? '' : 'none';
+        if (window.applyLang) window.applyLang();
+      } catch (e) {
+        if (reset) grid.innerHTML = '<div style="color:#ff7a7a;padding:30px;" data-i18n-ar="تعذّر تحميل المواد.">Could not load materials.</div>';
+      } finally {
+        state.loading = false;
+      }
+    }
+
+    // Expand/collapse properties on card click.
+    grid.addEventListener('click', (e) => {
+      const card = e.target.closest('.enc-chem');
+      if (!card) return;
+      const det = card.querySelector('.enc-det');
+      if (det) det.style.display = det.style.display === 'none' ? 'block' : 'none';
     });
 
-    renderEncyclopedia();
+    // Search (debounced) + button + Enter key.
+    let st;
+    const doSearch = () => { state.q = ((searchInput && searchInput.value) || '').trim(); load(true); };
+    if (searchInput) {
+      searchInput.addEventListener('input', () => { clearTimeout(st); st = setTimeout(doSearch, 350); });
+      searchInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(st); doSearch(); } });
+      const btn = searchInput.parentElement && searchInput.parentElement.querySelector('button');
+      if (btn) btn.addEventListener('click', doSearch);
+    }
+
+    // Dynamic category pills from the API.
+    async function loadCategories() {
+      if (!pillBar) return;
+      try {
+        const cats = ((await (await fetch(WORKER + '/chemicals/categories')).json()).categories) || [];
+        if (!cats.length) return;
+        pillBar.innerHTML = '<button class="cat-pill active" data-cat="" data-i18n-ar="الكل">All</button>' +
+          cats.map((c) => `<button class="cat-pill" data-cat="${escA(c.name)}">${esc(c.name)} (${c.count})</button>`).join('');
+        pillBar.querySelectorAll('.cat-pill').forEach((p) => p.addEventListener('click', () => {
+          pillBar.querySelectorAll('.cat-pill').forEach((x) => x.classList.remove('active'));
+          p.classList.add('active');
+          state.category = p.dataset.cat || '';
+          load(true);
+        }));
+        if (window.applyLang) window.applyLang();
+      } catch (_) { /* keep static pills on failure */ }
+    }
+
+    if (moreBtn) moreBtn.addEventListener('click', () => load(false));
+    loadCategories();
+    load(true);
   </script>
   <script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "a4ede3342671416ca784eee5ad5d62a1"}'></script>
 </body>
